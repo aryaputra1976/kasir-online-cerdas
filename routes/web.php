@@ -122,7 +122,10 @@ Route::get('/stok-menipis', [StockController::class, 'low'])->name('stocks.low')
 */
 
 Route::view('/laporan', 'reports')->name('reports.index');
-Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])->name('reports.sales');
+Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])
+    ->name('reports.sales');
+Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])
+    ->name('reports.sales.export');
 Route::get('/laporan/produk-terlaris', [BestSellingProductReportController::class, 'index'])->name('reports.best-products');
 Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])
     ->name('reports.profit-loss');
