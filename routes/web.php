@@ -12,6 +12,7 @@ use App\Http\Controllers\BestSellingProductReportController;
 use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\ProfitLossReportController;
 use App\Http\Controllers\StoreSettingController;
+use App\Http\Controllers\ReceiptTemplateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -150,8 +151,11 @@ Route::delete('/pengaturan/profil-toko/logo', [StoreSettingController::class, 'r
 
 Route::view('/pengaturan/user-role', 'users-list')->name('settings.users');
 Route::view('/pengaturan/tambah-user', 'add-user')->name('settings.users.create');
-Route::view('/pengaturan/template-struk', 'invoice-details')->name('settings.receipt-template');
+Route::get('/pengaturan/template-struk', [ReceiptTemplateController::class, 'edit'])
+    ->name('settings.receipt-template');
 
+Route::put('/pengaturan/template-struk', [ReceiptTemplateController::class, 'update'])
+    ->name('settings.receipt-template.update');
 /*
 |--------------------------------------------------------------------------
 | Halaman Publik Order Online

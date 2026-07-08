@@ -198,8 +198,11 @@
             $storePhone = $storeSetting?->phone ?: null;
             $storeEmail = $storeSetting?->email ?: null;
             $storeFooter = $storeSetting?->receipt_footer ?: 'Terima kasih sudah berbelanja.';
+            $storePolicyText = $storeSetting?->receipt_policy_text;
+            $showLogo = (bool) ($storeSetting?->receipt_show_logo ?? true);
+            $showSku = (bool) ($storeSetting?->receipt_show_sku ?? true);
+            $showPoweredBy = (bool) ($storeSetting?->receipt_show_powered_by ?? true);
         @endphp
-
         <div class="page-wrapper">
             <div class="toolbar">
                 <div class="toolbar-group">
@@ -227,7 +230,7 @@
 
             <div class="receipt-paper">
                 <div class="receipt-center">
-                    @if ($storeLogo)
+                    @if ($showLogo && $storeLogo)
                         <img src="{{ $storeLogo }}" alt="Logo toko" class="receipt-logo">
                     @endif
 
@@ -282,7 +285,7 @@
                             <strong>{{ $rupiah($item->subtotal_amount) }}</strong>
                         </div>
 
-                        @if ($item->sku)
+                        @if ($showSku && $item->sku)
                             <div class="small-text">SKU: {{ $item->sku }}</div>
                         @endif
                     </div>
@@ -333,10 +336,19 @@
                 <div class="divider"></div>
 
                 <div class="receipt-center">
-                    <p class="footer-note">{{ $storeFooter }}</p>
-                    <p class="small-text" style="margin-top: 8px;">
-                        Dicetak dari {{ $storeName }}
-                    </p>
+                    @if ($storeFooter)
+                        <p class="footer-note">{{ $storeFooter }}</p>
+                    @endif
+
+                    @if ($storePolicyText)
+                        <p class="footer-note">{{ $storePolicyText }}</p>
+                    @endif
+
+                    @if ($showPoweredBy)
+                        <p class="small-text" style="margin-top: 8px;">
+                            Dicetak dari {{ $storeName }}
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>
