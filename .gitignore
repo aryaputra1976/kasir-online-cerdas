@@ -1,0 +1,31 @@
+/.phpunit.cache
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+.DS_Store
+
+# Trezo demo archive - jangan upload ke GitHub
+/resources/views/_trezo_demo/
+/resources/views/partials/sidebar-demo-trezo.blade.php
+
+# Trezo demo dan asset bawaan template - jangan upload ke public GitHub
+/resources/views/_trezo_demo/
+/resources/views/partials/sidebar-demo-trezo.blade.php
+/routes/web-demo-trezo.php
+/public/assets/

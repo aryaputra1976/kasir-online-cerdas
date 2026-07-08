@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Sale extends Model
+{
+    use HasFactory;
+
+    public const PAYMENT_CASH = 'CASH';
+    public const PAYMENT_QRIS = 'QRIS';
+    public const PAYMENT_TRANSFER = 'TRANSFER';
+    public const PAYMENT_EDC = 'EDC';
+
+    public const STATUS_COMPLETED = 'COMPLETED';
+
+    protected $fillable = [
+        'invoice_no',
+        'sale_date',
+        'customer_name',
+        'subtotal_amount',
+        'discount_amount',
+        'tax_amount',
+        'total_amount',
+        'payment_method',
+        'paid_amount',
+        'change_amount',
+        'status',
+        'note',
+    ];
+
+    protected $casts = [
+        'sale_date' => 'datetime',
+        'subtotal_amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'change_amount' => 'decimal:2',
+    ];
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        return match ($this->payment_method) {
+            self::PAYMENT_CASH => 'Tunai',
+            self::PAYMENT_QRIS => 'QRIS',
+            self::PAYMENT_TRANSFER => 'Transfer',
+            self::PAYMENT_EDC => 'EDC / Kartu',
+            default => $this->payment_method,
+        };
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_COMPLETED => 'Selesai',
+            default => $this->status,
+        };
+    }
+}
