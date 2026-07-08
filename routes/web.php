@@ -11,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BestSellingProductReportController;
 use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\ProfitLossReportController;
+use App\Http\Controllers\StoreSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -138,7 +139,15 @@ Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('repo
 |--------------------------------------------------------------------------
 */
 
-Route::view('/pengaturan/profil-toko', 'settings')->name('settings.store');
+Route::get('/pengaturan/profil-toko', [StoreSettingController::class, 'edit'])
+    ->name('settings.store');
+
+Route::put('/pengaturan/profil-toko', [StoreSettingController::class, 'update'])
+    ->name('settings.store.update');
+
+Route::delete('/pengaturan/profil-toko/logo', [StoreSettingController::class, 'removeLogo'])
+    ->name('settings.store.logo.destroy');
+
 Route::view('/pengaturan/user-role', 'users-list')->name('settings.users');
 Route::view('/pengaturan/tambah-user', 'add-user')->name('settings.users.create');
 Route::view('/pengaturan/template-struk', 'invoice-details')->name('settings.receipt-template');
