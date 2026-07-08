@@ -13,6 +13,7 @@ use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\ProfitLossReportController;
 use App\Http\Controllers\StoreSettingController;
 use App\Http\Controllers\ReceiptTemplateController;
+use App\Http\Controllers\PaymentMethodSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -156,6 +157,15 @@ Route::get('/pengaturan/template-struk', [ReceiptTemplateController::class, 'edi
 
 Route::put('/pengaturan/template-struk', [ReceiptTemplateController::class, 'update'])
     ->name('settings.receipt-template.update');
+
+Route::get('/pengaturan/metode-pembayaran', [PaymentMethodSettingController::class, 'edit'])
+    ->name('settings.payment-methods');
+
+Route::put('/pengaturan/metode-pembayaran', [PaymentMethodSettingController::class, 'update'])
+    ->name('settings.payment-methods.update');
+
+Route::delete('/pengaturan/metode-pembayaran/qris', [PaymentMethodSettingController::class, 'removeQris'])
+    ->name('settings.payment-methods.qris.destroy');
 /*
 |--------------------------------------------------------------------------
 | Halaman Publik Order Online

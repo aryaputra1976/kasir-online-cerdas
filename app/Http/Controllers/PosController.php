@@ -50,6 +50,7 @@ class PosController extends Controller
 
         $storeSetting = StoreSetting::current();
         $taxPercentage = (float) $storeSetting->tax_percentage;
+        $paymentMethods = $this->availablePaymentMethods($storeSetting);
 
         $cart = $this->getCart();
         $totals = $this->calculateCartTotals($cart, $taxPercentage);
@@ -61,7 +62,9 @@ class PosController extends Controller
             'totals',
             'search',
             'categoryId',
-            'taxPercentage'
+            'taxPercentage',
+            'paymentMethods',
+            'storeSetting'
         ));
     }
     public function addToCart(Request $request): RedirectResponse
@@ -176,16 +179,14 @@ class PosController extends Controller
                 ->with('error', 'Keranjang masih kosong.');
         }
 
+        $storeSetting = StoreSetting::current();
+        $availablePaymentMethodKeys = array_keys($this->availablePaymentMethods($storeSetting));
+
         $validated = $request->validate([
             'customer_name' => ['nullable', 'string', 'max:191'],
             'payment_method' => [
                 'required',
-                Rule::in([
-                    Sale::PAYMENT_CASH,
-                    Sale::PAYMENT_QRIS,
-                    Sale::PAYMENT_TRANSFER,
-                    Sale::PAYMENT_EDC,
-                ]),
+                Rule::in($availablePaymentMethodKeys),
             ],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
@@ -340,6 +341,35 @@ class PosController extends Controller
             'total_items' => $totalItems,
             'cart_count' => count($cart),
         ];
+    }
+
+    private function availablePaymentMethods(?StoreSetting $storeSetting = null): array
+    {
+        $storeSetting ??= StoreSetting::current();
+
+        $methods = [];
+
+        if ($storeSetting->payment_cash_enabled) {
+            $methods[Sale::PAYMENT_CASH] = 'Tunai';
+        }
+
+        if ($storeSetting->payment_qris_enabled) {
+            $methods[Sale::PAYMENT_QRIS] = 'QRIS';
+        }
+
+        if ($storeSetting->payment_transfer_enabled) {
+            $methods[Sale::PAYMENT_TRANSFER] = 'Transfer';
+        }
+
+        if ($storeSetting->payment_edc_enabled) {
+            $methods[Sale::PAYMENT_EDC] = 'EDC / Kartu';
+        }
+
+        if (empty($methods)) {
+            $methods[Sale::PAYMENT_CASH] = 'Tunai';
+        }
+
+        return $methods;
     }
 
     private function generateInvoiceNo(): string

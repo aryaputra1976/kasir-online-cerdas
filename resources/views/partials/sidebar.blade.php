@@ -187,6 +187,12 @@
                     </li>
 
                     <li class="menu-item">
+                        <a href="{{ route('settings.payment-methods') }}" class="menu-link {{ Request::is('pengaturan/metode-pembayaran') ? 'active' : '' }}">
+                            Metode Pembayaran
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
                         <a href="{{ route('settings.users') }}" class="menu-link {{ Request::is('pengaturan/user-role') || Request::is('pengaturan/tambah-user') ? 'active' : '' }}">
                             User &amp; Role
                         </a>

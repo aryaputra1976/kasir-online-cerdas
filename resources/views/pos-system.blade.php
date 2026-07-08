@@ -407,12 +407,94 @@
 
                                             <div class="mb-3">
                                                 <label class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
-                                                <select name="payment_method" class="form-select" required>
-                                                    <option value="CASH" @selected(old('payment_method', 'CASH') === 'CASH')>Tunai</option>
-                                                    <option value="QRIS" @selected(old('payment_method') === 'QRIS')>QRIS</option>
-                                                    <option value="TRANSFER" @selected(old('payment_method') === 'TRANSFER')>Transfer</option>
-                                                    <option value="EDC" @selected(old('payment_method') === 'EDC')>EDC / Kartu</option>
+                                                @php
+                                                    $defaultPaymentMethod = array_key_first($paymentMethods ?? ['CASH' => 'Tunai']) ?: 'CASH';
+                                                    $selectedPaymentMethod = old('payment_method', $defaultPaymentMethod);
+                                                @endphp
+
+                                                <select name="payment_method" id="payment_method" class="form-select" required>
+                                                    @foreach ($paymentMethods as $methodValue => $methodLabel)
+                                                        <option value="{{ $methodValue }}" @selected($selectedPaymentMethod === $methodValue)>
+                                                            {{ $methodLabel }}
+                                                        </option>
+                                                    @endforeach
                                                 </select>
+                                                @if ($storeSetting?->payment_qris_enabled)
+                                                    <div id="payment-info-qris" class="border rounded-3 p-3 mt-3 d-none">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <i class="material-symbols-outlined text-success me-2">qr_code_2</i>
+                                                            <strong>QRIS Manual</strong>
+                                                        </div>
+
+                                                        @if ($storeSetting->qris_image_path)
+                                                            <div class="text-center mb-3">
+                                                                <img
+                                                                    src="{{ asset('storage/' . $storeSetting->qris_image_path) }}"
+                                                                    alt="QRIS"
+                                                                    style="width: 210px; max-width: 100%; border-radius: 12px; border: 1px solid #eef0f7;"
+                                                                >
+                                                            </div>
+                                                        @else
+                                                            <p class="text-body fs-13 mb-2">
+                                                                Gambar QRIS belum diatur.
+                                                            </p>
+                                                        @endif
+
+                                                        <p class="fs-13 mb-1">
+                                                            Merchant:
+                                                            <strong>{{ $storeSetting->qris_merchant_name ?: $storeSetting->store_name }}</strong>
+                                                        </p>
+
+                                                        @if ($storeSetting->qris_note)
+                                                            <p class="text-body fs-13 mb-0">
+                                                                {{ $storeSetting->qris_note }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+                                                @endif
+
+                                                @if ($storeSetting?->payment_transfer_enabled)
+                                                    <div id="payment-info-transfer" class="border rounded-3 p-3 mt-3 d-none">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <i class="material-symbols-outlined text-info me-2">account_balance</i>
+                                                            <strong>Transfer Bank</strong>
+                                                        </div>
+
+                                                        <p class="fs-13 mb-1">
+                                                            Bank:
+                                                            <strong>{{ $storeSetting->bank_name ?: '-' }}</strong>
+                                                        </p>
+
+                                                        <p class="fs-13 mb-1">
+                                                            No. Rekening:
+                                                            <strong>{{ $storeSetting->bank_account_number ?: '-' }}</strong>
+                                                        </p>
+
+                                                        <p class="fs-13 mb-1">
+                                                            Atas Nama:
+                                                            <strong>{{ $storeSetting->bank_account_name ?: '-' }}</strong>
+                                                        </p>
+
+                                                        @if ($storeSetting->transfer_note)
+                                                            <p class="text-body fs-13 mb-0">
+                                                                {{ $storeSetting->transfer_note }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+                                                @endif
+
+                                                @if ($storeSetting?->payment_edc_enabled)
+                                                    <div id="payment-info-edc" class="border rounded-3 p-3 mt-3 d-none">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <i class="material-symbols-outlined text-warning me-2">credit_card</i>
+                                                            <strong>EDC / Kartu</strong>
+                                                        </div>
+
+                                                        <p class="text-body fs-13 mb-0">
+                                                            {{ $storeSetting->edc_note ?: 'Pastikan transaksi EDC berhasil sebelum struk dicetak.' }}
+                                                        </p>
+                                                    </div>
+                                                @endif                                                
                                             </div>
 
                                             <div class="mb-3">
@@ -469,6 +551,11 @@
                 const taxText = document.getElementById('pos-tax-text');
                 const totalText = document.getElementById('pos-total-text');
 
+                const paymentMethodSelect = document.getElementById('payment_method');
+                const qrisInfo = document.getElementById('payment-info-qris');
+                const transferInfo = document.getElementById('payment-info-transfer');
+                const edcInfo = document.getElementById('payment-info-edc');
+
                 const formatRupiah = function (value) {
                     return new Intl.NumberFormat('id-ID', {
                         style: 'currency',
@@ -505,6 +592,24 @@
                     }
                 };
 
+                const refreshPaymentInfo = function () {
+                    if (!paymentMethodSelect) {
+                        return;
+                    }
+
+                    if (qrisInfo) {
+                        qrisInfo.classList.toggle('d-none', paymentMethodSelect.value !== 'QRIS');
+                    }
+
+                    if (transferInfo) {
+                        transferInfo.classList.toggle('d-none', paymentMethodSelect.value !== 'TRANSFER');
+                    }
+
+                    if (edcInfo) {
+                        edcInfo.classList.toggle('d-none', paymentMethodSelect.value !== 'EDC');
+                    }
+                };
+
                 if (paidAmountInput) {
                     paidAmountInput.addEventListener('input', function () {
                         paidAmountInput.dataset.userChanged = 'true';
@@ -514,6 +619,11 @@
                 if (discountInput) {
                     discountInput.addEventListener('input', calculateTotal);
                     calculateTotal();
+                }
+
+                if (paymentMethodSelect) {
+                    paymentMethodSelect.addEventListener('change', refreshPaymentInfo);
+                    refreshPaymentInfo();
                 }
             });
         </script>
