@@ -9,6 +9,7 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BestSellingProductReportController;
+use App\Http\Controllers\StockReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -123,7 +124,8 @@ Route::view('/laporan', 'reports')->name('reports.index');
 Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])->name('reports.sales');
 Route::get('/laporan/produk-terlaris', [BestSellingProductReportController::class, 'index'])->name('reports.best-products');
 Route::view('/laporan/laba-rugi', 'reports')->name('reports.profit-loss');
-Route::view('/laporan/stok', 'reports')->name('reports.stock');
+Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('reports.stock');
+
 
 /*
 |--------------------------------------------------------------------------
