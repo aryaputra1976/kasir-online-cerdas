@@ -1,4 +1,9 @@
 @php
+    $storeName = $storeSetting?->store_name ?: 'Kasir Online Cerdas';
+    $storeLogo = $storeSetting?->logo_path
+        ? asset('storage/' . $storeSetting->logo_path)
+        : '/assets/images/logo-icon.png';
+
     $isDashboard = Request::is('dashboard');
 
     $isMasterData = Request::is('kategori-produk')
@@ -26,8 +31,8 @@
 <div class="sidebar-area" id="sidebar-area">
     <div class="logo position-relative">
         <a href="{{ route('dashboard') }}" class="d-block text-decoration-none position-relative">
-            <img src="/assets/images/logo-icon.png" alt="logo-icon">
-            <span class="logo-text fw-bold text-dark">Kasir Online Cerdas</span>
+            <img src="{{ $storeLogo }}" alt="logo-icon">
+            <span class="logo-text fw-bold text-dark">{{ $storeName }}</span>
         </a>
 
         <button

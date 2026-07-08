@@ -4,7 +4,11 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Struk {{ $sale->invoice_no }} - Kasir Online Cerdas</title>
+        @php
+            $storeName = $storeSetting?->store_name ?: 'Kasir Online Cerdas';
+        @endphp
+
+        <title>Struk {{ $sale->invoice_no }} - {{ $storeName }}</title>
 
         <style>
             * {
@@ -72,6 +76,14 @@
                 text-align: center;
             }
 
+            .receipt-logo {
+                width: 52px;
+                height: 52px;
+                object-fit: contain;
+                display: block;
+                margin: 0 auto 6px;
+            }
+
             .store-name {
                 font-size: 16px;
                 font-weight: 700;
@@ -104,6 +116,7 @@
 
             .receipt-row strong {
                 font-weight: 700;
+                text-align: right;
             }
 
             .item {
@@ -121,6 +134,10 @@
                 justify-content: space-between;
                 gap: 8px;
                 line-height: 1.4;
+            }
+
+            .item-detail strong {
+                text-align: right;
             }
 
             .total-row {
@@ -173,12 +190,14 @@
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
 
-            $store = [
-                'name' => 'Kasir Online Cerdas',
-                'address' => 'Alamat toko belum diatur',
-                'phone' => 'No. HP/WA belum diatur',
-                'footer' => 'Terima kasih sudah berbelanja.',
-            ];
+            $storeLogo = $storeSetting?->logo_path
+                ? asset('storage/' . $storeSetting->logo_path)
+                : null;
+
+            $storeAddress = $storeSetting?->address ?: 'Alamat toko belum diatur';
+            $storePhone = $storeSetting?->phone ?: null;
+            $storeEmail = $storeSetting?->email ?: null;
+            $storeFooter = $storeSetting?->receipt_footer ?: 'Terima kasih sudah berbelanja.';
         @endphp
 
         <div class="page-wrapper">
@@ -208,9 +227,21 @@
 
             <div class="receipt-paper">
                 <div class="receipt-center">
-                    <div class="store-name">{{ $store['name'] }}</div>
-                    <p class="store-info">{{ $store['address'] }}</p>
-                    <p class="store-info">{{ $store['phone'] }}</p>
+                    @if ($storeLogo)
+                        <img src="{{ $storeLogo }}" alt="Logo toko" class="receipt-logo">
+                    @endif
+
+                    <div class="store-name">{{ $storeName }}</div>
+
+                    <p class="store-info">{{ $storeAddress }}</p>
+
+                    @if ($storePhone)
+                        <p class="store-info">WA/HP: {{ $storePhone }}</p>
+                    @endif
+
+                    @if ($storeEmail)
+                        <p class="store-info">{{ $storeEmail }}</p>
+                    @endif
                 </div>
 
                 <div class="divider"></div>
@@ -302,10 +333,9 @@
                 <div class="divider"></div>
 
                 <div class="receipt-center">
-                    <p class="footer-note">{{ $store['footer'] }}</p>
-                    <p class="footer-note">Barang yang sudah dibeli tidak dapat dikembalikan.</p>
+                    <p class="footer-note">{{ $storeFooter }}</p>
                     <p class="small-text" style="margin-top: 8px;">
-                        Dicetak dari Kasir Online Cerdas
+                        Dicetak dari {{ $storeName }}
                     </p>
                 </div>
             </div>

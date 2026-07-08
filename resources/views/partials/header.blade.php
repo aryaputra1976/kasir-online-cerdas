@@ -1,3 +1,8 @@
+@php
+    $storeName = $storeSetting?->store_name ?: 'Kasir Online Cerdas';
+    $ownerName = $storeSetting?->owner_name ?: 'Admin Toko';
+@endphp
+
 <header
     class="header-area bg-white mb-4 rounded-bottom-15"
     id="header-area"
@@ -225,9 +230,9 @@
                                     >
                                         <div class="d-none d-xxl-block">
                                             <div class="d-flex align-content-center">
-                                                <h3>Admin Toko</h3>
+                                                <h3>{{ $ownerName }}</h3>
                                             </div>
-                                            <span class="fs-12 text-body">Kasir Online Cerdas</span>
+                                            <span class="fs-12 text-body">{{ $storeName }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -246,8 +251,8 @@
                                     </div>
 
                                     <div class="flex-grow-1 ms-2">
-                                        <h3 class="fw-medium">Admin Toko</h3>
-                                        <span class="fs-12">Owner / Kasir</span>
+                                        <h3 class="fw-medium">{{ $ownerName }}</h3>
+                                        <span class="fs-12">{{ $storeName }}</span>
                                     </div>
                                 </div>
 
