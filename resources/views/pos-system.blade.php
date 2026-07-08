@@ -360,7 +360,7 @@
                                             <div class="border-top pt-3 mb-3">
                                                 <div class="d-flex justify-content-between mb-2">
                                                     <span class="text-body">Subtotal</span>
-                                                    <strong>{{ $rupiah($totals['subtotal']) }}</strong>
+                                                    <strong id="pos-subtotal-text">{{ $rupiah($totals['subtotal']) }}</strong>
                                                 </div>
 
                                                 <div class="mb-3">
@@ -368,15 +368,29 @@
                                                     <input
                                                         type="number"
                                                         name="discount_amount"
+                                                        id="discount_amount"
                                                         value="{{ old('discount_amount', 0) }}"
                                                         min="0"
                                                         class="form-control"
                                                     >
+                                                    <div class="fs-13 text-body mt-1">
+                                                        Diskon akan mengurangi dasar pengenaan pajak.
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-body">
+                                                        Pajak Default
+                                                        @if (($taxPercentage ?? 0) > 0)
+                                                            ({{ number_format((float) $taxPercentage, 2, ',', '.') }}%)
+                                                        @endif
+                                                    </span>
+                                                    <strong id="pos-tax-text">{{ $rupiah($totals['tax_amount']) }}</strong>
                                                 </div>
 
                                                 <div class="d-flex justify-content-between mb-3">
                                                     <span class="text-body">Estimasi Total</span>
-                                                    <h5 class="fw-bold mb-0">{{ $rupiah($totals['total']) }}</h5>
+                                                    <h5 class="fw-bold mb-0" id="pos-total-text">{{ $rupiah($totals['total']) }}</h5>
                                                 </div>
                                             </div>
 
@@ -406,6 +420,7 @@
                                                 <input
                                                     type="number"
                                                     name="paid_amount"
+                                                    id="paid_amount"
                                                     value="{{ old('paid_amount', (int) $totals['total']) }}"
                                                     min="0"
                                                     class="form-control"
@@ -443,5 +458,66 @@
 
         @include('partials.theme_settings')
         @include('partials.scripts')
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const subtotal = {{ (float) $totals['subtotal'] }};
+                const taxPercentage = {{ (float) ($taxPercentage ?? 0) }};
+
+                const discountInput = document.getElementById('discount_amount');
+                const paidAmountInput = document.getElementById('paid_amount');
+                const taxText = document.getElementById('pos-tax-text');
+                const totalText = document.getElementById('pos-total-text');
+
+                const formatRupiah = function (value) {
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        maximumFractionDigits: 0
+                    }).format(value);
+                };
+
+                const calculateTotal = function () {
+                    if (!discountInput || !taxText || !totalText) {
+                        return;
+                    }
+
+                    let discount = parseFloat(discountInput.value || 0);
+
+                    if (isNaN(discount) || discount < 0) {
+                        discount = 0;
+                    }
+
+                    if (discount > subtotal) {
+                        discount = subtotal;
+                        discountInput.value = subtotal;
+                    }
+
+                    const taxableAmount = Math.max(0, subtotal - discount);
+                    const taxAmount = Math.round(taxableAmount * (taxPercentage / 100));
+                    const total = Math.max(0, taxableAmount + taxAmount);
+
+                    taxText.textContent = formatRupiah(taxAmount);
+                    totalText.textContent = formatRupiah(total);
+
+                    if (paidAmountInput && (!paidAmountInput.dataset.userChanged || paidAmountInput.dataset.userChanged === 'false')) {
+                        paidAmountInput.value = total;
+                    }
+                };
+
+                if (paidAmountInput) {
+                    paidAmountInput.addEventListener('input', function () {
+                        paidAmountInput.dataset.userChanged = 'true';
+                    });
+                }
+
+                if (discountInput) {
+                    discountInput.addEventListener('input', calculateTotal);
+                    calculateTotal();
+                }
+            });
+        </script>
+        </body>
+        </html>
     </body>
 </html>

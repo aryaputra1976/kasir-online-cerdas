@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockMovement;
+use App\Models\StoreSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -47,8 +48,11 @@ class PosController extends Controller
             ->orderBy('name')
             ->get();
 
+        $storeSetting = StoreSetting::current();
+        $taxPercentage = (float) $storeSetting->tax_percentage;
+
         $cart = $this->getCart();
-        $totals = $this->calculateCartTotals($cart);
+        $totals = $this->calculateCartTotals($cart, $taxPercentage);
 
         return view('pos-system', compact(
             'products',
@@ -56,10 +60,10 @@ class PosController extends Controller
             'cart',
             'totals',
             'search',
-            'categoryId'
+            'categoryId',
+            'taxPercentage'
         ));
     }
-
     public function addToCart(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -198,8 +202,19 @@ class PosController extends Controller
             }
 
             $discountAmount = (float) ($validated['discount_amount'] ?? 0);
-            $taxAmount = 0;
-            $totalAmount = max(0, $subtotalAmount - $discountAmount + $taxAmount);
+
+            if ($discountAmount > $subtotalAmount) {
+                throw ValidationException::withMessages([
+                    'discount_amount' => 'Diskon tidak boleh lebih besar dari subtotal transaksi.',
+                ]);
+            }
+
+            $storeSetting = StoreSetting::current();
+            $taxPercentage = (float) $storeSetting->tax_percentage;
+
+            $taxableAmount = max(0, $subtotalAmount - $discountAmount);
+            $taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+            $totalAmount = max(0, $taxableAmount + $taxAmount);
 
             $paymentMethod = $validated['payment_method'];
 
@@ -300,7 +315,7 @@ class PosController extends Controller
         return session()->get(self::CART_SESSION_KEY, []);
     }
 
-    private function calculateCartTotals(array $cart): array
+    private function calculateCartTotals(array $cart, float $taxPercentage = 0): array
     {
         $subtotal = 0;
         $totalItems = 0;
@@ -311,9 +326,17 @@ class PosController extends Controller
             $totalItems += $quantity;
         }
 
+        $discount = 0;
+        $taxableAmount = max(0, $subtotal - $discount);
+        $taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+        $total = max(0, $taxableAmount + $taxAmount);
+
         return [
             'subtotal' => $subtotal,
-            'total' => $subtotal,
+            'discount' => $discount,
+            'tax_percentage' => $taxPercentage,
+            'tax_amount' => $taxAmount,
+            'total' => $total,
             'total_items' => $totalItems,
             'cart_count' => count($cart),
         ];
