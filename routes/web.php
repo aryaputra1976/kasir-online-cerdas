@@ -14,6 +14,9 @@ use App\Http\Controllers\ProfitLossReportController;
 use App\Http\Controllers\StoreSettingController;
 use App\Http\Controllers\ReceiptTemplateController;
 use App\Http\Controllers\PaymentMethodSettingController;
+use App\Http\Controllers\OnlineOrderController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PublicOrderTrackingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,13 +103,25 @@ Route::prefix('pos')
         Route::get('/struk/{sale}', 'receipt')->name('receipt');
     });
 
-Route::view('/order-online', 'orders')->name('online-orders.index');
-Route::view('/order-online/detail', 'order-details')->name('online-orders.show');
-Route::view('/order-online/tracking', 'order-tracking')->name('online-orders.tracking');
+Route::prefix('order-online')
+    ->name('online-orders.')
+    ->controller(OnlineOrderController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{order}', 'show')->name('show');
+        Route::patch('/{order}/payment/confirm', 'confirmPayment')->name('payment.confirm');
+        Route::patch('/{order}/payment/reject', 'rejectPayment')->name('payment.reject');
+    });
 
-Route::view('/pembayaran', 'invoice-list')->name('payments.index');
-Route::view('/pembayaran/detail', 'invoice-details')->name('payments.show');
-
+Route::prefix('pembayaran')
+    ->name('payments.')
+    ->controller(PaymentController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{order}', 'show')->name('show');
+        Route::patch('/{order}/confirm', 'confirm')->name('confirm');
+        Route::patch('/{order}/reject', 'reject')->name('reject');
+    });
 /*
 |--------------------------------------------------------------------------
 | Stok
@@ -178,11 +193,11 @@ Route::view('/menu', 'landing-page')->name('public.menu');
 Route::view('/order', 'landing-page')->name('public.order');
 Route::view('/checkout', 'checkout')->name('public.checkout');
 
-Route::get('/tracking/{token}', function (string $token) {
-    return view('order-tracking', [
-        'token' => $token,
-    ]);
-})->name('public.tracking');
+Route::get('/tracking/{token}', [PublicOrderTrackingController::class, 'show'])
+    ->name('public.tracking');
+
+Route::post('/tracking/{token}/payment-proof', [PublicOrderTrackingController::class, 'uploadPaymentProof'])
+    ->name('public.payment-proof.upload');
 
 /*
 |--------------------------------------------------------------------------
