@@ -59,6 +59,21 @@
                 color: #4f46e5;
             }
 
+            .badge-success {
+                background: #dcfce7;
+                color: #15803d;
+            }
+
+            .badge-warning {
+                background: #fef3c7;
+                color: #b45309;
+            }
+
+            .badge-danger {
+                background: #fee2e2;
+                color: #b91c1c;
+            }
+
             .grid {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -91,6 +106,7 @@
                 border-radius: 12px;
                 padding: 10px 12px;
                 font-size: 15px;
+                background: #ffffff;
             }
 
             textarea.form-control {
@@ -110,6 +126,16 @@
                 background: #605dff;
                 color: #ffffff;
                 width: 100%;
+            }
+
+            .btn-outline {
+                border: 1px solid #cbd5e1;
+                background: #ffffff;
+                color: #111827;
+                text-decoration: none;
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
             }
 
             .alert-success {
@@ -136,6 +162,21 @@
                 margin-top: 12px;
             }
 
+            .payment-box-success {
+                border-color: #bbf7d0;
+                background: #f0fdf4;
+            }
+
+            .payment-box-warning {
+                border-color: #fde68a;
+                background: #fffbeb;
+            }
+
+            .payment-box-danger {
+                border-color: #fecaca;
+                background: #fef2f2;
+            }
+
             .qris-img {
                 width: 240px;
                 max-width: 100%;
@@ -143,6 +184,28 @@
                 margin: 12px auto;
                 border-radius: 14px;
                 border: 1px solid #e5e7eb;
+            }
+
+            .proof-img {
+                width: 240px;
+                max-width: 100%;
+                border-radius: 14px;
+                border: 1px solid #e5e7eb;
+            }
+
+            .d-none {
+                display: none !important;
+            }
+
+            .action-row {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 16px;
+            }
+
+            .action-row a {
+                flex: 1;
             }
 
             @media (max-width: 768px) {
@@ -158,16 +221,29 @@
                     padding: 18px;
                 }
             }
-            .d-none {
-                display: none !important;
-            }            
         </style>
     </head>
 
     <body>
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+
             $storeName = $storeSetting?->store_name ?: 'Kasir Online Cerdas';
+
+            $isCashOrder = $order->payment_method === \App\Models\Sale::PAYMENT_CASH;
+            $isUnpaid = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_UNPAID;
+            $isWaitingConfirmation = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_WAITING_CONFIRMATION;
+            $isPaid = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_PAID;
+            $isRejected = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_REJECTED;
+
+            $paymentBadgeClass = match ($order->payment_status) {
+                \App\Models\OnlineOrder::PAYMENT_PAID => 'badge-success',
+                \App\Models\OnlineOrder::PAYMENT_WAITING_CONFIRMATION => 'badge-warning',
+                \App\Models\OnlineOrder::PAYMENT_REJECTED => 'badge-danger',
+                default => '',
+            };
+
+            $selectedPaymentMethod = old('payment_method', $order->payment_method ?? '');
         @endphp
 
         <div class="page">
@@ -197,12 +273,15 @@
                 <div class="grid">
                     <div class="card">
                         <h2 style="margin-top: 0;">{{ $order->order_no }}</h2>
+
                         <p class="muted">
                             Customer: <strong>{{ $order->customer_name }}</strong>
                         </p>
 
                         <p>
-                            <span class="badge">{{ $order->payment_status_label }}</span>
+                            <span class="badge {{ $paymentBadgeClass }}">
+                                {{ $order->payment_status_label }}
+                            </span>
                         </p>
 
                         <div class="row">
@@ -257,12 +336,14 @@
                     @foreach ($order->items as $item)
                         <div class="item">
                             <strong>{{ $item->product_name }}</strong>
+
                             <div class="muted">
                                 {{ number_format($item->quantity, 0, ',', '.') }}
                                 {{ $item->unit }}
                                 x
                                 {{ $rupiah($item->unit_price) }}
                             </div>
+
                             <div>
                                 Subtotal: <strong>{{ $rupiah($item->subtotal_amount) }}</strong>
                             </div>
@@ -273,19 +354,64 @@
                 <div class="card">
                     <h3 style="margin-top: 0;">Pembayaran Order</h3>
 
-                    @if ($order->payment_status === \App\Models\OnlineOrder::PAYMENT_PAID)
-                        <div class="payment-box">
+                    @if ($isCashOrder && $isUnpaid)
+                        <div class="payment-box payment-box-warning">
+                            <strong>Pembayaran Tunai / COD</strong>
+
+                            <p class="muted">
+                                Pembayaran dilakukan secara tunai saat pesanan diterima.
+                                Anda tidak perlu upload bukti pembayaran.
+                            </p>
+
+                            <div class="row">
+                                <span>Metode Pembayaran</span>
+                                <strong>{{ $order->payment_method_label }}</strong>
+                            </div>
+
+                            <div class="row">
+                                <span>Status Pembayaran</span>
+                                <strong>{{ $order->payment_status_label }}</strong>
+                            </div>
+
+                            <div class="row">
+                                <span>Total Tagihan</span>
+                                <strong>{{ $rupiah($order->total_amount) }}</strong>
+                            </div>
+                        </div>
+
+                    @elseif ($isPaid)
+                        <div class="payment-box payment-box-success">
                             <strong>Pembayaran Sudah Dikonfirmasi</strong>
+
                             <p class="muted">
                                 Pembayaran Anda sudah diterima dan dikonfirmasi oleh admin.
                             </p>
+
+                            <div class="row">
+                                <span>Metode Pembayaran</span>
+                                <strong>{{ $order->payment_method_label }}</strong>
+                            </div>
+
+                            <div class="row">
+                                <span>Total Dibayar</span>
+                                <strong>{{ $rupiah($order->total_amount) }}</strong>
+                            </div>
+
+                            @if ($order->payment_confirmed_at)
+                                <div class="row">
+                                    <span>Dikonfirmasi</span>
+                                    <strong>{{ $order->payment_confirmed_at->format('d/m/Y H:i') }}</strong>
+                                </div>
+                            @endif
                         </div>
 
-                    @elseif ($order->payment_status === \App\Models\OnlineOrder::PAYMENT_WAITING_CONFIRMATION)
+                    @elseif ($isWaitingConfirmation)
                         <div class="payment-box">
                             <strong>Bukti Pembayaran Sedang Diperiksa</strong>
+
                             <p class="muted">
-                                Bukti pembayaran sudah berhasil dikirim. Silakan tunggu konfirmasi admin.
+                                Bukti pembayaran sudah berhasil dikirim.
+                                Silakan tunggu konfirmasi admin.
                             </p>
 
                             <div class="row">
@@ -303,6 +429,7 @@
                             @if ($order->payment_proof_path)
                                 <div style="margin-top: 14px;">
                                     <span class="muted">Bukti pembayaran:</span>
+
                                     <a
                                         href="{{ asset('storage/' . $order->payment_proof_path) }}"
                                         target="_blank"
@@ -311,7 +438,7 @@
                                         <img
                                             src="{{ asset('storage/' . $order->payment_proof_path) }}"
                                             alt="Bukti pembayaran"
-                                            style="width: 240px; max-width: 100%; border-radius: 14px; border: 1px solid #e5e7eb;"
+                                            class="proof-img"
                                         >
                                     </a>
                                 </div>
@@ -319,11 +446,13 @@
                         </div>
 
                     @else
-                        @if ($order->payment_status === \App\Models\OnlineOrder::PAYMENT_REJECTED)
-                            <div class="payment-box" style="border-color: #fecaca; background: #fef2f2;">
+                        @if ($isRejected)
+                            <div class="payment-box payment-box-danger">
                                 <strong>Pembayaran Ditolak</strong>
+
                                 <p class="muted">
-                                    Bukti pembayaran sebelumnya ditolak. Silakan kirim ulang bukti pembayaran yang benar.
+                                    Bukti pembayaran sebelumnya ditolak.
+                                    Silakan kirim ulang bukti pembayaran yang benar.
                                 </p>
 
                                 @if ($order->admin_payment_note)
@@ -344,10 +473,6 @@
                             <div class="form-group">
                                 <label>Metode Pembayaran</label>
 
-                                @php
-                                    $selectedPaymentMethod = old('payment_method', $order->payment_method ?? '');
-                                @endphp
-
                                 <select name="payment_method" id="payment_method" class="form-control" required>
                                     <option value="" disabled @selected($selectedPaymentMethod === '')>
                                         Pilih metode pembayaran
@@ -364,7 +489,8 @@
                             <div class="payment-box d-none" id="payment-box-cash">
                                 <strong>Tunai / COD</strong>
                                 <p class="muted">
-                                    Pembayaran dilakukan secara tunai saat pesanan diterima. Bukti pembayaran tidak wajib diupload untuk metode ini.
+                                    Pembayaran dilakukan secara tunai saat pesanan diterima.
+                                    Bukti pembayaran tidak wajib diupload untuk metode ini.
                                 </p>
                             </div>
 
@@ -411,6 +537,7 @@
                             @if ($storeSetting?->payment_edc_enabled)
                                 <div class="payment-box d-none" id="payment-box-edc">
                                     <strong>EDC / Kartu</strong>
+
                                     <p class="muted">
                                         {{ $storeSetting->edc_note ?: 'Pastikan transaksi EDC berhasil sebelum mengirim bukti pembayaran.' }}
                                     </p>
@@ -419,19 +546,23 @@
 
                             <div class="form-group" style="margin-top: 14px;">
                                 <label>Bukti Pembayaran</label>
+
                                 <input
                                     type="file"
                                     name="payment_proof"
                                     class="form-control"
                                     accept="image/png,image/jpeg,image/webp"
                                 >
+
                                 <p class="muted">
                                     Wajib untuk QRIS, Transfer, atau EDC. Maksimal 2 MB.
+                                    Tidak wajib untuk Tunai / COD.
                                 </p>
                             </div>
 
                             <div class="form-group">
                                 <label>Catatan Pembayaran</label>
+
                                 <textarea
                                     name="payment_note"
                                     class="form-control"
@@ -444,6 +575,12 @@
                             </button>
                         </form>
                     @endif
+                </div>
+
+                <div class="action-row">
+                    <a href="{{ route('public.menu') }}" class="btn btn-outline">
+                        Kembali ke Menu
+                    </a>
                 </div>
             </div>
         </div>
@@ -466,7 +603,7 @@
                         }
                     });
 
-                    if (!paymentMethodSelect) {
+                    if (! paymentMethodSelect) {
                         return;
                     }
 
@@ -482,6 +619,6 @@
                     refreshPaymentBox();
                 }
             });
-        </script>        
+        </script>
     </body>
 </html>

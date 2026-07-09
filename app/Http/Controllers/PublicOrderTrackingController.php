@@ -68,7 +68,12 @@ class PublicOrderTrackingController extends Controller
         ];
 
         if ($paymentMethod === Sale::PAYMENT_CASH) {
+            if ($order->payment_proof_path && Storage::disk('public')->exists($order->payment_proof_path)) {
+                Storage::disk('public')->delete($order->payment_proof_path);
+            }
+
             $data['payment_status'] = OnlineOrder::PAYMENT_UNPAID;
+            $data['payment_proof_path'] = null;
         } else {
             $data['payment_status'] = OnlineOrder::PAYMENT_WAITING_CONFIRMATION;
         }

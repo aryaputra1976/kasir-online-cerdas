@@ -112,6 +112,9 @@ Route::prefix('order-online')
         Route::get('/{order}', 'show')->name('show');
         Route::patch('/{order}/payment/confirm', 'confirmPayment')->name('payment.confirm');
         Route::patch('/{order}/payment/reject', 'rejectPayment')->name('payment.reject');
+        Route::patch('/{order}/process', 'process')->name('process');
+        Route::patch('/{order}/complete', 'complete')->name('complete');
+        Route::patch('/{order}/cancel', 'cancel')->name('cancel');
     });
 
 Route::prefix('pembayaran')
@@ -213,7 +216,7 @@ Route::delete('/menu/cart/{product}', [PublicOrderController::class, 'removeCart
 
 Route::delete('/menu/cart', [PublicOrderController::class, 'clearCart'])
     ->name('public.cart.clear');
-    
+
 Route::get('/tracking/{token}', [PublicOrderTrackingController::class, 'show'])
     ->name('public.tracking');
 

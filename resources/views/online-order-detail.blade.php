@@ -40,6 +40,10 @@
 
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+
+            $isCashOrder = $order->payment_method === \App\Models\Sale::PAYMENT_CASH;
+            $isPaidOrder = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_PAID;
+            $canRunOrderAction = $isCashOrder || $isPaidOrder;
         @endphp
 
         <div class="container-fluid">
@@ -51,7 +55,7 @@
                         <div>
                             <h3 class="mb-1">Detail Order Online</h3>
                             <p class="text-body mb-0">
-                                Detail order, item, status, dan bukti pembayaran.
+                                Detail order, item, pembayaran, stok, dan proses pesanan.
                             </p>
                         </div>
 
@@ -59,6 +63,7 @@
                             <a href="{{ route('online-orders.index') }}" class="btn btn-outline-secondary">
                                 Order Online
                             </a>
+
                             <a href="{{ route('payments.index') }}" class="btn btn-outline-primary">
                                 Pembayaran
                             </a>
@@ -104,7 +109,12 @@
                                             <span class="badge {{ $order->payment_status_class }} p-2 fs-12 fw-normal">
                                                 {{ $order->payment_status_label }}
                                             </span>
-                                            <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+
+                                            <span class="badge {{ $order->stock_status_class }} p-2 fs-12 fw-normal">
+                                                {{ $order->stock_status_label }}
+                                            </span>
+
+                                            <span class="badge {{ $order->status_class }} p-2 fs-12 fw-normal">
                                                 {{ $order->status_label }}
                                             </span>
                                         </div>
@@ -116,7 +126,9 @@
                                                 <span class="text-body fs-13 d-block mb-1">Customer</span>
                                                 <h5 class="mb-1">{{ $order->customer_name }}</h5>
                                                 <p class="mb-1">{{ $order->customer_phone ?: '-' }}</p>
-                                                <p class="text-body mb-0 fs-13">{{ $order->customer_email ?: '-' }}</p>
+                                                <p class="text-body mb-0 fs-13">
+                                                    {{ $order->customer_email ?: '-' }}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -136,12 +148,17 @@
                                                 <div class="row g-3 align-items-center">
                                                     <div class="col-md-5">
                                                         <h6 class="fw-semibold mb-1">{{ $item->product_name }}</h6>
-                                                        <p class="text-body fs-13 mb-0">SKU: {{ $item->sku ?: '-' }}</p>
+                                                        <p class="text-body fs-13 mb-0">
+                                                            SKU: {{ $item->sku ?: '-' }}
+                                                        </p>
                                                     </div>
 
                                                     <div class="col-md-2">
                                                         <span class="text-body fs-13 d-block">Qty</span>
-                                                        <strong>{{ number_format($item->quantity, 0, ',', '.') }} {{ $item->unit }}</strong>
+                                                        <strong>
+                                                            {{ number_format($item->quantity, 0, ',', '.') }}
+                                                            {{ $item->unit }}
+                                                        </strong>
                                                     </div>
 
                                                     <div class="col-md-2">
@@ -190,18 +207,46 @@
 
                                     <div class="d-flex justify-content-between mb-3">
                                         <span class="fw-semibold">Total</span>
-                                        <h4 class="fw-bold mb-0 koc-price">{{ $rupiah($order->total_amount) }}</h4>
+                                        <h4 class="fw-bold mb-0 koc-price">
+                                            {{ $rupiah($order->total_amount) }}
+                                        </h4>
                                     </div>
 
                                     <div class="mb-3">
                                         <span class="text-body fs-13 d-block">Metode Pembayaran</span>
                                         <strong>{{ $order->payment_method_label }}</strong>
+
+                                        @if ($isCashOrder)
+                                            <p class="text-body fs-13 mb-0 mt-1">
+                                                Order Tunai / COD tidak memerlukan upload bukti pembayaran.
+                                            </p>
+                                        @endif
                                     </div>
 
                                     <div class="mb-3">
                                         <span class="text-body fs-13 d-block">Status Pembayaran</span>
                                         <span class="badge {{ $order->payment_status_class }} p-2 fs-12 fw-normal">
                                             {{ $order->payment_status_label }}
+                                        </span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body fs-13 d-block">Status Stok</span>
+                                        <span class="badge {{ $order->stock_status_class }} p-2 fs-12 fw-normal">
+                                            {{ $order->stock_status_label }}
+                                        </span>
+
+                                        @if ($order->stock_deducted_at)
+                                            <p class="text-body fs-13 mb-0 mt-1">
+                                                Dikurangi pada {{ $order->stock_deducted_at->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body fs-13 d-block">Status Order</span>
+                                        <span class="badge {{ $order->status_class }} p-2 fs-12 fw-normal">
+                                            {{ $order->status_label }}
                                         </span>
                                     </div>
 
@@ -222,7 +267,11 @@
                                     <div class="mb-3">
                                         <span class="text-body fs-13 d-block mb-2">Bukti Pembayaran</span>
 
-                                        @if ($order->payment_proof_path)
+                                        @if ($isCashOrder)
+                                            <p class="text-body mb-0">
+                                                Tidak diperlukan untuk Tunai / COD.
+                                            </p>
+                                        @elseif ($order->payment_proof_path)
                                             <a href="{{ asset('storage/' . $order->payment_proof_path) }}" target="_blank">
                                                 <img
                                                     src="{{ asset('storage/' . $order->payment_proof_path) }}"
@@ -231,7 +280,9 @@
                                                 >
                                             </a>
                                         @else
-                                            <p class="text-body mb-0">Belum ada bukti pembayaran.</p>
+                                            <p class="text-body mb-0">
+                                                Belum ada bukti pembayaran.
+                                            </p>
                                         @endif
                                     </div>
 
@@ -240,7 +291,7 @@
                                             <form
                                                 action="{{ route('payments.confirm', $order) }}"
                                                 method="post"
-                                                onsubmit="return confirm('Konfirmasi pembayaran order ini?')"
+                                                onsubmit="return confirm('Konfirmasi pembayaran order ini dan kurangi stok otomatis?')"
                                             >
                                                 @csrf
                                                 @method('PATCH')
@@ -272,6 +323,63 @@
                                             </form>
                                         </div>
                                     @endif
+
+                                    <hr>
+
+                                    <h5 class="mb-3">Proses Order</h5>
+
+                                    <div class="d-flex flex-column gap-2">
+                                        @if ($canRunOrderAction && $order->canProcess())
+                                            <form
+                                                action="{{ route('online-orders.process', $order) }}"
+                                                method="post"
+                                                onsubmit="return confirm('Proses order ini dan kurangi stok jika belum dikurangi?')"
+                                            >
+                                                @csrf
+                                                @method('PATCH')
+
+                                                <button type="submit" class="btn btn-warning text-white w-100">
+                                                    Proses Order
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if ($canRunOrderAction && $order->canComplete())
+                                            <form
+                                                action="{{ route('online-orders.complete', $order) }}"
+                                                method="post"
+                                                onsubmit="return confirm('Selesaikan order ini?')"
+                                            >
+                                                @csrf
+                                                @method('PATCH')
+
+                                                <button type="submit" class="btn btn-success text-white w-100">
+                                                    Selesaikan Order
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if ($order->canCancel())
+                                            <form
+                                                action="{{ route('online-orders.cancel', $order) }}"
+                                                method="post"
+                                                onsubmit="return confirm('Batalkan order ini?')"
+                                            >
+                                                @csrf
+                                                @method('PATCH')
+
+                                                <button type="submit" class="btn btn-outline-danger w-100">
+                                                    Batalkan Order
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if (! ($canRunOrderAction && $order->canProcess()) && ! ($canRunOrderAction && $order->canComplete()) && ! $order->canCancel())
+                                            <div class="alert alert-light border rounded-3 mb-0">
+                                                Tidak ada aksi proses order yang tersedia untuk status saat ini.
+                                            </div>
+                                        @endif
+                                    </div>
 
                                     <hr>
 

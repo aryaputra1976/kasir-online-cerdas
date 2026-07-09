@@ -3,12 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\OnlineOrder;
+use App\Models\Sale;
+use App\Services\OnlineOrderStockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class OnlineOrderController extends Controller
 {
+    public function __construct(
+        private readonly OnlineOrderStockService $onlineOrderStockService
+    ) {
+    }
+
     public function index(Request $request): View
     {
         $search = trim((string) $request->input('q', ''));
@@ -62,23 +69,17 @@ class OnlineOrderController extends Controller
 
     public function confirmPayment(Request $request, OnlineOrder $order): RedirectResponse
     {
-        if (! $order->canConfirmPayment()) {
-            return back()->with('error', 'Pembayaran order ini tidak dalam status menunggu konfirmasi.');
-        }
-
         $validated = $request->validate([
             'admin_payment_note' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $order->update([
-            'payment_status' => OnlineOrder::PAYMENT_PAID,
-            'paid_at' => now(),
-            'payment_confirmed_at' => now(),
-            'payment_rejected_at' => null,
-            'admin_payment_note' => $validated['admin_payment_note'] ?? null,
-        ]);
+        $confirmedOrder = $this->onlineOrderStockService
+            ->confirmPaymentAndDeductStock(
+                $order,
+                $validated['admin_payment_note'] ?? null
+            );
 
-        return back()->with('success', "Pembayaran {$order->order_no} berhasil dikonfirmasi.");
+        return back()->with('success', "Pembayaran {$confirmedOrder->order_no} berhasil dikonfirmasi dan stok produk otomatis dikurangi.");
     }
 
     public function rejectPayment(Request $request, OnlineOrder $order): RedirectResponse
@@ -101,5 +102,80 @@ class OnlineOrderController extends Controller
         ]);
 
         return back()->with('success', "Pembayaran {$order->order_no} ditolak.");
+    }
+
+    public function process(OnlineOrder $order): RedirectResponse
+    {
+        if (! $order->canProcess()) {
+            return back()->with('error', 'Order belum bisa diproses. Pastikan pembayaran sudah dikonfirmasi.');
+        }
+
+        if (
+            $order->payment_method !== Sale::PAYMENT_CASH
+            && $order->payment_status !== OnlineOrder::PAYMENT_PAID
+        ) {
+            return back()->with('error', 'Order non-COD hanya bisa diproses setelah pembayaran dibayar.');
+        }
+
+        $this->onlineOrderStockService->deductStock($order);
+
+        $order->refresh();
+
+        $order->update([
+            'status' => OnlineOrder::STATUS_PROCESSING,
+            'processed_at' => now(),
+        ]);
+
+        return back()->with('success', "Order {$order->order_no} mulai diproses.");
+    }
+
+    public function complete(OnlineOrder $order): RedirectResponse
+    {
+        if (! $order->canComplete()) {
+            return back()->with('error', 'Order ini tidak bisa diselesaikan.');
+        }
+
+        if (
+            $order->payment_method !== Sale::PAYMENT_CASH
+            && $order->payment_status !== OnlineOrder::PAYMENT_PAID
+        ) {
+            return back()->with('error', 'Order non-COD hanya bisa diselesaikan setelah pembayaran dibayar.');
+        }
+
+        $this->onlineOrderStockService->deductStock($order);
+
+        $order->refresh();
+
+        $updateData = [
+            'status' => OnlineOrder::STATUS_COMPLETED,
+            'processed_at' => $order->processed_at ?: now(),
+            'completed_at' => now(),
+        ];
+
+        if ($order->payment_method === Sale::PAYMENT_CASH) {
+            $updateData['payment_status'] = OnlineOrder::PAYMENT_PAID;
+            $updateData['paid_at'] = $order->paid_at ?: now();
+            $updateData['payment_confirmed_at'] = $order->payment_confirmed_at ?: now();
+            $updateData['payment_rejected_at'] = null;
+            $updateData['admin_payment_note'] = $order->admin_payment_note ?: 'Pembayaran Tunai / COD diterima saat order selesai.';
+        }
+
+        $order->update($updateData);
+
+        return back()->with('success', "Order {$order->order_no} selesai.");
+    }
+
+    public function cancel(OnlineOrder $order): RedirectResponse
+    {
+        if (! $order->canCancel()) {
+            return back()->with('error', 'Order tidak bisa dibatalkan karena stok sudah dikurangi atau status order sudah berubah.');
+        }
+
+        $order->update([
+            'status' => OnlineOrder::STATUS_CANCELLED,
+            'cancelled_at' => now(),
+        ]);
+
+        return back()->with('success', "Order {$order->order_no} dibatalkan.");
     }
 }

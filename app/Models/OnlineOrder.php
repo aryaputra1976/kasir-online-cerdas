@@ -38,6 +38,10 @@ class OnlineOrder extends Model
         'payment_confirmed_at',
         'payment_rejected_at',
         'status',
+        'stock_deducted_at',
+        'processed_at',
+        'completed_at',
+        'cancelled_at',
         'note',
     ];
 
@@ -50,6 +54,10 @@ class OnlineOrder extends Model
         'paid_at' => 'datetime',
         'payment_confirmed_at' => 'datetime',
         'payment_rejected_at' => 'datetime',
+        'stock_deducted_at' => 'datetime',
+        'processed_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     public function items(): HasMany
@@ -90,6 +98,17 @@ class OnlineOrder extends Model
         };
     }
 
+    public function getStatusClassAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_NEW => 'bg-primary bg-opacity-10 text-primary',
+            self::STATUS_PROCESSING => 'bg-warning bg-opacity-10 text-warning',
+            self::STATUS_COMPLETED => 'bg-success bg-opacity-10 text-success',
+            self::STATUS_CANCELLED => 'bg-danger bg-opacity-10 text-danger',
+            default => 'bg-light text-body border',
+        };
+    }
+
     public function getPaymentMethodLabelAttribute(): string
     {
         return match ($this->payment_method) {
@@ -102,6 +121,20 @@ class OnlineOrder extends Model
         };
     }
 
+    public function getStockStatusLabelAttribute(): string
+    {
+        return $this->stock_deducted_at
+            ? 'Stok Sudah Dikurangi'
+            : 'Stok Belum Dikurangi';
+    }
+
+    public function getStockStatusClassAttribute(): string
+    {
+        return $this->stock_deducted_at
+            ? 'bg-success bg-opacity-10 text-success'
+            : 'bg-secondary bg-opacity-10 text-secondary';
+    }
+
     public function canConfirmPayment(): bool
     {
         return $this->payment_status === self::PAYMENT_WAITING_CONFIRMATION;
@@ -110,5 +143,34 @@ class OnlineOrder extends Model
     public function canRejectPayment(): bool
     {
         return $this->payment_status === self::PAYMENT_WAITING_CONFIRMATION;
+    }
+
+    public function hasStockDeducted(): bool
+    {
+        return ! is_null($this->stock_deducted_at);
+    }
+
+    public function canProcess(): bool
+    {
+        if ($this->status !== self::STATUS_NEW) {
+            return false;
+        }
+
+        if ($this->payment_method === Sale::PAYMENT_CASH) {
+            return true;
+        }
+
+        return $this->payment_status === self::PAYMENT_PAID;
+    }
+
+    public function canComplete(): bool
+    {
+        return $this->status === self::STATUS_PROCESSING;
+    }
+
+    public function canCancel(): bool
+    {
+        return $this->status === self::STATUS_NEW
+            && ! $this->hasStockDeducted();
     }
 }

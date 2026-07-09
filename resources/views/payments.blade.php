@@ -237,7 +237,11 @@
                                                         {{ $order->payment_method_label }}
                                                     </span>
 
-                                                    @if ($order->payment_proof_path)
+                                                    @if ($order->payment_method === \App\Models\Sale::PAYMENT_CASH)
+                                                        <span class="badge bg-info bg-opacity-10 text-info p-2 fs-12 fw-normal">
+                                                            COD / Tanpa Bukti
+                                                        </span>
+                                                    @elseif ($order->payment_proof_path)
                                                         <span class="badge bg-success bg-opacity-10 text-success p-2 fs-12 fw-normal">
                                                             Bukti Ada
                                                         </span>

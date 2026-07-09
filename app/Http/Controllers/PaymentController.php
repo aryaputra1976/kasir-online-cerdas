@@ -3,16 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\OnlineOrder;
+use App\Services\OnlineOrderStockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PaymentController extends Controller
 {
+    public function __construct(
+        private readonly OnlineOrderStockService $onlineOrderStockService
+    ) {
+    }
+
     public function index(Request $request): View
     {
         $search = trim((string) $request->input('q', ''));
-        $paymentStatus = $request->input('payment_status', OnlineOrder::PAYMENT_WAITING_CONFIRMATION);
+        $paymentStatus = $request->input('payment_status');
         $paymentMethod = $request->input('payment_method');
 
         $orders = OnlineOrder::query()
@@ -63,21 +69,12 @@ class PaymentController extends Controller
 
     public function confirm(OnlineOrder $order): RedirectResponse
     {
-        if (! $order->canConfirmPayment()) {
-            return back()->with('error', 'Pembayaran order ini tidak dalam status menunggu konfirmasi.');
-        }
-
-        $order->update([
-            'payment_status' => OnlineOrder::PAYMENT_PAID,
-            'paid_at' => now(),
-            'payment_confirmed_at' => now(),
-            'payment_rejected_at' => null,
-            'admin_payment_note' => null,
-        ]);
+        $confirmedOrder = $this->onlineOrderStockService
+            ->confirmPaymentAndDeductStock($order);
 
         return redirect()
-            ->route('payments.show', $order)
-            ->with('success', "Pembayaran {$order->order_no} berhasil dikonfirmasi.");
+            ->route('payments.show', $confirmedOrder)
+            ->with('success', "Pembayaran {$confirmedOrder->order_no} berhasil dikonfirmasi dan stok produk otomatis dikurangi.");
     }
 
     public function reject(Request $request, OnlineOrder $order): RedirectResponse
