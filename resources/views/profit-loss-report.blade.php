@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -174,7 +174,7 @@
                             </div>
 
                             <div class="koc-filter-card">
-                                <form action="{{ route('reports.profit-loss') }}" method="get">
+                                <form action="{{ route('profit-loss.report') }}" method="get">
                                     <div class="row g-2 align-items-center">
                                         <div class="col-xl-3 col-lg-3 col-md-6">
                                             <label class="form-label fs-13 fw-medium">Tanggal Awal</label>
@@ -216,7 +216,7 @@
 
                                         @if ($startDate || $endDate || $paymentMethod)
                                             <div class="col-xl-auto col-lg-auto col-md-auto mt-auto">
-                                                <a href="{{ route('reports.profit-loss') }}" class="btn btn-outline-secondary w-100">
+                                                <a href="{{ route('profit-loss.report') }}" class="btn btn-outline-secondary w-100">
                                                     Reset
                                                 </a>
                                             </div>
@@ -375,7 +375,7 @@
                                             </p>
                                         </div>
 
-                                        <a href="{{ route('reports.profit-loss') }}" class="btn btn-outline-primary">
+                                        <a href="{{ route('profit-loss.report') }}" class="btn btn-outline-primary">
                                             Laba Rugi
                                         </a>
                                     </div>
@@ -467,7 +467,7 @@
                                                     Tidak ada transaksi pada filter laporan yang dipilih.
                                                 </p>
 
-                                                <a href="{{ route('reports.profit-loss') }}" class="btn btn-primary text-white">
+                                                <a href="{{ route('profit-loss.report') }}" class="btn btn-primary text-white">
                                                     Reset Filter
                                                 </a>
                                             </div>

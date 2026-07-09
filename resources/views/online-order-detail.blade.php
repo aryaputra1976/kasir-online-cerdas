@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -75,7 +75,7 @@
                                 Pembayaran
                             </a>
 
-                            <a href="{{ route('reports.sales') }}" class="btn btn-outline-success">
+                            <a href="{{ route('sales.report') }}" class="btn btn-outline-success">
                                 Laporan Penjualan
                             </a>
                         </div>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -138,7 +138,7 @@
                 [
                     'title' => 'Produk Stok Menipis',
                     'value' => number_format($lowStockCount, 0, ',', '.'),
-                    'note' => 'Produk dengan stok ≤ minimum',
+                    'note' => 'Produk dengan stok â‰¤ minimum',
                     'icon' => 'inventory_2',
                     'color' => 'bg-danger bg-opacity-10 text-danger',
                     'badge' => $lowStockCount > 0 ? 'Perlu cek' : 'Aman',
@@ -166,7 +166,7 @@
                                 Buka Kasir POS
                             </a>
 
-                            <a href="{{ route('reports.sales') }}" class="btn btn-outline-primary">
+                            <a href="{{ route('sales.report') }}" class="btn btn-outline-primary">
                                 <i class="material-symbols-outlined align-middle fs-18 me-1">receipt_long</i>
                                 Laporan Penjualan
                             </a>
@@ -283,7 +283,7 @@
                                             <p class="text-body mb-0 fs-13">Data transaksi terakhir dari POS</p>
                                         </div>
 
-                                        <a href="{{ route('reports.sales') }}" class="btn btn-outline-primary btn-sm">
+                                        <a href="{{ route('sales.report') }}" class="btn btn-outline-primary btn-sm">
                                             Lihat Semua
                                         </a>
                                     </div>
@@ -409,7 +409,7 @@
                                             <p class="text-body mb-0 fs-13">Berdasarkan item terjual dari transaksi POS</p>
                                         </div>
 
-                                        <a href="{{ route('reports.best-products') }}" class="btn btn-outline-primary btn-sm">
+                                        <a href="{{ route('best-products.report') }}" class="btn btn-outline-primary btn-sm">
                                             Laporan
                                         </a>
                                     </div>

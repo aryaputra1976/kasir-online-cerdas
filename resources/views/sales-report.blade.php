@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -164,7 +164,7 @@
                                 </div>
 
                                 <a
-                                    href="{{ route('reports.sales.export', request()->query()) }}"
+                                    href="{{ route('sales.report.export', request()->query()) }}"
                                     class="btn btn-success text-white"
                                 >
                                     <i class="ri-file-excel-2-line me-1"></i>
@@ -173,7 +173,7 @@
                             </div>
 
                             <div class="koc-filter-card">
-                                <form action="{{ route('reports.sales') }}" method="get">
+                                <form action="{{ route('sales.report') }}" method="get">
                                     <div class="row g-2 align-items-center">
                                         <div class="col-xl-3 col-lg-3 col-md-6">
                                             <label class="form-label fs-13 fw-medium">Tanggal Awal</label>
@@ -228,7 +228,7 @@
                                         </div>
 
                                         <div class="col-xl-auto col-lg-auto col-md-auto">
-                                            <a href="{{ route('reports.sales') }}" class="btn btn-outline-secondary w-100">
+                                            <a href="{{ route('sales.report') }}" class="btn btn-outline-secondary w-100">
                                                 Reset
                                             </a>
                                         </div>
@@ -335,7 +335,7 @@
                                 </div>
 
                                 <div class="d-flex gap-2 flex-wrap">
-                                    <a href="{{ route('reports.profit-loss') }}" class="btn btn-outline-primary">
+                                    <a href="{{ route('profit-loss.report') }}" class="btn btn-outline-primary">
                                         Laba Rugi
                                     </a>
 

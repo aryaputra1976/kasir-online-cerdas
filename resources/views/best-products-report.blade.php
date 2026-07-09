@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -229,7 +229,7 @@
                                     <div class="col-lg-5">
                                         <div class="d-flex justify-content-lg-end gap-2 flex-wrap">
                                             <a
-                                                href="{{ route('reports.sales', ['q' => $topProduct->product_name]) }}"
+                                                href="{{ route('sales.report', ['q' => $topProduct->product_name]) }}"
                                                 class="btn btn-outline-primary"
                                             >
                                                 Lihat Transaksi
@@ -251,7 +251,7 @@
                     <div class="card bg-white border-0 rounded-3 mb-4">
                         <div class="card-body p-4">
                             <div class="koc-filter-card mb-4">
-                                <form action="{{ route('reports.best-products') }}" method="get">
+                                <form action="{{ route('best-products.report') }}" method="get">
                                     <div class="row g-2 align-items-center">
                                         <div class="col-xl-3 col-lg-4 col-md-6">
                                             <div class="position-relative table-src-form me-0">
@@ -293,14 +293,14 @@
 
                                         @if ($search || $categoryId || $dateFrom || $dateTo)
                                             <div class="col-xl-auto col-lg-auto col-md-auto">
-                                                <a href="{{ route('reports.best-products') }}" class="btn btn-outline-secondary w-100">
+                                                <a href="{{ route('best-products.report') }}" class="btn btn-outline-secondary w-100">
                                                     Reset
                                                 </a>
                                             </div>
                                         @endif
 
                                         <div class="col-xl-auto col-lg-auto col-md-auto ms-xl-auto ms-lg-auto">
-                                            <a href="{{ route('reports.sales') }}" class="btn btn-primary text-white px-4 w-100">
+                                            <a href="{{ route('sales.report') }}" class="btn btn-primary text-white px-4 w-100">
                                                 Laporan Penjualan
                                             </a>
                                         </div>
@@ -372,7 +372,7 @@
                                             <div class="col-xl-2 col-lg-1 col-md-12">
                                                 <div class="d-flex justify-content-xl-end gap-2 flex-wrap">
                                                     <a
-                                                        href="{{ route('reports.sales', ['q' => $product->product_name]) }}"
+                                                        href="{{ route('sales.report', ['q' => $product->product_name]) }}"
                                                         class="btn btn-outline-primary btn-sm"
                                                     >
                                                         Transaksi

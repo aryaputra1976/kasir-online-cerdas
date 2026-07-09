@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -269,7 +269,7 @@
                             </div>
 
                             <div class="koc-filter-card mb-4">
-                                <form action="{{ route('reports.stock') }}" method="get">
+                                <form action="{{ route('stock.report') }}" method="get">
                                     <div class="row g-2 align-items-center">
                                         <div class="col-xl-4 col-lg-4 col-md-6">
                                             <div class="position-relative table-src-form me-0">
@@ -313,7 +313,7 @@
 
                                         @if ($search || $categoryId || $stockStatus)
                                             <div class="col-xl-auto col-lg-auto col-md-auto">
-                                                <a href="{{ route('reports.stock') }}" class="btn btn-outline-secondary w-100">
+                                                <a href="{{ route('stock.report') }}" class="btn btn-outline-secondary w-100">
                                                     Reset
                                                 </a>
                                             </div>
