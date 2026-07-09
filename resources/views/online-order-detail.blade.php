@@ -31,6 +31,13 @@
             .koc-price {
                 letter-spacing: -0.2px;
             }
+
+            .koc-sale-box {
+                border: 1px dashed #d7dbec;
+                border-radius: 14px;
+                padding: 14px;
+                background: #fbfcff;
+            }
         </style>
     </head>
 
@@ -55,7 +62,7 @@
                         <div>
                             <h3 class="mb-1">Detail Order Online</h3>
                             <p class="text-body mb-0">
-                                Detail order, item, pembayaran, stok, dan proses pesanan.
+                                Detail order, item, pembayaran, stok, proses pesanan, dan status laporan penjualan.
                             </p>
                         </div>
 
@@ -66,6 +73,10 @@
 
                             <a href="{{ route('payments.index') }}" class="btn btn-outline-primary">
                                 Pembayaran
+                            </a>
+
+                            <a href="{{ route('reports.sales') }}" class="btn btn-outline-success">
+                                Laporan Penjualan
                             </a>
                         </div>
                     </div>
@@ -117,6 +128,10 @@
                                             <span class="badge {{ $order->status_class }} p-2 fs-12 fw-normal">
                                                 {{ $order->status_label }}
                                             </span>
+
+                                            <span class="badge {{ $order->sale_conversion_status_class }} p-2 fs-12 fw-normal">
+                                                {{ $order->sale_conversion_status_label }}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -139,6 +154,13 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    @if ($order->note)
+                                        <div class="koc-info-card mb-4">
+                                            <span class="text-body fs-13 d-block mb-1">Catatan Order</span>
+                                            <p class="mb-0">{{ $order->note }}</p>
+                                        </div>
+                                    @endif
 
                                     <h4 class="mb-3">Item Order</h4>
 
@@ -228,6 +250,12 @@
                                         <span class="badge {{ $order->payment_status_class }} p-2 fs-12 fw-normal">
                                             {{ $order->payment_status_label }}
                                         </span>
+
+                                        @if ($order->payment_confirmed_at)
+                                            <p class="text-body fs-13 mb-0 mt-1">
+                                                Dikonfirmasi pada {{ $order->payment_confirmed_at->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
                                     </div>
 
                                     <div class="mb-3">
@@ -248,7 +276,62 @@
                                         <span class="badge {{ $order->status_class }} p-2 fs-12 fw-normal">
                                             {{ $order->status_label }}
                                         </span>
+
+                                        @if ($order->processed_at)
+                                            <p class="text-body fs-13 mb-0 mt-1">
+                                                Diproses pada {{ $order->processed_at->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
+
+                                        @if ($order->completed_at)
+                                            <p class="text-body fs-13 mb-0 mt-1">
+                                                Selesai pada {{ $order->completed_at->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
                                     </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body fs-13 d-block">Status Laporan Penjualan</span>
+                                        <span class="badge {{ $order->sale_conversion_status_class }} p-2 fs-12 fw-normal">
+                                            {{ $order->sale_conversion_status_label }}
+                                        </span>
+
+                                        @if ($order->converted_to_sale_at)
+                                            <p class="text-body fs-13 mb-0 mt-1">
+                                                Masuk laporan pada {{ $order->converted_to_sale_at->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
+
+                                        @if ($order->sale)
+                                            <p class="text-body fs-13 mb-0 mt-1">
+                                                Invoice penjualan: <strong>{{ $order->sale->invoice_no }}</strong>
+                                            </p>
+
+                                            <a
+                                                href="{{ route('pos.receipt', $order->sale) }}"
+                                                target="_blank"
+                                                class="btn btn-outline-primary w-100 mt-2"
+                                            >
+                                                Lihat Struk Penjualan
+                                            </a>
+                                        @endif
+                                    </div>
+
+                                    @if ($order->canConvertToSale())
+                                        <form
+                                            action="{{ route('online-orders.convert-sale', $order) }}"
+                                            method="post"
+                                            class="mb-3"
+                                            onsubmit="return confirm('Masukkan order ini ke laporan penjualan?')"
+                                        >
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <button type="submit" class="btn btn-primary text-white w-100">
+                                                Masukkan ke Laporan Penjualan
+                                            </button>
+                                        </form>
+                                    @endif
 
                                     @if ($order->payment_note)
                                         <div class="mb-3">
@@ -348,7 +431,7 @@
                                             <form
                                                 action="{{ route('online-orders.complete', $order) }}"
                                                 method="post"
-                                                onsubmit="return confirm('Selesaikan order ini?')"
+                                                onsubmit="return confirm('Selesaikan order ini dan masukkan ke laporan penjualan?')"
                                             >
                                                 @csrf
                                                 @method('PATCH')

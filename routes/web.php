@@ -115,6 +115,7 @@ Route::prefix('order-online')
         Route::patch('/{order}/process', 'process')->name('process');
         Route::patch('/{order}/complete', 'complete')->name('complete');
         Route::patch('/{order}/cancel', 'cancel')->name('cancel');
+        Route::patch('/{order}/convert-sale', 'convertToSale')->name('convert-sale');
     });
 
 Route::prefix('pembayaran')

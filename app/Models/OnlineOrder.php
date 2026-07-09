@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OnlineOrder extends Model
@@ -42,6 +43,8 @@ class OnlineOrder extends Model
         'processed_at',
         'completed_at',
         'cancelled_at',
+        'sale_id',
+        'converted_to_sale_at',
         'note',
     ];
 
@@ -58,11 +61,17 @@ class OnlineOrder extends Model
         'processed_at' => 'datetime',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'converted_to_sale_at' => 'datetime',
     ];
 
     public function items(): HasMany
     {
         return $this->hasMany(OnlineOrderItem::class);
+    }
+
+    public function sale(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class);
     }
 
     public function getPaymentStatusLabelAttribute(): string
@@ -135,6 +144,20 @@ class OnlineOrder extends Model
             : 'bg-secondary bg-opacity-10 text-secondary';
     }
 
+    public function getSaleConversionStatusLabelAttribute(): string
+    {
+        return $this->sale_id
+            ? 'Sudah Masuk Penjualan'
+            : 'Belum Masuk Penjualan';
+    }
+
+    public function getSaleConversionStatusClassAttribute(): string
+    {
+        return $this->sale_id
+            ? 'bg-success bg-opacity-10 text-success'
+            : 'bg-secondary bg-opacity-10 text-secondary';
+    }
+
     public function canConfirmPayment(): bool
     {
         return $this->payment_status === self::PAYMENT_WAITING_CONFIRMATION;
@@ -172,5 +195,12 @@ class OnlineOrder extends Model
     {
         return $this->status === self::STATUS_NEW
             && ! $this->hasStockDeducted();
+    }
+
+    public function canConvertToSale(): bool
+    {
+        return $this->status === self::STATUS_COMPLETED
+            && $this->payment_status === self::PAYMENT_PAID
+            && is_null($this->sale_id);
     }
 }

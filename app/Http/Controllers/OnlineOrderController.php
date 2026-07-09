@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\OnlineOrder;
 use App\Models\Sale;
+use App\Services\OnlineOrderSaleService;
 use App\Services\OnlineOrderStockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,8 @@ use Illuminate\View\View;
 class OnlineOrderController extends Controller
 {
     public function __construct(
-        private readonly OnlineOrderStockService $onlineOrderStockService
+        private readonly OnlineOrderStockService $onlineOrderStockService,
+        private readonly OnlineOrderSaleService $onlineOrderSaleService
     ) {
     }
 
@@ -60,7 +62,7 @@ class OnlineOrderController extends Controller
 
     public function show(OnlineOrder $order): View
     {
-        $order->load('items');
+        $order->load(['items', 'sale']);
 
         return view('online-order-detail', [
             'order' => $order,
@@ -126,7 +128,7 @@ class OnlineOrderController extends Controller
             'processed_at' => now(),
         ]);
 
-        return back()->with('success', "Order {$order->order_no} mulai diproses.");
+        return back()->with('success', "Order {$order->order_no} mulai diproses dan stok produk otomatis dikurangi.");
     }
 
     public function complete(OnlineOrder $order): RedirectResponse
@@ -161,8 +163,11 @@ class OnlineOrderController extends Controller
         }
 
         $order->update($updateData);
+        $order->refresh();
 
-        return back()->with('success', "Order {$order->order_no} selesai.");
+        $sale = $this->onlineOrderSaleService->convertCompletedOrder($order);
+
+        return back()->with('success', "Order {$order->order_no} selesai dan masuk ke laporan penjualan sebagai {$sale->invoice_no}.");
     }
 
     public function cancel(OnlineOrder $order): RedirectResponse
@@ -177,5 +182,12 @@ class OnlineOrderController extends Controller
         ]);
 
         return back()->with('success', "Order {$order->order_no} dibatalkan.");
+    }
+
+    public function convertToSale(OnlineOrder $order): RedirectResponse
+    {
+        $sale = $this->onlineOrderSaleService->convertCompletedOrder($order);
+
+        return back()->with('success', "Order {$order->order_no} berhasil dimasukkan ke laporan penjualan sebagai {$sale->invoice_no}.");
     }
 }
