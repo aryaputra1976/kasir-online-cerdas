@@ -18,6 +18,7 @@ use App\Http\Controllers\OnlineOrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PublicOrderTrackingController;
 use App\Http\Controllers\PublicOrderController;
+use App\Http\Controllers\OnlineOrderReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,17 +145,17 @@ Route::get('/stok-menipis', [StockController::class, 'low'])->name('stocks.low')
 |--------------------------------------------------------------------------
 */
 
-Route::view('/laporan', 'reports')->name('reports.index');
-Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])
-    ->name('reports.sales');
-Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])
-    ->name('reports.sales.export');
-Route::get('/laporan/produk-terlaris', [BestSellingProductReportController::class, 'index'])->name('reports.best-products');
-Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])
-    ->name('reports.profit-loss');
-Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('reports.stock');
+Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])->name('sales.report');
+Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])->name('sales.report.export');
+Route::get('/laporan/produk-terlaris', [BestSellingProductReportController::class, 'index'])->name('best-products.report');
+Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])->name('profit-loss.report');
+Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('stock.report');
 
+Route::get('/laporan/order-online', [OnlineOrderReportController::class, 'index'])
+    ->name('reports.online-orders.index');
 
+Route::get('/laporan/order-online/export', [OnlineOrderReportController::class, 'export'])
+    ->name('reports.online-orders.export');
 /*
 |--------------------------------------------------------------------------
 | Pengaturan

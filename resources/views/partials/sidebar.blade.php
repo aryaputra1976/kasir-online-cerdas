@@ -147,26 +147,37 @@
 
                 <ul class="menu-sub">
                     <li class="menu-item">
-                        <a href="{{ route('reports.sales') }}" class="menu-link {{ Request::is('laporan/penjualan') ? 'active' : '' }}">
+                        <a href="{{ url('/laporan/penjualan') }}"
+                           class="menu-link {{ Request::is('laporan/penjualan*') ? 'active' : '' }}">
                             Penjualan
                         </a>
                     </li>
 
                     <li class="menu-item">
-                        <a href="{{ route('reports.best-products') }}" class="menu-link {{ Request::is('laporan/produk-terlaris') ? 'active' : '' }}">
+                        <a href="{{ url('/laporan/produk-terlaris') }}"
+                           class="menu-link {{ Request::is('laporan/produk-terlaris*') ? 'active' : '' }}">
                             Produk Terlaris
                         </a>
                     </li>
 
                     <li class="menu-item">
-                        <a href="{{ route('reports.profit-loss') }}" class="menu-link {{ Request::is('laporan/laba-rugi') ? 'active' : '' }}">
+                        <a href="{{ url('/laporan/laba-rugi') }}"
+                           class="menu-link {{ Request::is('laporan/laba-rugi*') ? 'active' : '' }}">
                             Laba Rugi
                         </a>
                     </li>
 
                     <li class="menu-item">
-                        <a href="{{ route('reports.stock') }}" class="menu-link {{ Request::is('laporan/stok') ? 'active' : '' }}">
+                        <a href="{{ url('/laporan/stok') }}"
+                           class="menu-link {{ Request::is('laporan/stok*') ? 'active' : '' }}">
                             Stok
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a href="{{ url('/laporan/order-online') }}"
+                           class="menu-link {{ Request::is('laporan/order-online*') ? 'active' : '' }}">
+                            Order Online
                         </a>
                     </li>
                 </ul>
