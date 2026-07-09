@@ -195,17 +195,31 @@
                                             >
                                         </div>
 
-                                        <div class="col-xl-3 col-lg-3 col-md-6">
-                                            <label class="form-label fs-13 fw-medium">Metode Pembayaran</label>
-                                            <select name="payment_method" class="form-select form-control">
-                                                <option value="">Semua Metode</option>
-                                                @foreach ($paymentMethods as $method)
-                                                    <option value="{{ $method }}" @selected($paymentMethod === $method)>
-                                                        {{ $method }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+<div class="col-xl-3 col-lg-3 col-md-6">
+    <label class="form-label fs-13 fw-medium">Metode Pembayaran</label>
+    <select name="payment_method" class="form-select form-control">
+        <option value="">Semua Metode</option>
+
+        @foreach ($paymentMethods as $method)
+            @php
+                $methodLabel = match (strtoupper($method)) {
+                    'CASH' => 'Tunai / Cash',
+                    'QRIS' => 'QRIS',
+                    'TRANSFER' => 'Transfer Bank',
+                    'BANK_TRANSFER' => 'Transfer Bank',
+                    'EDC' => 'EDC / Kartu',
+                    'CARD' => 'EDC / Kartu',
+                    'COD' => 'Tunai / COD',
+                    default => ucwords(str_replace(['_', '-'], ' ', strtolower($method))),
+                };
+            @endphp
+
+            <option value="{{ $method }}" @selected($paymentMethod === $method)>
+                {{ $methodLabel }}
+            </option>
+        @endforeach
+    </select>
+</div>
 
                                         <div class="col-xl-3 col-lg-3 col-md-6">
                                             <label class="form-label fs-13 fw-medium">Pencarian</label>
