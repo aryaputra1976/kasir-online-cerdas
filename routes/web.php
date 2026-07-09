@@ -17,6 +17,7 @@ use App\Http\Controllers\PaymentMethodSettingController;
 use App\Http\Controllers\OnlineOrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PublicOrderTrackingController;
+use App\Http\Controllers\PublicOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -189,10 +190,30 @@ Route::delete('/pengaturan/metode-pembayaran/qris', [PaymentMethodSettingControl
 | Nanti akan dibuat custom mobile-friendly.
 */
 
-Route::view('/menu', 'landing-page')->name('public.menu');
-Route::view('/order', 'landing-page')->name('public.order');
-Route::view('/checkout', 'checkout')->name('public.checkout');
+Route::get('/menu', [PublicOrderController::class, 'menu'])
+    ->name('public.menu');
 
+Route::get('/order', [PublicOrderController::class, 'checkout'])
+    ->name('public.order');
+
+Route::get('/checkout', [PublicOrderController::class, 'checkout'])
+    ->name('public.checkout');
+
+Route::post('/checkout', [PublicOrderController::class, 'store'])
+    ->name('public.checkout.store');
+
+Route::post('/menu/cart/{product}', [PublicOrderController::class, 'addToCart'])
+    ->name('public.cart.add');
+
+Route::patch('/menu/cart/{product}', [PublicOrderController::class, 'updateCart'])
+    ->name('public.cart.update');
+
+Route::delete('/menu/cart/{product}', [PublicOrderController::class, 'removeCart'])
+    ->name('public.cart.remove');
+
+Route::delete('/menu/cart', [PublicOrderController::class, 'clearCart'])
+    ->name('public.cart.clear');
+    
 Route::get('/tracking/{token}', [PublicOrderTrackingController::class, 'show'])
     ->name('public.tracking');
 
