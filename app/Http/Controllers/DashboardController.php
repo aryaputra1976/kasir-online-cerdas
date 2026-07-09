@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OnlineOrder;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockMovement;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -15,9 +15,15 @@ class DashboardController extends Controller
     public function index(): View
     {
         $today = now()->toDateString();
+        $monthStart = now()->startOfMonth();
+        $monthEnd = now()->endOfMonth();
 
         $todayOmzet = Sale::query()
             ->whereDate('sale_date', $today)
+            ->sum('total_amount');
+
+        $monthOmzet = Sale::query()
+            ->whereBetween('sale_date', [$monthStart, $monthEnd])
             ->sum('total_amount');
 
         $todayTransactions = Sale::query()
@@ -30,7 +36,41 @@ class DashboardController extends Controller
             })
             ->sum('quantity');
 
-        $newOnlineOrders = 0;
+        $todayOnlineOrders = OnlineOrder::query()
+            ->whereDate('created_at', $today)
+            ->count();
+
+        $todayOnlineOmzet = OnlineOrder::query()
+            ->whereDate('created_at', $today)
+            ->where('status', '!=', 'CANCELLED')
+            ->sum('total_amount');
+
+        $newOnlineOrders = OnlineOrder::query()
+            ->where('status', 'NEW')
+            ->count();
+
+        $processingOnlineOrders = OnlineOrder::query()
+            ->where('status', 'PROCESSING')
+            ->count();
+
+        $waitingPaymentConfirmations = OnlineOrder::query()
+            ->where('payment_status', 'WAITING_CONFIRMATION')
+            ->count();
+
+        $paidOnlineOrders = OnlineOrder::query()
+            ->where('payment_status', 'PAID')
+            ->count();
+
+        $completedOnlineOrdersToday = OnlineOrder::query()
+            ->whereDate('completed_at', $today)
+            ->where('status', 'COMPLETED')
+            ->count();
+
+        $onlineOrdersNotConvertedToSale = OnlineOrder::query()
+            ->where('status', 'COMPLETED')
+            ->where('payment_status', 'PAID')
+            ->whereNull('sale_id')
+            ->count();
 
         $lowStockCount = Product::query()
             ->whereColumn('stock', '<=', 'minimum_stock')
@@ -55,6 +95,12 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $latestOnlineOrders = OnlineOrder::query()
+            ->with('items')
+            ->latest()
+            ->limit(5)
+            ->get();
+
         $lowStockProducts = Product::query()
             ->with('category')
             ->whereColumn('stock', '<=', 'minimum_stock')
@@ -72,6 +118,9 @@ class DashboardController extends Controller
 
         $bestProducts = SaleItem::query()
             ->with('product.category')
+            ->whereHas('sale', function ($query) use ($monthStart, $monthEnd) {
+                $query->whereBetween('sale_date', [$monthStart, $monthEnd]);
+            })
             ->select([
                 'product_id',
                 'product_name',
@@ -143,22 +192,55 @@ class DashboardController extends Controller
             ];
         });
 
+        $onlinePaymentSummaryRaw = OnlineOrder::query()
+            ->select('payment_method')
+            ->selectRaw('SUM(total_amount) as total_amount')
+            ->selectRaw('COUNT(*) as total_order')
+            ->whereDate('created_at', $today)
+            ->where('status', '!=', 'CANCELLED')
+            ->groupBy('payment_method')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $totalOnlinePaymentToday = max(1, (float) $onlinePaymentSummaryRaw->sum('total_amount'));
+
+        $onlinePaymentSummary = $onlinePaymentSummaryRaw->map(function ($payment) use ($totalOnlinePaymentToday) {
+            return [
+                'method' => $payment->payment_method,
+                'label' => $this->paymentMethodLabel($payment->payment_method),
+                'amount' => (float) $payment->total_amount,
+                'total_order' => (int) $payment->total_order,
+                'percent' => round(((float) $payment->total_amount / $totalOnlinePaymentToday) * 100),
+                'class' => $this->paymentProgressClass($payment->payment_method),
+            ];
+        });
+
         return view('ecommerce', compact(
             'todayOmzet',
+            'monthOmzet',
             'todayTransactions',
             'todayItemsSold',
+            'todayOnlineOrders',
+            'todayOnlineOmzet',
             'newOnlineOrders',
+            'processingOnlineOrders',
+            'waitingPaymentConfirmations',
+            'paidOnlineOrders',
+            'completedOnlineOrdersToday',
+            'onlineOrdersNotConvertedToSale',
             'lowStockCount',
             'totalProducts',
             'activeProducts',
             'safeStockProducts',
             'emptyStockProducts',
             'latestSales',
+            'latestOnlineOrders',
             'lowStockProducts',
             'latestStockMovements',
             'bestProducts',
             'weeklySales',
-            'paymentSummary'
+            'paymentSummary',
+            'onlinePaymentSummary'
         ));
     }
 
@@ -178,22 +260,23 @@ class DashboardController extends Controller
 
     private function paymentMethodLabel(?string $method): string
     {
-        return match ($method) {
-            'CASH' => 'Tunai',
+        return match (strtoupper((string) $method)) {
+            'CASH' => 'Tunai / Cash',
+            'COD' => 'Tunai / COD',
             'QRIS' => 'QRIS',
-            'TRANSFER' => 'Transfer',
-            'EDC' => 'EDC / Kartu',
-            default => $method ?: 'Lainnya',
+            'TRANSFER', 'BANK_TRANSFER', 'TRANSFER_BANK' => 'Transfer Bank',
+            'EDC', 'CARD', 'DEBIT', 'CREDIT_CARD' => 'EDC / Kartu',
+            default => $method ? ucwords(str_replace(['_', '-'], ' ', strtolower($method))) : 'Lainnya',
         };
     }
 
     private function paymentProgressClass(?string $method): string
     {
-        return match ($method) {
-            'CASH' => 'bg-success',
+        return match (strtoupper((string) $method)) {
+            'CASH', 'COD' => 'bg-success',
             'QRIS' => 'bg-primary',
-            'TRANSFER' => 'bg-info',
-            'EDC' => 'bg-warning',
+            'TRANSFER', 'BANK_TRANSFER', 'TRANSFER_BANK' => 'bg-info',
+            'EDC', 'CARD', 'DEBIT', 'CREDIT_CARD' => 'bg-warning',
             default => 'bg-secondary',
         };
     }

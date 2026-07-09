@@ -107,46 +107,137 @@
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
 
-            $summaryCards = [
-                [
-                    'title' => 'Omzet Hari Ini',
-                    'value' => $rupiah($todayOmzet),
-                    'note' => 'Berdasarkan transaksi POS hari ini',
-                    'icon' => 'payments',
-                    'color' => 'bg-success bg-opacity-10 text-success',
-                    'badge' => $todayTransactions . ' transaksi',
-                    'badgeClass' => 'bg-success bg-opacity-10 text-success',
-                ],
-                [
-                    'title' => 'Transaksi Hari Ini',
-                    'value' => number_format($todayTransactions, 0, ',', '.'),
-                    'note' => number_format($todayItemsSold, 0, ',', '.') . ' item terjual hari ini',
-                    'icon' => 'point_of_sale',
-                    'color' => 'bg-primary bg-opacity-10 text-primary',
-                    'badge' => 'POS',
-                    'badgeClass' => 'bg-primary bg-opacity-10 text-primary',
-                ],
-                [
-                    'title' => 'Order Online Baru',
-                    'value' => number_format($newOnlineOrders, 0, ',', '.'),
-                    'note' => 'Modul order online belum diaktifkan',
-                    'icon' => 'shopping_cart',
-                    'color' => 'bg-warning bg-opacity-10 text-warning',
-                    'badge' => 'Tahap berikutnya',
-                    'badgeClass' => 'bg-warning bg-opacity-10 text-warning',
-                ],
-                [
-                    'title' => 'Produk Stok Menipis',
-                    'value' => number_format($lowStockCount, 0, ',', '.'),
-                    'note' => 'Produk dengan stok â‰¤ minimum',
-                    'icon' => 'inventory_2',
-                    'color' => 'bg-danger bg-opacity-10 text-danger',
-                    'badge' => $lowStockCount > 0 ? 'Perlu cek' : 'Aman',
-                    'badgeClass' => $lowStockCount > 0
-                        ? 'bg-danger bg-opacity-10 text-danger'
-                        : 'bg-success bg-opacity-10 text-success',
-                ],
-            ];
+$summaryCards = [
+    [
+        'title' => 'Omzet Hari Ini',
+        'value' => $rupiah($todayOmzet),
+        'note' => 'Berdasarkan transaksi POS hari ini',
+        'icon' => 'payments',
+        'color' => 'bg-success bg-opacity-10 text-success',
+        'badge' => $todayTransactions . ' transaksi',
+        'badgeClass' => 'bg-success bg-opacity-10 text-success',
+    ],
+    [
+        'title' => 'Omzet Bulan Ini',
+        'value' => $rupiah($monthOmzet),
+        'note' => 'Akumulasi transaksi POS bulan berjalan',
+        'icon' => 'calendar_month',
+        'color' => 'bg-primary bg-opacity-10 text-primary',
+        'badge' => now()->translatedFormat('F Y'),
+        'badgeClass' => 'bg-primary bg-opacity-10 text-primary',
+    ],
+    [
+        'title' => 'Transaksi Hari Ini',
+        'value' => number_format($todayTransactions, 0, ',', '.'),
+        'note' => number_format($todayItemsSold, 0, ',', '.') . ' item terjual hari ini',
+        'icon' => 'point_of_sale',
+        'color' => 'bg-info bg-opacity-10 text-info',
+        'badge' => 'POS',
+        'badgeClass' => 'bg-info bg-opacity-10 text-info',
+    ],
+    [
+        'title' => 'Order Online Hari Ini',
+        'value' => number_format($todayOnlineOrders, 0, ',', '.'),
+        'note' => 'Omzet online hari ini: ' . $rupiah($todayOnlineOmzet),
+        'icon' => 'shopping_cart',
+        'color' => 'bg-warning bg-opacity-10 text-warning',
+        'badge' => 'Online',
+        'badgeClass' => 'bg-warning bg-opacity-10 text-warning',
+    ],
+    [
+        'title' => 'Order Online Baru',
+        'value' => number_format($newOnlineOrders, 0, ',', '.'),
+        'note' => 'Order yang perlu segera diproses',
+        'icon' => 'new_releases',
+        'color' => 'bg-danger bg-opacity-10 text-danger',
+        'badge' => $newOnlineOrders > 0 ? 'Perlu diproses' : 'Aman',
+        'badgeClass' => $newOnlineOrders > 0
+            ? 'bg-danger bg-opacity-10 text-danger'
+            : 'bg-success bg-opacity-10 text-success',
+    ],
+    [
+        'title' => 'Menunggu Konfirmasi',
+        'value' => number_format($waitingPaymentConfirmations, 0, ',', '.'),
+        'note' => 'Pembayaran online menunggu validasi',
+        'icon' => 'fact_check',
+        'color' => 'bg-purple bg-opacity-10 text-primary',
+        'badge' => 'Pembayaran',
+        'badgeClass' => 'bg-primary bg-opacity-10 text-primary',
+    ],
+    [
+        'title' => 'Belum Masuk Penjualan',
+        'value' => number_format($onlineOrdersNotConvertedToSale, 0, ',', '.'),
+        'note' => 'Order selesai yang belum menjadi transaksi POS',
+        'icon' => 'sync_problem',
+        'color' => 'bg-warning bg-opacity-10 text-warning',
+        'badge' => $onlineOrdersNotConvertedToSale > 0 ? 'Cek order' : 'Aman',
+        'badgeClass' => $onlineOrdersNotConvertedToSale > 0
+            ? 'bg-warning bg-opacity-10 text-warning'
+            : 'bg-success bg-opacity-10 text-success',
+    ],
+    [
+        'title' => 'Produk Stok Menipis',
+        'value' => number_format($lowStockCount, 0, ',', '.'),
+        'note' => 'Produk dengan stok kurang/sama dari minimum',
+        'icon' => 'inventory_2',
+        'color' => 'bg-danger bg-opacity-10 text-danger',
+        'badge' => $lowStockCount > 0 ? 'Perlu cek' : 'Aman',
+        'badgeClass' => $lowStockCount > 0
+            ? 'bg-danger bg-opacity-10 text-danger'
+            : 'bg-success bg-opacity-10 text-success',
+    ],
+];
+
+$orderStatusLabel = function (?string $status) {
+    return match (strtoupper((string) $status)) {
+        'NEW' => 'Baru',
+        'PROCESSING' => 'Diproses',
+        'COMPLETED' => 'Selesai',
+        'CANCELLED' => 'Dibatalkan',
+        default => $status ? ucwords(str_replace(['_', '-'], ' ', strtolower($status))) : '-',
+    };
+};
+
+$orderStatusClass = function (?string $status) {
+    return match (strtoupper((string) $status)) {
+        'NEW' => 'bg-primary bg-opacity-10 text-primary',
+        'PROCESSING' => 'bg-warning bg-opacity-10 text-warning',
+        'COMPLETED' => 'bg-success bg-opacity-10 text-success',
+        'CANCELLED' => 'bg-danger bg-opacity-10 text-danger',
+        default => 'bg-light text-body border',
+    };
+};
+
+$paymentStatusLabel = function (?string $status) {
+    return match (strtoupper((string) $status)) {
+        'UNPAID' => 'Belum Dibayar',
+        'WAITING_CONFIRMATION' => 'Menunggu Konfirmasi',
+        'PAID' => 'Dibayar',
+        'REJECTED' => 'Ditolak',
+        default => $status ? ucwords(str_replace(['_', '-'], ' ', strtolower($status))) : '-',
+    };
+};
+
+$paymentStatusClass = function (?string $status) {
+    return match (strtoupper((string) $status)) {
+        'PAID' => 'bg-success bg-opacity-10 text-success',
+        'WAITING_CONFIRMATION' => 'bg-warning bg-opacity-10 text-warning',
+        'REJECTED' => 'bg-danger bg-opacity-10 text-danger',
+        'UNPAID' => 'bg-secondary bg-opacity-10 text-secondary',
+        default => 'bg-light text-body border',
+    };
+};
+
+$paymentMethodLabel = function (?string $method) {
+    return match (strtoupper((string) $method)) {
+        'CASH' => 'Tunai / Cash',
+        'COD' => 'Tunai / COD',
+        'QRIS' => 'QRIS',
+        'TRANSFER', 'BANK_TRANSFER', 'TRANSFER_BANK' => 'Transfer Bank',
+        'EDC', 'CARD', 'DEBIT', 'CREDIT_CARD' => 'EDC / Kartu',
+        default => $method ? ucwords(str_replace(['_', '-'], ' ', strtolower($method))) : 'Lainnya',
+    };
+};
         @endphp
 
         <div class="container-fluid">
@@ -170,6 +261,10 @@
                                 <i class="material-symbols-outlined align-middle fs-18 me-1">receipt_long</i>
                                 Laporan Penjualan
                             </a>
+                            <a href="{{ route('reports.online-orders.index') }}" class="btn btn-outline-primary">
+                                <i class="material-symbols-outlined align-middle fs-18 me-1">shopping_cart_checkout</i>
+                                Laporan Order Online
+                            </a>                            
                         </div>
                     </div>
 
@@ -273,6 +368,138 @@
                         </div>
                     </div>
 
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="card bg-white border-0 rounded-3 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                    <div>
+                        <h3 class="mb-1">Order Online Terbaru</h3>
+                        <p class="text-body mb-0 fs-13">Order terbaru dari halaman menu publik</p>
+                    </div>
+
+                    <a href="{{ route('online-orders.index') }}" class="btn btn-outline-primary btn-sm">
+                        Lihat Semua
+                    </a>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    @forelse ($latestOnlineOrders as $order)
+                        <div class="koc-list-card">
+                            <div class="row align-items-center g-3">
+                                <div class="col-lg-5">
+                                    <div class="d-flex align-items-start">
+                                        <div class="koc-icon-box bg-warning bg-opacity-10 text-warning me-3">
+                                            <i class="material-symbols-outlined fs-20">shopping_cart</i>
+                                        </div>
+
+                                        <div>
+                                            <h6 class="fw-semibold fs-14 mb-1">{{ $order->order_no }}</h6>
+                                            <span class="fs-12 text-body">
+                                                {{ $order->customer_name ?: 'Customer Online' }}
+                                            </span>
+
+                                            <div class="mt-2 d-flex flex-wrap gap-1">
+                                                <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                    {{ $order->created_at->format('d/m/Y H:i') }}
+                                                </span>
+
+                                                <span class="badge bg-info bg-opacity-10 text-info p-2 fs-12 fw-normal">
+                                                    {{ $paymentMethodLabel($order->payment_method) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-2 col-6">
+                                    <span class="d-block fs-12 text-body mb-1">Item</span>
+                                    <strong>{{ number_format($order->items->sum('quantity'), 0, ',', '.') }}</strong>
+                                </div>
+
+                                <div class="col-lg-2 col-6">
+                                    <span class="d-block fs-12 text-body mb-1">Total</span>
+                                    <strong class="koc-price">{{ $rupiah($order->total_amount) }}</strong>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="d-flex flex-wrap justify-content-lg-end gap-1">
+                                        <span class="badge {{ $paymentStatusClass($order->payment_status) }} p-2 fs-12 fw-normal">
+                                            {{ $paymentStatusLabel($order->payment_status) }}
+                                        </span>
+
+                                        <span class="badge {{ $orderStatusClass($order->status) }} p-2 fs-12 fw-normal">
+                                            {{ $orderStatusLabel($order->status) }}
+                                        </span>
+
+                                        <a href="{{ url('/order-online/' . $order->id) }}" class="btn btn-outline-primary btn-sm mt-2">
+                                            Detail
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-5 border rounded-3">
+                            <i class="material-symbols-outlined text-body fs-40 mb-2">shopping_cart</i>
+                            <h6 class="fw-semibold mb-1">Belum ada order online</h6>
+                            <p class="text-body mb-3 fs-13">Order dari halaman menu publik akan muncul di sini.</p>
+                            <a href="{{ url('/menu') }}" class="btn btn-primary text-white" target="_blank">
+                                Buka Menu Publik
+                            </a>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card bg-white border-0 rounded-3 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                    <div>
+                        <h3 class="mb-1">Pembayaran Online Hari Ini</h3>
+                        <p class="text-body mb-0 fs-13">Rekap metode pembayaran dari order online hari ini</p>
+                    </div>
+
+                    <a href="{{ route('reports.online-orders.index') }}" class="btn btn-outline-primary btn-sm">
+                        Laporan
+                    </a>
+                </div>
+
+                @forelse ($onlinePaymentSummary as $payment)
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="fw-medium">{{ $payment['label'] }}</span>
+                                <span class="d-block fs-12 text-body">
+                                    {{ $payment['total_order'] }} order
+                                </span>
+                            </div>
+
+                            <div class="text-end">
+                                <span class="fs-13 fw-semibold">{{ $rupiah($payment['amount']) }}</span>
+                                <span class="d-block fs-12 text-body">{{ $payment['percent'] }}%</span>
+                            </div>
+                        </div>
+
+                        <div class="koc-payment-progress">
+                            <div class="koc-payment-progress-bar {{ $payment['class'] }}" style="width: {{ $payment['percent'] }}%;"></div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center py-5 border rounded-3">
+                        <i class="material-symbols-outlined text-body fs-40 mb-2">payments</i>
+                        <h6 class="fw-semibold mb-1">Belum ada pembayaran online hari ini</h6>
+                        <p class="text-body mb-0 fs-13">Order online hari ini akan muncul di sini.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
+                    
                     <div class="row g-4 mb-4">
                         <div class="col-xl-7">
                             <div class="card bg-white border-0 rounded-3 h-100">
