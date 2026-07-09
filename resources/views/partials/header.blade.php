@@ -1,6 +1,92 @@
 @php
     $storeName = $storeSetting?->store_name ?: 'Kasir Online Cerdas';
     $ownerName = $storeSetting?->owner_name ?: 'Admin Toko';
+
+    $newOnlineOrderCount = \App\Models\OnlineOrder::query()
+        ->where('status', 'NEW')
+        ->count();
+
+    $waitingPaymentConfirmationCount = \App\Models\OnlineOrder::query()
+        ->where('payment_status', 'WAITING_CONFIRMATION')
+        ->count();
+
+    $completedNotConvertedCount = \App\Models\OnlineOrder::query()
+        ->where('status', 'COMPLETED')
+        ->where('payment_status', 'PAID')
+        ->whereNull('sale_id')
+        ->count();
+
+    $lowStockNotificationCount = \App\Models\Product::query()
+        ->whereColumn('stock', '<=', 'minimum_stock')
+        ->count();
+
+    $emptyStockNotificationCount = \App\Models\Product::query()
+        ->where('stock', '<=', 0)
+        ->count();
+
+    $operationalNotificationTotal =
+        $newOnlineOrderCount
+        + $waitingPaymentConfirmationCount
+        + $completedNotConvertedCount
+        + $lowStockNotificationCount
+        + $emptyStockNotificationCount;
+
+    $notificationBadgeText = $operationalNotificationTotal > 99
+        ? '99+'
+        : (string) $operationalNotificationTotal;
+
+    $operationalNotifications = collect([
+        [
+            'show' => $newOnlineOrderCount > 0,
+            'title' => 'Order online baru',
+            'description' => 'Ada ' . number_format($newOnlineOrderCount, 0, ',', '.') . ' order online baru yang perlu diproses.',
+            'url' => route('online-orders.index'),
+            'icon' => 'shopping_cart',
+            'iconClass' => 'text-warning',
+            'status' => 'Perlu diproses',
+            'unseen' => true,
+        ],
+        [
+            'show' => $waitingPaymentConfirmationCount > 0,
+            'title' => 'Pembayaran menunggu konfirmasi',
+            'description' => 'Ada ' . number_format($waitingPaymentConfirmationCount, 0, ',', '.') . ' pembayaran online yang perlu divalidasi.',
+            'url' => route('payments.index'),
+            'icon' => 'fact_check',
+            'iconClass' => 'text-primary',
+            'status' => 'Perlu validasi',
+            'unseen' => true,
+        ],
+        [
+            'show' => $completedNotConvertedCount > 0,
+            'title' => 'Order belum masuk penjualan',
+            'description' => 'Ada ' . number_format($completedNotConvertedCount, 0, ',', '.') . ' order selesai yang belum masuk transaksi penjualan.',
+            'url' => route('reports.online-orders.index'),
+            'icon' => 'sync_problem',
+            'iconClass' => 'text-warning',
+            'status' => 'Perlu dicek',
+            'unseen' => true,
+        ],
+        [
+            'show' => $lowStockNotificationCount > 0,
+            'title' => 'Stok menipis',
+            'description' => 'Ada ' . number_format($lowStockNotificationCount, 0, ',', '.') . ' produk dengan stok kurang atau sama dengan minimum.',
+            'url' => route('stocks.low'),
+            'icon' => 'inventory_2',
+            'iconClass' => 'text-danger',
+            'status' => 'Perlu restock',
+            'unseen' => false,
+        ],
+        [
+            'show' => $emptyStockNotificationCount > 0,
+            'title' => 'Stok kosong',
+            'description' => 'Ada ' . number_format($emptyStockNotificationCount, 0, ',', '.') . ' produk dengan stok kosong.',
+            'url' => route('stocks.low'),
+            'icon' => 'production_quantity_limits',
+            'iconClass' => 'text-danger',
+            'status' => 'Stok kosong',
+            'unseen' => false,
+        ],
+    ])->filter(fn ($item) => $item['show'])->values();
 @endphp
 
 <header
@@ -105,13 +191,22 @@
                     <li class="header-right-item">
                         <div class="dropdown notifications noti">
                             <button
-                                class="btn btn-secondary border-0 p-0 position-relative badge"
+                                class="btn btn-secondary border-0 p-0 position-relative"
                                 type="button"
                                 data-bs-toggle="dropdown"
                                 aria-expanded="false"
                                 aria-label="Notifikasi"
                             >
                                 <span class="material-symbols-outlined">notifications</span>
+
+                                @if ($operationalNotificationTotal > 0)
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white"
+                                        style="font-size: 10px;"
+                                    >
+                                        {{ $notificationBadgeText }}
+                                    </span>
+                                @endif
                             </button>
 
                             <div
@@ -121,89 +216,69 @@
                                     class="d-flex justify-content-between align-items-center title"
                                 >
                                     <span class="fw-semibold fs-15 text-secondary">
-                                        Notifikasi
-                                        <span class="fw-normal text-body fs-14">(03)</span>
+                                        Notifikasi Operasional
+                                        <span class="fw-normal text-body fs-14">
+                                            ({{ number_format($operationalNotificationTotal, 0, ',', '.') }})
+                                        </span>
                                     </span>
 
-                                    <button
-                                        class="p-0 m-0 bg-transparent border-0 fs-14 text-primary"
-                                        type="button"
-                                    >
-                                        Tandai Dibaca
-                                    </button>
+                                    <span class="fs-13 text-body">
+                                        Real-time
+                                    </span>
                                 </div>
 
                                 <div class="max-h-217" data-simplebar>
-                                    <div class="notification-menu unseen">
-                                        <a
-                                            href="{{ route('online-orders.index') }}"
-                                            class="dropdown-item"
-                                        >
-                                            <div class="d-flex align-items-center">
-                                                <div class="flex-shrink-0">
-                                                    <i class="material-symbols-outlined text-warning">shopping_cart</i>
-                                                </div>
+                                    @forelse ($operationalNotifications as $notification)
+                                        <div class="notification-menu {{ $notification['unseen'] ? 'unseen' : '' }}">
+                                            <a
+                                                href="{{ $notification['url'] }}"
+                                                class="dropdown-item"
+                                            >
+                                                <div class="d-flex align-items-center">
+                                                    <div class="flex-shrink-0">
+                                                        <i class="material-symbols-outlined {{ $notification['iconClass'] }}">
+                                                            {{ $notification['icon'] }}
+                                                        </i>
+                                                    </div>
 
-                                                <div class="flex-grow-1 ms-3">
-                                                    <p>
-                                                        Ada
-                                                        <span class="fw-semibold">order online baru</span>
-                                                        yang menunggu konfirmasi.
-                                                    </p>
-                                                    <span class="fs-13">5 menit lalu</span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <p>
+                                                            <span class="fw-semibold">
+                                                                {{ $notification['title'] }}
+                                                            </span>
+                                                            <br>
+                                                            {{ $notification['description'] }}
+                                                        </p>
 
-                                    <div class="notification-menu">
-                                        <a
-                                            href="{{ route('stocks.low') }}"
-                                            class="dropdown-item"
-                                        >
-                                            <div class="d-flex align-items-center">
-                                                <div class="flex-shrink-0">
-                                                    <i class="material-symbols-outlined text-danger">inventory_2</i>
+                                                        <span class="fs-13">
+                                                            {{ $notification['status'] }}
+                                                        </span>
+                                                    </div>
                                                 </div>
+                                            </a>
+                                        </div>
+                                    @empty
+                                        <div class="text-center py-4 px-3">
+                                            <i class="material-symbols-outlined text-success fs-40 mb-2">
+                                                check_circle
+                                            </i>
 
-                                                <div class="flex-grow-1 ms-3">
-                                                    <p>
-                                                        Beberapa produk masuk daftar
-                                                        <span class="fw-semibold">stok menipis</span>.
-                                                    </p>
-                                                    <span class="fs-13">20 menit lalu</span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </div>
+                                            <h6 class="fw-semibold mb-1">
+                                                Semua aman
+                                            </h6>
 
-                                    <div class="notification-menu">
-                                        <a
-                                            href="{{ route('payments.index') }}"
-                                            class="dropdown-item"
-                                        >
-                                            <div class="d-flex align-items-center">
-                                                <div class="flex-shrink-0">
-                                                    <i class="material-symbols-outlined text-success">payments</i>
-                                                </div>
-
-                                                <div class="flex-grow-1 ms-3">
-                                                    <p>
-                                                        Pembayaran QRIS berhasil dicatat
-                                                        <span class="fw-semibold">Rp 185.000</span>.
-                                                    </p>
-                                                    <span class="fs-13">1 jam lalu</span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </div>
+                                            <p class="text-body mb-0 fs-13">
+                                                Tidak ada order, pembayaran, atau stok yang perlu tindakan saat ini.
+                                            </p>
+                                        </div>
+                                    @endforelse
                                 </div>
 
                                 <a
-                                    href="{{ route('online-orders.index') }}"
+                                    href="{{ route('reports.online-orders.index') }}"
                                     class="dropdown-item text-center text-primary d-block view-all fw-medium rounded-bottom-3"
                                 >
-                                    <span>Lihat Semua Order</span>
+                                    <span>Lihat Laporan Order Online</span>
                                 </a>
                             </div>
                         </div>
