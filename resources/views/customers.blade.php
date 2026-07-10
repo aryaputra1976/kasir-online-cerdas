@@ -73,16 +73,16 @@
                     'color' => 'bg-success bg-opacity-10 text-success',
                 ],
                 [
-                    'title' => 'Pelanggan Nonaktif',
-                    'value' => number_format($inactiveCustomers, 0, ',', '.'),
-                    'note' => 'Pelanggan nonaktif',
-                    'icon' => 'person_off',
-                    'color' => 'bg-danger bg-opacity-10 text-danger',
+                    'title' => 'Pelanggan Bertransaksi',
+                    'value' => number_format($customersWithTransactions, 0, ',', '.'),
+                    'note' => 'Pelanggan dengan POS / order online',
+                    'icon' => 'receipt_long',
+                    'color' => 'bg-info bg-opacity-10 text-info',
                 ],
                 [
                     'title' => 'Omzet Pelanggan',
                     'value' => $rupiah($totalCustomerOmzet),
-                    'note' => 'Transaksi dengan nama pelanggan',
+                    'note' => 'POS + order online terhubung',
                     'icon' => 'payments',
                     'color' => 'bg-warning bg-opacity-10 text-warning',
                 ],
@@ -150,6 +150,119 @@
                         @endforeach
                     </div>
 
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="card bg-white border-0 rounded-3 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                    <div>
+                        <h3 class="mb-1">Top Pelanggan</h3>
+                        <p class="text-body mb-0 fs-13">
+                            Pelanggan dengan omzet tertinggi dari POS dan order online.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    @forelse ($topCustomers as $topCustomer)
+                        <div class="koc-customer-card">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                <div>
+                                    <h6 class="fw-semibold fs-15 mb-1">
+                                        {{ $topCustomer->name }}
+                                    </h6>
+
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                            {{ $topCustomer->customer_code }}
+                                        </span>
+
+                                        <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">
+                                            POS {{ number_format((int) $topCustomer->sales_count, 0, ',', '.') }}
+                                        </span>
+
+                                        <span class="badge bg-warning bg-opacity-10 text-warning p-2 fs-12 fw-normal">
+                                            Online {{ number_format((int) $topCustomer->online_orders_count, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="text-lg-end">
+                                    <span class="text-body fs-13 d-block mb-1">Total Omzet</span>
+                                    <h5 class="mb-2 koc-price">
+                                        {{ $rupiah($topCustomer->total_omzet) }}
+                                    </h5>
+
+                                    <a href="{{ route('customers.show', $topCustomer) }}" class="btn btn-outline-primary btn-sm">
+                                        Detail
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-5 border rounded-3">
+                            <i class="material-symbols-outlined text-body fs-40 mb-2">leaderboard</i>
+                            <h6 class="fw-semibold mb-1">Belum ada top pelanggan</h6>
+                            <p class="text-body mb-0 fs-13">
+                                Data akan muncul setelah pelanggan memiliki transaksi atau order online.
+                            </p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card bg-white border-0 rounded-3 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                    <div>
+                        <h3 class="mb-1">Pelanggan Terbaru</h3>
+                        <p class="text-body mb-0 fs-13">
+                            Data pelanggan yang terakhir ditambahkan.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    @forelse ($newestCustomers as $newCustomer)
+                        <div class="koc-customer-card">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div>
+                                    <h6 class="fw-semibold fs-15 mb-1">
+                                        {{ $newCustomer->name }}
+                                    </h6>
+
+                                    <span class="text-body fs-13 d-block">
+                                        {{ $newCustomer->phone ?: 'Tanpa nomor HP' }}
+                                    </span>
+
+                                    <span class="text-body fs-13 d-block">
+                                        {{ $newCustomer->created_at?->format('d/m/Y H:i') }}
+                                    </span>
+                                </div>
+
+                                <a href="{{ route('customers.show', $newCustomer) }}" class="btn btn-outline-primary btn-sm">
+                                    Detail
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-5 border rounded-3">
+                            <i class="material-symbols-outlined text-body fs-40 mb-2">person_add</i>
+                            <h6 class="fw-semibold mb-1">Belum ada pelanggan</h6>
+                            <p class="text-body mb-0 fs-13">
+                                Pelanggan baru akan tampil di sini.
+                            </p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                    
                     <div class="card bg-white border-0 rounded-3 mb-4">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
@@ -237,6 +350,17 @@
                                                         <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
                                                             Kota: {{ $customer->city ?: '-' }}
                                                         </span>
+                                                        <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">
+                                                            POS: {{ number_format((int) $customer->sales_count, 0, ',', '.') }}
+                                                        </span>
+
+                                                        <span class="badge bg-warning bg-opacity-10 text-warning p-2 fs-12 fw-normal">
+                                                            Online: {{ number_format((int) $customer->online_orders_count, 0, ',', '.') }}
+                                                        </span>
+
+                                                        <span class="badge bg-success bg-opacity-10 text-success p-2 fs-12 fw-normal">
+                                                            Omzet: {{ $rupiah($customer->total_omzet) }}
+                                                        </span>                                                        
                                                     </div>
 
                                                     @if ($customer->address)
@@ -244,6 +368,12 @@
                                                             {{ $customer->address }}
                                                         </p>
                                                     @endif
+                                                    <p class="text-body fs-13 mb-0 mt-2">
+                                                        Aktivitas terakhir:
+                                                        <strong>
+                                                            {{ $customer->last_activity_at ? $customer->last_activity_at->format('d/m/Y H:i') : '-' }}
+                                                        </strong>
+                                                    </p>                                                    
                                                 </div>
                                             </div>
 

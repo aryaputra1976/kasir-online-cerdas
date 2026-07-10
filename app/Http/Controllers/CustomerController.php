@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\OnlineOrder;
 use App\Models\Sale;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -18,6 +19,15 @@ class CustomerController extends Controller
         $status = $request->input('status');
 
         $customersQuery = Customer::query()
+            ->withCount(['sales', 'onlineOrders'])
+            ->withSum('sales as sales_total_omzet', 'total_amount')
+            ->withSum([
+                'onlineOrders as online_orders_total_omzet' => function ($query) {
+                    $query->where('status', '!=', OnlineOrder::STATUS_CANCELLED);
+                },
+            ], 'total_amount')
+            ->withMax('sales as last_sale_at', 'sale_date')
+            ->withMax('onlineOrders as last_online_order_at', 'created_at')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($subQuery) use ($search) {
                     $subQuery
@@ -36,27 +46,77 @@ class CustomerController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $customers->getCollection()->transform(function (Customer $customer) {
+            $salesOmzet = (float) ($customer->sales_total_omzet ?? 0);
+            $onlineOmzet = (float) ($customer->online_orders_total_omzet ?? 0);
+
+            $lastSaleAt = $customer->last_sale_at
+                ? Carbon::parse($customer->last_sale_at)
+                : null;
+
+            $lastOnlineOrderAt = $customer->last_online_order_at
+                ? Carbon::parse($customer->last_online_order_at)
+                : null;
+
+            $lastActivityAt = collect([$lastSaleAt, $lastOnlineOrderAt])
+                ->filter()
+                ->sortDesc()
+                ->first();
+
+            $customer->setAttribute('total_activity_count', (int) $customer->sales_count + (int) $customer->online_orders_count);
+            $customer->setAttribute('total_omzet', $salesOmzet + $onlineOmzet);
+            $customer->setAttribute('last_activity_at', $lastActivityAt);
+
+            return $customer;
+        });
+
         $totalCustomers = Customer::count();
         $activeCustomers = Customer::where('is_active', true)->count();
         $inactiveCustomers = Customer::where('is_active', false)->count();
 
         $customersWithTransactions = Customer::query()
-            ->whereIn('name', function ($query) {
-                $query->select('customer_name')
-                    ->from('sales')
-                    ->whereNotNull('customer_name')
-                    ->where('customer_name', '!=', '')
-                    ->where('customer_name', '!=', 'Umum')
-                    ->where('customer_name', '!=', 'Customer Umum');
-            })
+            ->whereHas('sales')
+            ->orWhereHas('onlineOrders')
             ->count();
 
-        $totalCustomerOmzet = Sale::query()
-            ->whereNotNull('customer_name')
-            ->where('customer_name', '!=', '')
-            ->where('customer_name', '!=', 'Umum')
-            ->where('customer_name', '!=', 'Customer Umum')
+        $totalSalesOmzet = Sale::query()
+            ->whereNotNull('customer_id')
             ->sum('total_amount');
+
+        $totalOnlineOrderOmzet = OnlineOrder::query()
+            ->whereNotNull('customer_id')
+            ->where('status', '!=', OnlineOrder::STATUS_CANCELLED)
+            ->sum('total_amount');
+
+        $totalCustomerOmzet = (float) $totalSalesOmzet + (float) $totalOnlineOrderOmzet;
+
+        $topCustomers = Customer::query()
+            ->withCount(['sales', 'onlineOrders'])
+            ->withSum('sales as sales_total_omzet', 'total_amount')
+            ->withSum([
+                'onlineOrders as online_orders_total_omzet' => function ($query) {
+                    $query->where('status', '!=', OnlineOrder::STATUS_CANCELLED);
+                },
+            ], 'total_amount')
+            ->get()
+            ->map(function (Customer $customer) {
+                $customer->total_omzet = (float) ($customer->sales_total_omzet ?? 0)
+                    + (float) ($customer->online_orders_total_omzet ?? 0);
+
+                $customer->total_activity_count = (int) $customer->sales_count
+                    + (int) $customer->online_orders_count;
+
+                return $customer;
+            })
+            ->filter(fn (Customer $customer) => $customer->total_omzet > 0 || $customer->total_activity_count > 0)
+            ->sortByDesc('total_omzet')
+            ->take(5)
+            ->values();
+
+        $newestCustomers = Customer::query()
+            ->latest()
+            ->limit(5)
+            ->get();
 
         return view('customers', compact(
             'customers',
@@ -66,7 +126,9 @@ class CustomerController extends Controller
             'activeCustomers',
             'inactiveCustomers',
             'customersWithTransactions',
-            'totalCustomerOmzet'
+            'totalCustomerOmzet',
+            'topCustomers',
+            'newestCustomers'
         ));
     }
 
@@ -97,28 +159,88 @@ class CustomerController extends Controller
 
     public function show(Customer $customer): View
     {
-        $sales = Sale::query()
+        $salesBaseQuery = Sale::query()
             ->with('items')
-            ->where('customer_name', $customer->name)
+            ->where(function ($query) use ($customer) {
+                $query->where('customer_id', $customer->id)
+                    ->orWhere(function ($fallbackQuery) use ($customer) {
+                        $fallbackQuery
+                            ->whereNull('customer_id')
+                            ->where('customer_name', $customer->name);
+                    });
+            });
+
+        $onlineOrdersBaseQuery = OnlineOrder::query()
+            ->with(['items', 'sale'])
+            ->where(function ($query) use ($customer) {
+                $query->where('customer_id', $customer->id);
+
+                if ($customer->phone) {
+                    $query->orWhere(function ($phoneQuery) use ($customer) {
+                        $phoneQuery
+                            ->whereNull('customer_id')
+                            ->where('customer_phone', $customer->phone);
+                    });
+                }
+
+                if ($customer->email) {
+                    $query->orWhere(function ($emailQuery) use ($customer) {
+                        $emailQuery
+                            ->whereNull('customer_id')
+                            ->where('customer_email', $customer->email);
+                    });
+                }
+            });
+
+        $sales = (clone $salesBaseQuery)
             ->latest('sale_date')
-            ->paginate(10)
+            ->paginate(5, ['*'], 'sales_page')
             ->withQueryString();
 
-        $totalTransactions = (clone $sales->getCollection())->count();
+        $onlineOrders = (clone $onlineOrdersBaseQuery)
+            ->latest()
+            ->paginate(5, ['*'], 'orders_page')
+            ->withQueryString();
 
-        $customerStatsQuery = Sale::query()
-            ->where('customer_name', $customer->name);
+        $salesCount = (clone $salesBaseQuery)->count();
+        $onlineOrderCount = (clone $onlineOrdersBaseQuery)->count();
 
-        $totalOmzet = (clone $customerStatsQuery)->sum('total_amount');
-        $transactionCount = (clone $customerStatsQuery)->count();
-        $lastSale = (clone $customerStatsQuery)->latest('sale_date')->first();
+        $totalSalesOmzet = (clone $salesBaseQuery)->sum('total_amount');
+
+        $totalOnlineOrderOmzet = (clone $onlineOrdersBaseQuery)
+            ->where('status', '!=', OnlineOrder::STATUS_CANCELLED)
+            ->sum('total_amount');
+
+        $totalOmzet = (float) $totalSalesOmzet + (float) $totalOnlineOrderOmzet;
+
+        $lastSale = (clone $salesBaseQuery)
+            ->latest('sale_date')
+            ->first();
+
+        $lastOnlineOrder = (clone $onlineOrdersBaseQuery)
+            ->latest()
+            ->first();
+
+        $lastActivityAt = collect([
+            $lastSale?->sale_date,
+            $lastOnlineOrder?->created_at,
+        ])
+            ->filter()
+            ->sortDesc()
+            ->first();
 
         return view('customer-details', compact(
             'customer',
             'sales',
+            'onlineOrders',
+            'salesCount',
+            'onlineOrderCount',
+            'totalSalesOmzet',
+            'totalOnlineOrderOmzet',
             'totalOmzet',
-            'transactionCount',
-            'lastSale'
+            'lastSale',
+            'lastOnlineOrder',
+            'lastActivityAt'
         ));
     }
 
