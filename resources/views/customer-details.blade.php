@@ -4,252 +4,228 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Trezo - Laravel Admin Dashboard Template</title>
-        <!-- Styles -->
+        <title>Detail Pelanggan - Kasir Online Cerdas</title>
+
         @include('partials.styles')
+
+        <style>
+            .koc-summary-icon {
+                width: 48px;
+                height: 48px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 14px;
+            }
+
+            .koc-sale-row {
+                border: 1px solid #eef0f7;
+                border-radius: 14px;
+                padding: 16px 18px;
+                background-color: #ffffff;
+            }
+
+            .koc-sale-row:hover {
+                background-color: #fafaff;
+            }
+
+            .koc-price {
+                letter-spacing: -0.2px;
+            }
+        </style>
     </head>
+
     <body class="boxed-size">
         @include('partials.preloader')
         @include('partials.sidebar')
 
+        @php
+            $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+        @endphp
+
         <div class="container-fluid">
-			<div class="main-content d-flex flex-column">
-				<!-- Start Header Area -->
-				@include('partials.header')
-				<!-- End Header Area -->
+            <div class="main-content d-flex flex-column">
+                @include('partials.header')
 
-				<div class="main-content-container overflow-hidden">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                        <h3 class="mb-0">Customer Details</h3>
+                <div class="main-content-container overflow-hidden">
+                    <div class="d-flex justify-content-between align-items-start align-items-lg-center flex-wrap gap-3 mb-4">
+                        <div>
+                            <h3 class="mb-1">Detail Pelanggan</h3>
+                            <p class="text-body mb-0">
+                                Profil pelanggan dan riwayat transaksi berdasarkan nama pelanggan.
+                            </p>
+                        </div>
 
-                        <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
-                            <ol class="breadcrumb align-items-center mb-0 lh-1">
-                                <li class="breadcrumb-item">
-                                    <a href="#" class="d-flex align-items-center text-decoration-none">
-                                        <i class="ri-home-4-line fs-18 text-primary me-1"></i>
-                                        <span class="text-secondary fw-medium hover">Dashboard</span>
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">eCommerce</span>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">Customer Details</span>
-                                </li>
-                            </ol>
-                        </nav>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{{ route('customers.edit', $customer) }}" class="btn btn-primary text-white">
+                                Edit Pelanggan
+                            </a>
+
+                            <a href="{{ route('customers.index') }}" class="btn btn-outline-secondary">
+                                Kembali
+                            </a>
+                        </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-xxl-9 col-lg-8 col-md-7">
-                            <div class="card bg-white border-0 rounded-3 mb-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-xl-4">
+                            <div class="card bg-white border-0 rounded-3 h-100">
                                 <div class="card-body p-4">
-                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 mb-lg-4">
-                                        <h3 class="mb-0">Transactions History</h3>
-                                        <select class="form-select month-select form-control p-0 h-auto border-0 w-90" style="background-position: right 0 center;" aria-label="Default select example">
-                                            <option selected="">Last Month</option>
-                                            <option value="1">Last Month</option>
-                                            <option value="2">Last Year</option>
-                                        </select>
+                                    <div class="d-flex align-items-start mb-4">
+                                        <div class="koc-summary-icon bg-primary bg-opacity-10 text-primary me-3">
+                                            <i class="material-symbols-outlined">person</i>
+                                        </div>
+
+                                        <div>
+                                            <h4 class="fs-18 fw-semibold mb-1">{{ $customer->name }}</h4>
+                                            <span class="badge {{ $customer->status_badge_class }} p-2 fs-12 fw-normal">
+                                                {{ $customer->status_label }}
+                                            </span>
+                                        </div>
                                     </div>
-        
-                                    <div class="default-table-area recent-orders">
-                                        <div class="table-responsive">
-                                            <table class="table align-middle">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col">Order ID</th>
-                                                        <th scope="col">Status</th>
-                                                        <th scope="col">Amount</th>
-                                                        <th scope="col">Rewards</th>
-                                                        <th scope="col">Date</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td>#JAN-121</td>
-                                                        <td>
-                                                            <span class="badge bg-warning bg-opacity-10 text-warning p-2 fs-12 fw-normal">Pending</span>
-                                                        </td>
-                                                        <td>$6,855.00</td>
-                                                        <td>$12.00</td>
-                                                        <td>14 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-120</td>
-                                                        <td>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Successful</span>
-                                                        </td>
-                                                        <td>$258.00</td>
-                                                        <td>$9.00</td>
-                                                        <td>13 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-119</td>
-                                                        <td>
-                                                            <span class="badge bg-danger bg-opacity-10 text-danger p-2 fs-12 fw-normal">Rejected</span>
-                                                        </td>
-                                                        <td>$3,890.00</td>
-                                                        <td>$11.00</td>
-                                                        <td>12 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-118</td>
-                                                        <td>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Successful</span>
-                                                        </td>
-                                                        <td>$2,500.00</td>
-                                                        <td>$23.42</td>
-                                                        <td>11 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-117</td>
-                                                        <td>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Successful</span>
-                                                        </td>
-                                                        <td>$8,200.00</td>
-                                                        <td>$10.84</td>
-                                                        <td>10 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-116</td>
-                                                        <td>
-                                                            <span class="badge bg-danger bg-opacity-10 text-danger p-2 fs-12 fw-normal">Rejected</span>
-                                                        </td>
-                                                        <td>$640.00</td>
-                                                        <td>$3.21</td>
-                                                        <td>09 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-115</td>
-                                                        <td>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Successful</span>
-                                                        </td>
-                                                        <td>$9,100.00</td>
-                                                        <td>$43.21</td>
-                                                        <td>08 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-114</td>
-                                                        <td>
-                                                            <span class="badge bg-warning bg-opacity-10 text-warning p-2 fs-12 fw-normal">Pending</span>
-                                                        </td>
-                                                        <td>$7,300.00</td>
-                                                        <td>$42.42</td>
-                                                        <td>07 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-113</td>
-                                                        <td>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Successful</span>
-                                                        </td>
-                                                        <td>$2,800.00</td>
-                                                        <td>$11.21</td>
-                                                        <td>06 Jan 2024</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>#JAN-112</td>
-                                                        <td>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Successful</span>
-                                                        </td>
-                                                        <td>$6,600.00</td>
-                                                        <td>$14.32</td>
-                                                        <td>05 Jan 2024</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-            
-                                        <div class="d-flex justify-content-center justify-content-sm-between align-items-center text-center flex-wrap gap-2 showing-wrap">
-                                            <span class="fs-13 fw-medium">Items per pages: 10</span>
-            
-                                            <div class="d-flex align-items-center">
-                                                <span class="fs-13 fw-medium me-2">1 - 10 of 12</span>
-                                                <nav aria-label="Page navigation example">
-                                                    <ul class="pagination mb-0 justify-content-center">
-                                                        <li class="page-item">
-                                                            <a class="page-link icon" href="customer-details" aria-label="Previous">
-                                                                <i class="material-symbols-outlined">keyboard_arrow_left</i>
-                                                            </a>
-                                                        </li>
-                                                        <li class="page-item">
-                                                            <a class="page-link icon" href="customer-details" aria-label="Next">
-                                                                <i class="material-symbols-outlined">keyboard_arrow_right</i>
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </nav>
-                                            </div>
-                                        </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body d-block fs-13">Kode Pelanggan</span>
+                                        <strong>{{ $customer->customer_code }}</strong>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body d-block fs-13">Nomor HP</span>
+                                        <strong>{{ $customer->phone ?: '-' }}</strong>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body d-block fs-13">Email</span>
+                                        <strong>{{ $customer->email ?: '-' }}</strong>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body d-block fs-13">Kota</span>
+                                        <strong>{{ $customer->city ?: '-' }}</strong>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-body d-block fs-13">Alamat</span>
+                                        <strong>{{ $customer->address ?: '-' }}</strong>
+                                    </div>
+
+                                    <div>
+                                        <span class="text-body d-block fs-13">Catatan</span>
+                                        <strong>{{ $customer->note ?: '-' }}</strong>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xxl-3 col-lg-4 col-md-5">
-                            <div class="card bg-white border-0 rounded-3 mb-4">
+
+                        <div class="col-xl-8">
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <div class="card bg-white border-0 rounded-3 h-100">
+                                        <div class="card-body p-4">
+                                            <span class="text-body d-block mb-2">Total Transaksi</span>
+                                            <h3 class="fs-22 fw-semibold mb-1">
+                                                {{ number_format($transactionCount, 0, ',', '.') }}
+                                            </h3>
+                                            <p class="fs-13 text-body mb-0">Berdasarkan nama pelanggan</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="card bg-white border-0 rounded-3 h-100">
+                                        <div class="card-body p-4">
+                                            <span class="text-body d-block mb-2">Total Omzet</span>
+                                            <h3 class="fs-22 fw-semibold mb-1 koc-price">
+                                                {{ $rupiah($totalOmzet) }}
+                                            </h3>
+                                            <p class="fs-13 text-body mb-0">Akumulasi transaksi pelanggan</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="card bg-white border-0 rounded-3 h-100">
+                                        <div class="card-body p-4">
+                                            <span class="text-body d-block mb-2">Transaksi Terakhir</span>
+                                            <h3 class="fs-18 fw-semibold mb-1">
+                                                {{ $lastSale?->invoice_no ?: '-' }}
+                                            </h3>
+                                            <p class="fs-13 text-body mb-0">
+                                                {{ $lastSale?->sale_date?->format('d/m/Y H:i') ?: '-' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-white border-0 rounded-3 mt-4">
                                 <div class="card-body p-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-3 mb-lg-4">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-shrink-0">
-                                                <img src="assets/images/user-60.jpg" class="wh-65 rounded-circle border border-2" alt="user">
-                                            </div>
-                                            <div class="flex-grow-1 ms-2 position-relative top-2">
-                                                <h4 class="fs-16 fw-semibold mb-1">Ava Turner</h4>
-                                                <span>Team Leader</span>
-                                            </div>
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                                        <div>
+                                            <h3 class="mb-1">Riwayat Transaksi</h3>
+                                            <p class="text-body mb-0 fs-13">
+                                                Transaksi POS dengan nama customer yang sama.
+                                            </p>
                                         </div>
 
-                                        <div class="dropdown action-opt ms-2 position-relative top-3" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="More Option">
-                                            <button class="p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="material-symbols-outlined fs-20 text-body hover">more_horiz</i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end bg-white border box-shadow">
-                                                <li>
-                                                    <a class="dropdown-item" href="javascript:void(0);">
-                                                        <i data-feather="eye"></i>
-                                                        View All 
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="javascript:void(0);">
-                                                        <i data-feather="edit"></i>
-                                                        Edit
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="javascript:void(0);">
-                                                        <i data-feather="trash-2"></i>
-                                                        Delete One
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="javascript:void(0);">
-                                                        <i data-feather="lock"></i>
-                                                        Block
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                        <a href="{{ route('sales.report', ['q' => $customer->name]) }}" class="btn btn-outline-primary btn-sm">
+                                            Lihat di Laporan
+                                        </a>
                                     </div>
-                                    <div class="mb-3">
-                                        <span>Account ID:</span>
-                                        <span class="d-block fw-medium text-secondary mt-1">ID-12174123</span>
+
+                                    <div class="d-flex flex-column gap-3">
+                                        @forelse ($sales as $sale)
+                                            <div class="koc-sale-row">
+                                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                                    <div>
+                                                        <h6 class="fw-semibold fs-15 mb-1">
+                                                            {{ $sale->invoice_no }}
+                                                        </h6>
+
+                                                        <p class="text-body fs-13 mb-2">
+                                                            {{ $sale->sale_date?->format('d/m/Y H:i') }}
+                                                        </p>
+
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                                {{ $sale->payment_method ?: 'Tidak diketahui' }}
+                                                            </span>
+
+                                                            <span class="badge bg-success bg-opacity-10 text-success p-2 fs-12 fw-normal">
+                                                                {{ $sale->status ?: 'Selesai' }}
+                                                            </span>
+
+                                                            <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                                {{ number_format($sale->items->sum('quantity'), 0, ',', '.') }} item
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="text-lg-end">
+                                                        <span class="text-body d-block fs-13 mb-1">Total</span>
+                                                        <h5 class="fw-semibold mb-2 koc-price">
+                                                            {{ $rupiah($sale->total_amount) }}
+                                                        </h5>
+
+                                                        <a href="{{ route('pos.receipt', $sale) }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                                                            Lihat Struk
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <div class="text-center py-5 border rounded-3">
+                                                <i class="material-symbols-outlined text-body fs-40 mb-2">receipt_long</i>
+                                                <h6 class="fw-semibold mb-1">Belum ada transaksi</h6>
+                                                <p class="text-body mb-0 fs-13">
+                                                    Riwayat transaksi akan muncul jika nama pelanggan digunakan pada transaksi POS.
+                                                </p>
+                                            </div>
+                                        @endforelse
                                     </div>
-                                    <div class="mb-3">
-                                        <span>Billing Email:</span>
-                                        <span class="d-block fw-medium text-secondary mt-1">ava@trezo.com</span>
-                                    </div>
-                                    <div class="mb-3">
-                                        <span>Delivery Address:</span>
-                                        <span class="d-block fw-medium text-secondary mt-1">715 Maple St, Hamletville, England</span>
-                                    </div>
-                                    <div class="mb-3">
-                                        <span>Language:</span>
-                                        <span class="d-block fw-medium text-secondary mt-1">English, Spanish</span>
-                                    </div>
-                                    <div>
-                                        <span>Latest Transaction:</span>
-                                        <span class="d-block fw-medium text-secondary mt-1">#JAN-121</span>
+
+                                    <div class="mt-4">
+                                        {{ $sales->links('pagination::bootstrap-5') }}
                                     </div>
                                 </div>
                             </div>
@@ -257,15 +233,12 @@
                     </div>
                 </div>
 
-				<div class="flex-grow-1"></div>
+                <div class="flex-grow-1"></div>
 
-				<!-- Start Footer Area -->
-				@include('partials.footer')
-				<!-- End Footer Area -->
-			</div>
-		</div>
+                @include('partials.footer')
+            </div>
+        </div>
 
-        
         @include('partials.theme_settings')
         @include('partials.scripts')
     </body>

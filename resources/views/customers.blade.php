@@ -4,510 +4,302 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Trezo - Laravel Admin Dashboard Template</title>
-        <!-- Styles -->
+        <title>Pelanggan - Kasir Online Cerdas</title>
+
         @include('partials.styles')
+
+        <style>
+            .koc-summary-icon {
+                width: 48px;
+                height: 48px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 14px;
+            }
+
+            .koc-customer-card {
+                border: 1px solid #eef0f7;
+                border-radius: 14px;
+                padding: 18px 20px;
+                background-color: #ffffff;
+            }
+
+            .koc-customer-card:hover {
+                background-color: #fafaff;
+            }
+
+            .koc-avatar {
+                width: 46px;
+                height: 46px;
+                min-width: 46px;
+                border-radius: 14px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .koc-filter-card .form-control,
+            .koc-filter-card .form-select {
+                min-height: 48px;
+            }
+
+            .koc-price {
+                letter-spacing: -0.2px;
+            }
+        </style>
     </head>
+
     <body class="boxed-size">
         @include('partials.preloader')
         @include('partials.sidebar')
 
-        <div class="container-fluid">
-			<div class="main-content d-flex flex-column">
-				<!-- Start Header Area -->
-				@include('partials.header')
-				<!-- End Header Area -->
+        @php
+            $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
 
-				<div class="main-content-container overflow-hidden">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                        <h3 class="mb-0">Customers</h3>
+            $summaryCards = [
+                [
+                    'title' => 'Total Pelanggan',
+                    'value' => number_format($totalCustomers, 0, ',', '.'),
+                    'note' => 'Semua data pelanggan',
+                    'icon' => 'groups',
+                    'color' => 'bg-primary bg-opacity-10 text-primary',
+                ],
+                [
+                    'title' => 'Pelanggan Aktif',
+                    'value' => number_format($activeCustomers, 0, ',', '.'),
+                    'note' => 'Pelanggan yang masih aktif',
+                    'icon' => 'verified_user',
+                    'color' => 'bg-success bg-opacity-10 text-success',
+                ],
+                [
+                    'title' => 'Pelanggan Nonaktif',
+                    'value' => number_format($inactiveCustomers, 0, ',', '.'),
+                    'note' => 'Pelanggan nonaktif',
+                    'icon' => 'person_off',
+                    'color' => 'bg-danger bg-opacity-10 text-danger',
+                ],
+                [
+                    'title' => 'Omzet Pelanggan',
+                    'value' => $rupiah($totalCustomerOmzet),
+                    'note' => 'Transaksi dengan nama pelanggan',
+                    'icon' => 'payments',
+                    'color' => 'bg-warning bg-opacity-10 text-warning',
+                ],
+            ];
+        @endphp
+
+        <div class="container-fluid">
+            <div class="main-content d-flex flex-column">
+                @include('partials.header')
+
+                <div class="main-content-container overflow-hidden">
+                    <div class="d-flex justify-content-between align-items-start align-items-lg-center flex-wrap gap-3 mb-4">
+                        <div>
+                            <h3 class="mb-1">Pelanggan</h3>
+                            <p class="text-body mb-0">
+                                Kelola data pelanggan, nomor HP, alamat, dan status pelanggan toko.
+                            </p>
+                        </div>
 
                         <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
                             <ol class="breadcrumb align-items-center mb-0 lh-1">
                                 <li class="breadcrumb-item">
-                                    <a href="#" class="d-flex align-items-center text-decoration-none">
+                                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none">
                                         <i class="ri-home-4-line fs-18 text-primary me-1"></i>
                                         <span class="text-secondary fw-medium hover">Dashboard</span>
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">eCommerce</span>
+                                    <span class="fw-medium">Master Data</span>
                                 </li>
                                 <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">Customers</span>
+                                    <span class="fw-medium">Pelanggan</span>
                                 </li>
                             </ol>
                         </nav>
                     </div>
 
+                    @if (session('success'))
+                        <div class="alert alert-success border-0 rounded-3 mb-4">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    <div class="row g-4 mb-4">
+                        @foreach ($summaryCards as $card)
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-white border-0 rounded-3 h-100">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-between align-items-center gap-3">
+                                            <div>
+                                                <span class="d-block text-body mb-2">{{ $card['title'] }}</span>
+                                                <h3 class="fs-22 fw-semibold mb-1 koc-price">
+                                                    {{ $card['value'] }}
+                                                </h3>
+                                                <p class="fs-13 text-body mb-0">{{ $card['note'] }}</p>
+                                            </div>
+
+                                            <div class="koc-summary-icon {{ $card['color'] }}">
+                                                <i class="material-symbols-outlined">{{ $card['icon'] }}</i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
                     <div class="card bg-white border-0 rounded-3 mb-4">
-                        <div class="card-body p-0">
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-4">
-                                <form class="position-relative table-src-form me-0">
-                                    <input type="text" class="form-control" placeholder="Search here">
-                                    <i class="material-symbols-outlined position-absolute top-50 start-0 translate-middle-y">search</i>
-                                </form>
-                                <button class="btn btn-outline-primary py-1 px-2 px-sm-4 fs-14 fw-medium rounded-3 hover-bg" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
-                                    <span class="py-sm-1 d-block">
-                                        <i class="ri-add-line d-none d-sm-inline-block"></i>
-                                        <span>Add New Customer</span>
-                                    </span>
-                                </button>
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                                <div>
+                                    <h3 class="mb-1">Daftar Pelanggan</h3>
+                                    <p class="text-body mb-0 fs-13">
+                                        Cari pelanggan berdasarkan nama, nomor HP, email, atau kota.
+                                    </p>
+                                </div>
+
+                                <a href="{{ route('customers.create') }}" class="btn btn-primary text-white">
+                                    <i class="material-symbols-outlined align-middle fs-18 me-1">person_add</i>
+                                    Tambah Pelanggan
+                                </a>
                             </div>
 
-                            <div class="default-table-area style-two default-table-width">
-                                <div class="table-responsive">
-                                    <table class="table align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input position-relative top-1" type="checkbox" value="" id="flexCheckDefault7">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault7">ID</label>
-                                                    </div>
-                                                </th>
-                                                <th scope="col">User</th>
-                                                <th scope="col">Email</th>
-                                                <th scope="col">Phone</th>
-                                                <th scope="col">Last Login</th>
-                                                <th scope="col">Received</th>
-                                                <th scope="col">Due</th>
-                                                <th scope="col">Status</th>
-                                                <th scope="col">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#854</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-42.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Oliver Khan</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>oliver@trezo.com</td>
-                                                <td class="text-body">+1 555-123-4567</td>
-                                                <td class="text-body">Jun 19, 2024</td>
-                                                <td class="text-body">$6855</td>
-                                                <td class="text-body">$125</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#853</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-7.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Carolyn Barnes</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>carolyn@trezo.com</td>
-                                                <td class="text-body">+1 555-987-6543</td>
-                                                <td class="text-body">Jun 18, 2024</td>
-                                                <td class="text-body">$258</td>
-                                                <td class="text-body">$99</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#852</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-8.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Donna Miller</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>donna@trezo.com</td>
-                                                <td class="text-body">+1 555-456-7890</td>
-                                                <td class="text-body">Jun 17, 2024</td>
-                                                <td class="text-body">$3,890</td>
-                                                <td class="text-body">$0</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#851</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-9.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Barbara Cross</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>barbara@trezo.com</td>
-                                                <td class="text-body">+1 555-369-7878</td>
-                                                <td class="text-body">Jun 16, 2024</td>
-                                                <td class="text-body">$2,500</td>
-                                                <td class="text-body">$279</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#850</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-10.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Rebecca Block</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>rebecca@trezo.com</td>
-                                                <td class="text-body">+1 555-658-4488</td>
-                                                <td class="text-body">Jun 15, 2024</td>
-                                                <td class="text-body">$8,200</td>
-                                                <td class="text-body">$0</td>
-                                                <td>
-                                                    <span class="badge bg-danger bg-opacity-10 text-danger p-2 fs-12 fw-normal">Deactive</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#849</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-11.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Ramiro McCarty</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>ramiro@trezo.com</td>
-                                                <td class="text-body">+1 555-558-9966</td>
-                                                <td class="text-body">Jun 14, 2024</td>
-                                                <td class="text-body">$640</td>
-                                                <td class="text-body">$46</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#848</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-12.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Robert Fairweather</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>robert@trezo.com</td>
-                                                <td class="text-body">+1 555-357-5888</td>
-                                                <td class="text-body">Jun 13, 2024</td>
-                                                <td class="text-body">$9,100</td>
-                                                <td class="text-body">$184</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#847</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-13.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Marcelino Haddock</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>marcelino@trezo.com</td>
-                                                <td class="text-body">+1 555-456-8877</td>
-                                                <td class="text-body">Jun 12, 2024</td>
-                                                <td class="text-body">$7,300</td>
-                                                <td class="text-body">$166</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#846</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-15.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Thomas Wilson</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>thomas@trezo.com</td>
-                                                <td class="text-body">+1 555-622-4488</td>
-                                                <td class="text-body">Jun 11, 2024</td>
-                                                <td class="text-body">$6,600</td>
-                                                <td class="text-body">$0</td>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal">Active</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault12">
-                                                        <label class="position-relative top-2 ms-1" for="flexCheckDefault12">#845</label>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="agents" class="d-flex align-items-center">
-                                                        <div class="flex-shrink-0">
-                                                            <img src="assets/images/user-16.jpg" class="wh-34 rounded-circle" alt="user">
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-2 position-relative top-1">
-                                                            <h6 class="mb-0 fs-14 fw-medium">Nathaniel Hulsey</h6>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>nathaniel@trezo.com</td>
-                                                <td class="text-body">+1 555-225-4488</td>
-                                                <td class="text-body">Jun 10, 2024</td>
-                                                <td class="text-body">$2,800</td>
-                                                <td class="text-body">$55</td>
-                                                <td>
-                                                    <span class="badge bg-danger bg-opacity-10 text-danger p-2 fs-12 fw-normal">Deactive</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="p-4 pt-lg-4">
-                                    <div class="d-flex justify-content-center justify-content-sm-between align-items-center text-center flex-wrap gap-2 showing-wrap">
-                                        <span class="fs-12 fw-medium">Showing 10 of 30 Results</span>
-        
-                                        <nav aria-label="Page navigation example">
-                                            <ul class="pagination mb-0 justify-content-center">
-                                                <li class="page-item">
-                                                    <a class="page-link icon" href="contacts-2" aria-label="Previous">
-                                                        <i class="material-symbols-outlined">keyboard_arrow_left</i>
-                                                    </a>
-                                                </li>
-                                                <li class="page-item"><a class="page-link active" href="contacts-2">1</a></li>
-                                                <li class="page-item"><a class="page-link" href="contacts-2">2</a></li>
-                                                <li class="page-item"><a class="page-link" href="contacts-2">3</a></li>
-                                                <li class="page-item"><a class="page-link" href="contacts-2">4</a></li>
-                                                <li class="page-item">
-                                                    <a class="page-link icon" href="contacts-2" aria-label="Next">
-                                                        <i class="material-symbols-outlined">keyboard_arrow_right</i>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </nav>
+                            <form action="{{ route('customers.index') }}" method="get" class="koc-filter-card mb-4">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-xl-6 col-lg-6 col-md-12">
+                                        <div class="position-relative table-src-form me-0">
+                                            <input
+                                                type="text"
+                                                name="q"
+                                                value="{{ $search }}"
+                                                class="form-control"
+                                                placeholder="Cari nama, HP, email, kota..."
+                                            >
+                                            <i class="material-symbols-outlined position-absolute top-50 start-0 translate-middle-y">search</i>
+                                        </div>
                                     </div>
+
+                                    <div class="col-xl-3 col-lg-3 col-md-6">
+                                        <select name="status" class="form-select form-control">
+                                            <option value="">Semua Status</option>
+                                            <option value="active" @selected($status === 'active')>Aktif</option>
+                                            <option value="inactive" @selected($status === 'inactive')>Nonaktif</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-xl-auto col-lg-auto col-md-auto">
+                                        <button type="submit" class="btn btn-outline-primary w-100">
+                                            Filter
+                                        </button>
+                                    </div>
+
+                                    <div class="col-xl-auto col-lg-auto col-md-auto">
+                                        <a href="{{ route('customers.index') }}" class="btn btn-outline-secondary w-100">
+                                            Reset
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <div class="d-flex flex-column gap-3">
+                                @forelse ($customers as $customer)
+                                    <div class="koc-customer-card">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                            <div class="d-flex align-items-start">
+                                                <div class="koc-avatar bg-primary bg-opacity-10 text-primary me-3">
+                                                    <i class="material-symbols-outlined">person</i>
+                                                </div>
+
+                                                <div>
+                                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                                        <h6 class="fw-semibold fs-16 mb-0">{{ $customer->name }}</h6>
+
+                                                        <span class="badge {{ $customer->status_badge_class }} p-2 fs-12 fw-normal">
+                                                            {{ $customer->status_label }}
+                                                        </span>
+                                                    </div>
+
+                                                    <p class="text-body fs-13 mb-2">
+                                                        {{ $customer->customer_code }}
+                                                    </p>
+
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                            HP: {{ $customer->phone ?: '-' }}
+                                                        </span>
+
+                                                        <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                            Email: {{ $customer->email ?: '-' }}
+                                                        </span>
+
+                                                        <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                            Kota: {{ $customer->city ?: '-' }}
+                                                        </span>
+                                                    </div>
+
+                                                    @if ($customer->address)
+                                                        <p class="text-body fs-13 mb-0 mt-2">
+                                                            {{ $customer->address }}
+                                                        </p>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <a href="{{ route('customers.show', $customer) }}" class="btn btn-outline-primary btn-sm">
+                                                    Detail
+                                                </a>
+
+                                                <a href="{{ route('customers.edit', $customer) }}" class="btn btn-outline-secondary btn-sm">
+                                                    Edit
+                                                </a>
+
+                                                <form action="{{ route('customers.destroy', $customer) }}" method="post" onsubmit="return confirm('Hapus pelanggan ini?')">
+                                                    @csrf
+                                                    @method('DELETE')
+
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                        Hapus
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-center py-5 border rounded-3">
+                                        <i class="material-symbols-outlined text-body fs-40 mb-2">groups</i>
+                                        <h6 class="fw-semibold mb-1">Belum ada pelanggan</h6>
+                                        <p class="text-body mb-3 fs-13">
+                                            Tambahkan pelanggan agar riwayat transaksi dan kontak lebih mudah dikelola.
+                                        </p>
+                                        <a href="{{ route('customers.create') }}" class="btn btn-primary text-white">
+                                            Tambah Pelanggan
+                                        </a>
+                                    </div>
+                                @endforelse
+                            </div>
+
+                            <div class="d-flex justify-content-center justify-content-sm-between align-items-center text-center flex-wrap gap-2 showing-wrap mt-4">
+                                <span class="fs-13 fw-medium">
+                                    Menampilkan {{ $customers->count() }} dari {{ $customers->total() }} pelanggan
+                                </span>
+
+                                <div>
+                                    {{ $customers->links('pagination::bootstrap-5') }}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-				<div class="flex-grow-1"></div>
+                <div class="flex-grow-1"></div>
 
-				<!-- Start Footer Area -->
-				@include('partials.footer')
-				<!-- End Footer Area -->
-			</div>
-		</div>
+                @include('partials.footer')
+            </div>
+        </div>
 
-        
         @include('partials.theme_settings')
         @include('partials.scripts')
     </body>

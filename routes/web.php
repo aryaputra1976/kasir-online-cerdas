@@ -19,6 +19,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PublicOrderTrackingController;
 use App\Http\Controllers\PublicOrderController;
 use App\Http\Controllers\OnlineOrderReportController;
+use App\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -83,9 +84,19 @@ Route::view('/produk/create', 'create-product')->name('products.create');
 Route::view('/produk/edit', 'edit-product')->name('products.edit');
 Route::view('/produk/detail', 'product-details')->name('products.show');
 
-Route::view('/pelanggan', 'customers')->name('customers.index');
-Route::view('/pelanggan/detail', 'customer-details')->name('customers.show');
-
+Route::prefix('pelanggan')
+    ->name('customers.')
+    ->controller(CustomerController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/tambah', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{customer}', 'show')->name('show');
+        Route::get('/{customer}/edit', 'edit')->name('edit');
+        Route::put('/{customer}', 'update')->name('update');
+        Route::delete('/{customer}', 'destroy')->name('destroy');
+    });
+    
 /*
 |--------------------------------------------------------------------------
 | Transaksi
