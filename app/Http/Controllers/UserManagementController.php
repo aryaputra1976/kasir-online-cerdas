@@ -79,7 +79,7 @@ class UserManagementController extends Controller
         User::create($validated);
 
         return redirect()
-            ->route('settings.users')
+            ->route('settings.users.index')
             ->with('success', 'User berhasil ditambahkan.');
     }
 
@@ -103,7 +103,7 @@ class UserManagementController extends Controller
         $user->update($validated);
 
         return redirect()
-            ->route('settings.users')
+            ->route('settings.users.index')
             ->with('success', 'User berhasil diperbarui.');
     }
 
@@ -111,14 +111,14 @@ class UserManagementController extends Controller
     {
         if (User::count() <= 1) {
             return redirect()
-                ->route('settings.users')
+                ->route('settings.users.index')
                 ->with('error', 'User terakhir tidak boleh dihapus.');
         }
 
         $user->delete();
 
         return redirect()
-            ->route('settings.users')
+            ->route('settings.users.index')
             ->with('success', 'User berhasil dihapus.');
     }
 
