@@ -11,4 +11,12 @@
 <link rel="stylesheet" type="text/css" href="{{ url('/assets/css/jsvectormap.min.css') }}" />
 <link rel="stylesheet" type="text/css" href="{{ url('/assets/css/lightpick.css') }}" />
 <link rel="stylesheet" type="text/css" href="{{ url('/assets/scss/style.css') }}" />
-<link rel="icon" type="image/png" href="{{ url('/assets/images/favicon.png') }}">
+@php
+    $faviconStoreSetting = $storeSetting ?? \App\Models\StoreSetting::current();
+
+    $faviconUrl = $faviconStoreSetting?->logo_path
+        ? asset('storage/' . $faviconStoreSetting->logo_path)
+        : url('/assets/images/favicon.png');
+@endphp
+
+<link rel="icon" type="image/png" href="{{ $faviconUrl }}">
