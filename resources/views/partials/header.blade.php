@@ -345,7 +345,7 @@
                                     <li>
                                         <a
                                             class="dropdown-item d-flex align-items-center text-body"
-                                            href="{{ route('settings.users') }}"
+                                            href="{{ route('settings.users.index') }}"
                                         >
                                             <i class="material-symbols-outlined">group</i>
                                             <span class="ms-2">User & Role</span>

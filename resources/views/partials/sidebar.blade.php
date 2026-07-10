@@ -204,7 +204,7 @@
                     </li>
 
                     <li class="menu-item">
-                        <a href="{{ route('settings.users') }}" class="menu-link {{ Request::is('pengaturan/user-role') || Request::is('pengaturan/tambah-user') ? 'active' : '' }}">
+                        <a href="{{ route('settings.users.index') }}" class="menu-link {{ Request::is('pengaturan/user-role') ? 'active' : '' }}">
                             User &amp; Role
                         </a>
                     </li>
