@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Trezo - Laravel Admin Dashboard Template</title>
+        <title>Kasir Online Cerdas - POS & Order Online UMKM</title>
         <!-- Styles -->
         @include('partials.styles')
     </head>
@@ -61,7 +61,7 @@
                                         </button>
                                     </div>
                                     <div class="form-group">
-                                        <p>Don’t have an account. <a href="register" class="fw-medium text-primary text-decoration-none">Register</a></p>
+                                        <p>Donâ€™t have an account. <a href="register" class="fw-medium text-primary text-decoration-none">Register</a></p>
                                     </div>
                                 </form>
                             </div>
@@ -80,3 +80,4 @@
         @include('partials.scripts')
     </body>
 </html>
+

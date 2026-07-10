@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Trezo - Laravel Admin Dashboard Template</title>
+        <title>Kasir Online Cerdas - POS & Order Online UMKM</title>
         <!-- Styles -->
         @include('partials.styles')
     </head>
@@ -282,3 +282,4 @@
         @include('partials.scripts')
     </body>
 </html>
+

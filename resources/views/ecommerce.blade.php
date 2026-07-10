@@ -813,3 +813,4 @@ $paymentMethodLabel = function (?string $method) {
         @include('partials.scripts')
     </body>
 </html>
+

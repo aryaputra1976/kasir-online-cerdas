@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -449,7 +449,7 @@
                                     <option value="">Pilih Produk</option>
                                     @foreach ($products as $product)
                                         <option value="{{ $product->id }}" @selected((int) old('product_id') === $product->id)>
-                                            {{ $product->name }} — Stok {{ $product->stock }} {{ $product->unit }}
+                                            {{ $product->name }} â€” Stok {{ $product->stock }} {{ $product->unit }}
                                         </option>
                                     @endforeach
                                 </select>

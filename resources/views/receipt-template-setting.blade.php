@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -250,7 +250,7 @@
                                                         @checked(old('receipt_show_powered_by', $setting->receipt_show_powered_by))
                                                     >
                                                     <label class="form-check-label fw-medium" for="receipt_show_powered_by">
-                                                        Tampilkan teks “Dicetak dari nama toko”
+                                                        Tampilkan teks â€œDicetak dari nama tokoâ€
                                                     </label>
                                                 </div>
                                             </div>

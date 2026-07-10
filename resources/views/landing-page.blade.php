@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Trezo - Laravel Admin Dashboard Template</title>
+        <title>Kasir Online Cerdas - POS & Order Online UMKM</title>
         <!-- Styles -->
         @include('partials.styles')
     </head>
@@ -566,7 +566,7 @@
             <div class="container">
                 <div class="section-title mw-630">
                     <span class="top-title">
-                        <span>FAQ’s</span>
+                        <span>FAQâ€™s</span>
                     </span>
                     <h2>Inspiring Feedback: What Users Love About Trezo Dashboard</h2>
                 </div>
@@ -838,7 +838,7 @@
         <!-- Start CopyRight Area -->
         <div class="copyright-area bg-white text-center py-4">
             <div class="container">
-                <p class="fs-14">© <span class="text-primary-div">Trezo</span> is Proudly Owned by <a href="https://envytheme.com/" target="_blank" class="text-decoration-none text-primary">EnvyTheme</a></p>
+                <p class="fs-14">Â© <span class="text-primary-div">Trezo</span> is Proudly Owned by <a href="https://envytheme.com/" target="_blank" class="text-decoration-none text-primary">EnvyTheme</a></p>
             </div>
         </div>
         <!-- End CopyRight Area -->
@@ -852,3 +852,4 @@
         @include('partials.scripts')
     </body>
 </html>
+

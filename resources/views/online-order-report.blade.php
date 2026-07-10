@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="id">
 <head>
     @include('partials.styles')
@@ -402,7 +402,7 @@
                                         <p class="mb-1">
                                             <strong>{{ $read($order, $columns['customer_name'], '-') }}</strong>
                                             <span class="text-muted">
-                                                — {{ $read($order, $columns['customer_phone'], '-') }}
+                                                â€” {{ $read($order, $columns['customer_phone'], '-') }}
                                             </span>
                                         </p>
 

@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Trezo - Laravel Admin Dashboard Template</title>
+        <title>Kasir Online Cerdas - POS & Order Online UMKM</title>
         <!-- Styles -->
         @include('partials.styles')
     </head>
@@ -80,7 +80,7 @@
                                     <span class="mb-2 pb-1 d-block">25 Mar 2024 - 2:21PM: <span class="text-secondary">Your order delivered.</span></span>
                                     <span class="mb-2 pb-1 d-block">24 Mar 2024 - 3:45PM: <span class="text-secondary">Your order shipped.</span></span>
                                     <span class="mb-2 pb-1 d-block">23 Mar 2024 - 10:35AM: <span class="text-secondary">Your order is on the way for deliver.</span></span>
-                                    <span class="d-block">22 Mar 2024 - 11:35AM: <span class="text-secondary">Your order is now on warehouse. It’s being ready for shipped.</span></span>
+                                    <span class="d-block">22 Mar 2024 - 11:35AM: <span class="text-secondary">Your order is now on warehouse. Itâ€™s being ready for shipped.</span></span>
                                 </div>
                             </div>
                         </div>
@@ -150,3 +150,4 @@
         @include('partials.scripts')
     </body>
 </html>
+

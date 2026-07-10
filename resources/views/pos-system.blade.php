@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -312,7 +312,7 @@
                                                         <div>
                                                             <h6 class="fw-semibold fs-14 mb-1">{{ $item['name'] }}</h6>
                                                             <span class="fs-12 text-body">
-                                                                {{ $item['sku'] }} · {{ $rupiah($item['selling_price']) }}
+                                                                {{ $item['sku'] }} Â· {{ $rupiah($item['selling_price']) }}
                                                             </span>
                                                         </div>
 
@@ -402,7 +402,7 @@
                                                         <option value="{{ $customer->id }}" @selected((string) old('customer_id') === (string) $customer->id)>
                                                             {{ $customer->name }}
                                                             @if ($customer->phone)
-                                                                — {{ $customer->phone }}
+                                                                â€” {{ $customer->phone }}
                                                             @endif
                                                         </option>
                                                     @endforeach

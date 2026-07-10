@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -260,7 +260,7 @@
 
                     <div>
                         <a href="{{ route('public.checkout') }}" class="btn">
-                            Keranjang · {{ number_format($totals['total_items'], 0, ',', '.') }} item
+                            Keranjang Â· {{ number_format($totals['total_items'], 0, ',', '.') }} item
                         </a>
                     </div>
                 </div>

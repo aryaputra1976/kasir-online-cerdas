@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -224,7 +224,7 @@
                                                 <p class="text-body mb-1">
                                                     {{ $order->customer_name }}
                                                     @if ($order->customer_phone)
-                                                        · {{ $order->customer_phone }}
+                                                        Â· {{ $order->customer_phone }}
                                                     @endif
                                                 </p>
 
