@@ -1,39 +1,51 @@
 <?php
 
+use App\Http\Controllers\BestSellingProductReportController;
 use App\Http\Controllers\CategoryController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OnlineOrderController;
+use App\Http\Controllers\OnlineOrderReportController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentMethodSettingController;
+use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfitLossReportController;
+use App\Http\Controllers\PublicOrderController;
+use App\Http\Controllers\PublicOrderTrackingController;
+use App\Http\Controllers\ReceiptTemplateController;
+use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\StockMovementController;
-use App\Http\Controllers\PosController;
-use App\Http\Controllers\SalesReportController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\BestSellingProductReportController;
 use App\Http\Controllers\StockReportController;
-use App\Http\Controllers\ProfitLossReportController;
 use App\Http\Controllers\StoreSettingController;
-use App\Http\Controllers\ReceiptTemplateController;
-use App\Http\Controllers\PaymentMethodSettingController;
-use App\Http\Controllers\OnlineOrderController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\PublicOrderTrackingController;
-use App\Http\Controllers\PublicOrderController;
-use App\Http\Controllers\OnlineOrderReportController;
-use App\Http\Controllers\CustomerController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
 | Kasir Online Cerdas Laravel
 |--------------------------------------------------------------------------
 |
-| Route awal masih memakai view bawaan Trezo sebagai placeholder.
-| Nanti setelah modul dibuat, route ini akan diarahkan ke Controller asli.
+| Route utama aplikasi Kasir Online Cerdas.
 |
 */
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Landing Page Produk
+|--------------------------------------------------------------------------
+|
+| Halaman publik untuk memperkenalkan dan mendemokan aplikasi.
+| Halaman ini tidak menggunakan layout admin Trezo.
+|
+*/
+
+Route::view('/demo-produk', 'demo-produk')
+    ->name('product.demo');
 
 /*
 |--------------------------------------------------------------------------
@@ -52,7 +64,8 @@ Route::view('/register', 'register')->name('register');
 |--------------------------------------------------------------------------
 */
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->name('dashboard');
 
 /*
 |--------------------------------------------------------------------------
@@ -80,9 +93,14 @@ Route::prefix('produk')
         Route::delete('/{product}', 'destroy')->name('destroy');
     });
 
-Route::view('/produk/create', 'create-product')->name('products.create');
-Route::view('/produk/edit', 'edit-product')->name('products.edit');
-Route::view('/produk/detail', 'product-details')->name('products.show');
+Route::view('/produk/create', 'create-product')
+    ->name('products.create');
+
+Route::view('/produk/edit', 'edit-product')
+    ->name('products.edit');
+
+Route::view('/produk/detail', 'product-details')
+    ->name('products.show');
 
 Route::prefix('pelanggan')
     ->name('customers.')
@@ -96,7 +114,7 @@ Route::prefix('pelanggan')
         Route::put('/{customer}', 'update')->name('update');
         Route::delete('/{customer}', 'destroy')->name('destroy');
     });
-    
+
 /*
 |--------------------------------------------------------------------------
 | Transaksi
@@ -122,12 +140,15 @@ Route::prefix('order-online')
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{order}', 'show')->name('show');
-        Route::patch('/{order}/payment/confirm', 'confirmPayment')->name('payment.confirm');
-        Route::patch('/{order}/payment/reject', 'rejectPayment')->name('payment.reject');
+        Route::patch('/{order}/payment/confirm', 'confirmPayment')
+            ->name('payment.confirm');
+        Route::patch('/{order}/payment/reject', 'rejectPayment')
+            ->name('payment.reject');
         Route::patch('/{order}/process', 'process')->name('process');
         Route::patch('/{order}/complete', 'complete')->name('complete');
         Route::patch('/{order}/cancel', 'cancel')->name('cancel');
-        Route::patch('/{order}/convert-sale', 'convertToSale')->name('convert-sale');
+        Route::patch('/{order}/convert-sale', 'convertToSale')
+            ->name('convert-sale');
     });
 
 Route::prefix('pembayaran')
@@ -139,16 +160,24 @@ Route::prefix('pembayaran')
         Route::patch('/{order}/confirm', 'confirm')->name('confirm');
         Route::patch('/{order}/reject', 'reject')->name('reject');
     });
+
 /*
 |--------------------------------------------------------------------------
 | Stok
 |--------------------------------------------------------------------------
 */
 
-Route::get('/stok-barang', [StockController::class, 'index'])->name('stocks.index');
-Route::get('/mutasi-stok', [StockMovementController::class, 'index'])->name('stocks.movements');
-Route::post('/mutasi-stok', [StockMovementController::class, 'store'])->name('stocks.movements.store');
-Route::get('/stok-menipis', [StockController::class, 'low'])->name('stocks.low');
+Route::get('/stok-barang', [StockController::class, 'index'])
+    ->name('stocks.index');
+
+Route::get('/mutasi-stok', [StockMovementController::class, 'index'])
+    ->name('stocks.movements');
+
+Route::post('/mutasi-stok', [StockMovementController::class, 'store'])
+    ->name('stocks.movements.store');
+
+Route::get('/stok-menipis', [StockController::class, 'low'])
+    ->name('stocks.low');
 
 /*
 |--------------------------------------------------------------------------
@@ -156,17 +185,29 @@ Route::get('/stok-menipis', [StockController::class, 'low'])->name('stocks.low')
 |--------------------------------------------------------------------------
 */
 
-Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])->name('sales.report');
-Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])->name('sales.report.export');
-Route::get('/laporan/produk-terlaris', [BestSellingProductReportController::class, 'index'])->name('best-products.report');
-Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])->name('profit-loss.report');
-Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('stock.report');
+Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])
+    ->name('sales.report');
+
+Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])
+    ->name('sales.report.export');
+
+Route::get(
+    '/laporan/produk-terlaris',
+    [BestSellingProductReportController::class, 'index']
+)->name('best-products.report');
+
+Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])
+    ->name('profit-loss.report');
+
+Route::get('/laporan/stok', [StockReportController::class, 'index'])
+    ->name('stock.report');
 
 Route::get('/laporan/order-online', [OnlineOrderReportController::class, 'index'])
     ->name('reports.online-orders.index');
 
 Route::get('/laporan/order-online/export', [OnlineOrderReportController::class, 'export'])
     ->name('reports.online-orders.export');
+
 /*
 |--------------------------------------------------------------------------
 | Pengaturan
@@ -182,28 +223,41 @@ Route::put('/pengaturan/profil-toko', [StoreSettingController::class, 'update'])
 Route::delete('/pengaturan/profil-toko/logo', [StoreSettingController::class, 'removeLogo'])
     ->name('settings.store.logo.destroy');
 
-Route::view('/pengaturan/user-role', 'users-list')->name('settings.users');
-Route::view('/pengaturan/tambah-user', 'add-user')->name('settings.users.create');
+Route::view('/pengaturan/user-role', 'users-list')
+    ->name('settings.users');
+
+Route::view('/pengaturan/tambah-user', 'add-user')
+    ->name('settings.users.create');
+
 Route::get('/pengaturan/template-struk', [ReceiptTemplateController::class, 'edit'])
     ->name('settings.receipt-template');
 
 Route::put('/pengaturan/template-struk', [ReceiptTemplateController::class, 'update'])
     ->name('settings.receipt-template.update');
 
-Route::get('/pengaturan/metode-pembayaran', [PaymentMethodSettingController::class, 'edit'])
-    ->name('settings.payment-methods');
+Route::get(
+    '/pengaturan/metode-pembayaran',
+    [PaymentMethodSettingController::class, 'edit']
+)->name('settings.payment-methods');
 
-Route::put('/pengaturan/metode-pembayaran', [PaymentMethodSettingController::class, 'update'])
-    ->name('settings.payment-methods.update');
+Route::put(
+    '/pengaturan/metode-pembayaran',
+    [PaymentMethodSettingController::class, 'update']
+)->name('settings.payment-methods.update');
 
-Route::delete('/pengaturan/metode-pembayaran/qris', [PaymentMethodSettingController::class, 'removeQris'])
-    ->name('settings.payment-methods.qris.destroy');
+Route::delete(
+    '/pengaturan/metode-pembayaran/qris',
+    [PaymentMethodSettingController::class, 'removeQris']
+)->name('settings.payment-methods.qris.destroy');
+
 /*
 |--------------------------------------------------------------------------
 | Halaman Publik Order Online
 |--------------------------------------------------------------------------
-| Halaman ini untuk customer. Untuk sementara masih pakai placeholder Trezo.
-| Nanti akan dibuat custom mobile-friendly.
+|
+| Halaman publik untuk pelanggan melihat menu, membuat pesanan,
+| melakukan checkout, dan melacak status order.
+|
 */
 
 Route::get('/menu', [PublicOrderController::class, 'menu'])
@@ -233,19 +287,24 @@ Route::delete('/menu/cart', [PublicOrderController::class, 'clearCart'])
 Route::get('/tracking/{token}', [PublicOrderTrackingController::class, 'show'])
     ->name('public.tracking');
 
-Route::post('/tracking/{token}/payment-proof', [PublicOrderTrackingController::class, 'uploadPaymentProof'])
-    ->name('public.payment-proof.upload');
+Route::post(
+    '/tracking/{token}/payment-proof',
+    [PublicOrderTrackingController::class, 'uploadPaymentProof']
+)->name('public.payment-proof.upload');
 
 /*
 |--------------------------------------------------------------------------
 | Demo Trezo
 |--------------------------------------------------------------------------
+|
 | Route ini supaya halaman demo Trezo lama tetap bisa dibuka jika dibutuhkan.
+|
 | Contoh:
 | /demo/pos-system
 | /demo/products-list
 | /demo/orders
 | /demo/reports
+|
 */
 
 Route::get('/demo/{page}', function (string $page) {
