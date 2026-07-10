@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use App\Models\Customer;
 
 class PosController extends Controller
 {
@@ -48,6 +49,11 @@ class PosController extends Controller
             ->orderBy('name')
             ->get();
 
+        $customers = Customer::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'customer_code', 'name', 'phone']);
+
         $storeSetting = StoreSetting::current();
         $taxPercentage = (float) $storeSetting->tax_percentage;
         $paymentMethods = $this->availablePaymentMethods($storeSetting);
@@ -58,6 +64,7 @@ class PosController extends Controller
         return view('pos-system', compact(
             'products',
             'categories',
+            'customers',
             'cart',
             'totals',
             'search',
@@ -183,6 +190,7 @@ class PosController extends Controller
         $availablePaymentMethodKeys = array_keys($this->availablePaymentMethods($storeSetting));
 
         $validated = $request->validate([
+            'customer_id' => ['nullable', 'integer', Rule::exists('customers', 'id')],
             'customer_name' => ['nullable', 'string', 'max:191'],
             'payment_method' => [
                 'required',
@@ -231,7 +239,19 @@ class PosController extends Controller
                 ]);
             }
 
+            $selectedCustomer = null;
+
+            if (! empty($validated['customer_id'])) {
+                $selectedCustomer = Customer::query()
+                    ->where('is_active', true)
+                    ->find($validated['customer_id']);
+            }
+
+            $customerName = $selectedCustomer?->name
+                ?: ($validated['customer_name'] ?? null);
+
             $sale = Sale::create([
+                'customer_id' => $selectedCustomer?->id,
                 'invoice_no' => $this->generateInvoiceNo(),
                 'sale_date' => now(),
                 'customer_name' => $validated['customer_name'] ?? null,
@@ -245,6 +265,12 @@ class PosController extends Controller
                 'status' => Sale::STATUS_COMPLETED,
                 'note' => $validated['note'] ?? null,
             ]);
+
+            if ($selectedCustomer) {
+                $selectedCustomer->update([
+                    'last_transaction_at' => now(),
+                ]);
+            }
 
             foreach ($cart as $item) {
                 $product = Product::query()

@@ -19,6 +19,7 @@ class OnlineOrder extends Model
     public const PAYMENT_REJECTED = 'REJECTED';
 
     protected $fillable = [
+        'customer_id',
         'order_no',
         'tracking_token',
         'customer_name',
@@ -72,6 +73,11 @@ class OnlineOrder extends Model
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function getPaymentStatusLabelAttribute(): string

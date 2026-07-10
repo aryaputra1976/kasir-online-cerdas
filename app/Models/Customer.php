@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Customer extends Model
 {
@@ -34,4 +35,14 @@ class Customer extends Model
             ? 'bg-success bg-opacity-10 text-success'
             : 'bg-danger bg-opacity-10 text-danger';
     }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    public function onlineOrders(): HasMany
+    {
+        return $this->hasMany(OnlineOrder::class);
+    }    
 }

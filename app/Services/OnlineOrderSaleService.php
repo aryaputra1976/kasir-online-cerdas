@@ -41,6 +41,7 @@ class OnlineOrderSaleService
             }
 
             $sale = Sale::create([
+                'customer_id' => $lockedOrder->customer_id,
                 'invoice_no' => $this->generateOnlineSaleInvoiceNo(),
                 'sale_date' => $lockedOrder->completed_at ?: now(),
                 'customer_name' => $lockedOrder->customer_name ?: 'Customer Online',

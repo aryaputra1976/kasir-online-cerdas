@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use App\Models\Customer;
 
 class PublicOrderController extends Controller
 {
@@ -212,6 +213,7 @@ class PublicOrderController extends Controller
 
         $order = DB::transaction(function () use ($validated, $cartItems, $totals) {
             $order = OnlineOrder::create([
+                'customer_id' => $customer->id,
                 'order_no' => $this->generateOrderNo(),
                 'tracking_token' => $this->generateTrackingToken(),
 
@@ -377,6 +379,60 @@ class PublicOrderController extends Controller
         }
 
         return $methods;
+    }
+
+    private function syncCustomerFromOnlineOrder(array $data): Customer
+    {
+        $phone = trim((string) $data['customer_phone']);
+        $email = trim((string) ($data['customer_email'] ?? ''));
+        $name = trim((string) $data['customer_name']);
+        $address = trim((string) $data['customer_address']);
+
+        $customer = Customer::query()
+            ->where('phone', $phone)
+            ->when($email !== '', function ($query) use ($email) {
+                $query->orWhere('email', $email);
+            })
+            ->first();
+
+        if (! $customer) {
+            return Customer::create([
+                'customer_code' => $this->generateCustomerCode(),
+                'name' => $name,
+                'phone' => $phone,
+                'email' => $email !== '' ? $email : null,
+                'address' => $address,
+                'is_active' => true,
+                'last_transaction_at' => now(),
+            ]);
+        }
+
+        $customer->update([
+            'name' => $name ?: $customer->name,
+            'phone' => $phone ?: $customer->phone,
+            'email' => $email !== '' ? $email : $customer->email,
+            'address' => $address ?: $customer->address,
+            'is_active' => true,
+            'last_transaction_at' => now(),
+        ]);
+
+        return $customer;
+    }
+
+    private function generateCustomerCode(): string
+    {
+        $prefix = 'CUST-' . now()->format('Ymd') . '-';
+
+        $lastNumber = Customer::query()
+            ->where('customer_code', 'like', $prefix . '%')
+            ->count() + 1;
+
+        do {
+            $code = $prefix . str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
+            $lastNumber++;
+        } while (Customer::where('customer_code', $code)->exists());
+
+        return $code;
     }
 
     private function generateOrderNo(): string

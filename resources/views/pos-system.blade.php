@@ -395,7 +395,26 @@
                                             </div>
 
                                             <div class="mb-3">
-                                                <label class="form-label">Nama Pelanggan</label>
+                                                <label class="form-label">Pilih Pelanggan</label>
+                                                <select name="customer_id" class="form-select">
+                                                    <option value="">Customer Umum / Manual</option>
+                                                    @foreach ($customers as $customer)
+                                                        <option value="{{ $customer->id }}" @selected((string) old('customer_id') === (string) $customer->id)>
+                                                            {{ $customer->name }}
+                                                            @if ($customer->phone)
+                                                                — {{ $customer->phone }}
+                                                            @endif
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+
+                                                <div class="fs-13 text-body mt-1">
+                                                    Pilih dari master pelanggan, atau isi nama manual di bawah.
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Nama Pelanggan Manual</label>
                                                 <input
                                                     type="text"
                                                     name="customer_name"
