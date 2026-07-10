@@ -4,196 +4,234 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Kasir Online Cerdas - POS & Order Online UMKM</title>
-        <!-- Styles -->
+        <title>{{ $mode === 'edit' ? 'Edit User' : 'Tambah User' }} - Kasir Online Cerdas</title>
+
         @include('partials.styles')
     </head>
+
     <body class="boxed-size">
         @include('partials.preloader')
         @include('partials.sidebar')
 
+        @php
+            $selectedRole = old('role', $user->role ?: \App\Models\User::ROLE_KASIR);
+            $selectedStatus = (string) old('is_active', $user->exists ? ($user->is_active ? '1' : '0') : '1');
+        @endphp
+
         <div class="container-fluid">
-			<div class="main-content d-flex flex-column">
-				<!-- Start Header Area -->
-				@include('partials.header')
-				<!-- End Header Area -->
+            <div class="main-content d-flex flex-column">
+                @include('partials.header')
 
-				<div class="main-content-container overflow-hidden">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                        <h3 class="mb-0">Add User</h3>
+                <div class="main-content-container overflow-hidden">
+                    <div class="d-flex justify-content-between align-items-start align-items-lg-center flex-wrap gap-3 mb-4">
+                        <div>
+                            <h3 class="mb-1">
+                                {{ $mode === 'edit' ? 'Edit User' : 'Tambah User' }}
+                            </h3>
+                            <p class="text-body mb-0">
+                                Kelola akun pengguna, role akses, dan status aktif aplikasi.
+                            </p>
+                        </div>
 
-                        <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
-                            <ol class="breadcrumb align-items-center mb-0 lh-1">
-                                <li class="breadcrumb-item">
-                                    <a href="#" class="d-flex align-items-center text-decoration-none">
-                                        <i class="ri-home-4-line fs-18 text-primary me-1"></i>
-                                        <span class="text-secondary fw-medium hover">Dashboard</span>
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">User</span>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">Add User</span>
-                                </li>
-                            </ol>
-                        </nav>
+                        <a href="{{ route('settings.users.index') }}" class="btn btn-outline-secondary">
+                            Kembali
+                        </a>
                     </div>
 
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8">
+                    @if ($errors->any())
+                        <div class="alert alert-danger border-0 rounded-3 mb-4">
+                            <strong>Data belum valid.</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <div class="row g-4">
+                        <div class="col-xl-8">
                             <div class="card bg-white border-0 rounded-3 mb-4">
                                 <div class="card-body p-4">
-                                    <form>
-                                        <div class="row">
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">User IDe</label>
-                                                    <input type="text" class="form-control h-55" placeholder="Enter user id">
-                                                </div>
+                                    <form
+                                        action="{{ $mode === 'edit' ? route('settings.users.update', $user) : route('settings.users.store') }}"
+                                        method="post"
+                                    >
+                                        @csrf
+
+                                        @if ($mode === 'edit')
+                                            @method('PUT')
+                                        @endif
+
+                                        <div class="row g-3">
+                                            <div class="col-lg-6">
+                                                <label class="form-label fs-13 fw-medium">
+                                                    Nama User <span class="text-danger">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="name"
+                                                    value="{{ old('name', $user->name) }}"
+                                                    class="form-control"
+                                                    placeholder="Contoh: Admin Toko"
+                                                    required
+                                                >
                                             </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">User Name</label>
-                                                    <input type="text" class="form-control h-55" placeholder="Enter user name">
-                                                </div>
+
+                                            <div class="col-lg-6">
+                                                <label class="form-label fs-13 fw-medium">
+                                                    Email <span class="text-danger">*</span>
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    name="email"
+                                                    value="{{ old('email', $user->email) }}"
+                                                    class="form-control"
+                                                    placeholder="admin@email.com"
+                                                    required
+                                                >
                                             </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Email Address</label>
-                                                    <input type="email" class="form-control h-55" placeholder="Enter email address">
-                                                </div>
+
+                                            <div class="col-lg-6">
+                                                <label class="form-label fs-13 fw-medium">Nomor HP</label>
+                                                <input
+                                                    type="text"
+                                                    name="phone"
+                                                    value="{{ old('phone', $user->phone) }}"
+                                                    class="form-control"
+                                                    placeholder="081234567890"
+                                                >
                                             </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Location</label>
-                                                    <select class="form-select form-control h-55" aria-label="Default select example">
-                                                        <option selected>Select</option>
-                                                        <option value="1">New Zealand</option>
-                                                        <option value="2">Germany</option>
-                                                        <option value="3">United States</option>
-                                                        <option value="4">Switzerland</option>
-                                                    </select>
-                                                </div>
+
+                                            <div class="col-lg-6">
+                                                <label class="form-label fs-13 fw-medium">
+                                                    Role <span class="text-danger">*</span>
+                                                </label>
+                                                <select name="role" class="form-select form-control" required>
+                                                    @foreach ($roleOptions as $roleValue => $roleLabel)
+                                                        <option value="{{ $roleValue }}" @selected($selectedRole === $roleValue)>
+                                                            {{ $roleLabel }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                             </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Phone Number</label>
-                                                    <input type="text" class="form-control h-55" placeholder="+1 444 555 6699">
-                                                </div>
+
+                                            <div class="col-lg-6">
+                                                <label class="form-label fs-13 fw-medium">
+                                                    Status <span class="text-danger">*</span>
+                                                </label>
+                                                <select name="is_active" class="form-select form-control" required>
+                                                    <option value="1" @selected($selectedStatus === '1')>
+                                                        Aktif
+                                                    </option>
+                                                    <option value="0" @selected($selectedStatus === '0')>
+                                                        Nonaktif
+                                                    </option>
+                                                </select>
                                             </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Projects</label>
-                                                    <input type="text" class="form-control h-55" placeholder="Enter Projects">
-                                                </div>
+
+                                            <div class="col-lg-6"></div>
+
+                                            <div class="col-lg-6">
+                                                <label class="form-label fs-13 fw-medium">
+                                                    Password
+                                                    @if ($mode === 'create')
+                                                        <span class="text-danger">*</span>
+                                                    @endif
+                                                </label>
+                                                <input
+                                                    type="password"
+                                                    name="password"
+                                                    class="form-control"
+                                                    placeholder="{{ $mode === 'edit' ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter' }}"
+                                                    @required($mode === 'create')
+                                                >
                                             </div>
-                                            <div class="col-lg-12">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Add Some Info</label>
-                                                    <textarea rows="6" class="form-control" placeholder="Type here...."></textarea>
-                                                </div>
+
+                                            <div class="col-lg-6">
+                                                <label class="form-label fs-13 fw-medium">
+                                                    Konfirmasi Password
+                                                    @if ($mode === 'create')
+                                                        <span class="text-danger">*</span>
+                                                    @endif
+                                                </label>
+                                                <input
+                                                    type="password"
+                                                    name="password_confirmation"
+                                                    class="form-control"
+                                                    placeholder="Ulangi password"
+                                                    @required($mode === 'create')
+                                                >
                                             </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Facebook</label>
-                                                    <input type="text" class="form-control h-55" placeholder="https://www.facebook.com/">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">X</label>
-                                                    <input type="text" class="form-control h-55" placeholder="https://x.com/">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Linkedin</label>
-                                                    <input type="text" class="form-control h-55" placeholder="https://www.linkedin.com/">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">GitHub</label>
-                                                    <input type="text" class="form-control h-55" placeholder="https://www.github.com/">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-12">
-                                                <div class="form-group mb-4">
-                                                    <label class="label text-secondary">Upload Product Images</label>
-                                                    <div class="form-control h-100 text-center position-relative p-4 p-lg-5">
-                                                        <div class="product-upload">
-                                                            <label for="file-upload" class="file-upload mb-0">
-                                                                <i class="ri-folder-image-line bg-primary bg-opacity-10 p-2 rounded-1 text-primary"></i>
-                                                                <span class="d-block text-body fs-14">Drag and drop an image or <span class="text-primary text-decoration-underline">Browse</span></span>
-                                                            </label>
-                                                            <input id="file-upload" type="file">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-12">
-                                                <div class="d-flex flex-wrap gap-3">
-                                                    <button class="btn btn-danger py-2 px-4 fw-medium fs-16 text-white">Cancel</button>
-                                                    <button class="btn btn-primary py-2 px-4 fw-medium fs-16"> <i class="ri-add-line text-white fw-medium"></i> Add User</button>
-                                                </div>
-                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-end flex-wrap gap-2 mt-4">
+                                            <a href="{{ route('settings.users.index') }}" class="btn btn-outline-secondary">
+                                                Batal
+                                            </a>
+
+                                            <button type="submit" class="btn btn-primary text-white">
+                                                {{ $mode === 'edit' ? 'Simpan Perubahan' : 'Simpan User' }}
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4">
+
+                        <div class="col-xl-4">
                             <div class="card bg-white border-0 rounded-3 mb-4">
                                 <div class="card-body p-4">
-                                    <h3 class="mb-lg-4 mb-3">Privacy Policy</h3>
+                                    <h3 class="mb-3">Panduan Role</h3>
 
-                                    <div class="mb-4">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
-                                            <label class="form-check-label" for="flexCheckDefault">
-                                                Allow users to show your email
-                                            </label>
-                                        </div>
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked2">
-                                            <label class="form-check-label" for="flexCheckChecked2">
-                                                Allow users to show your experiences
-                                            </label>
-                                        </div>
-                                        <div class="form-check mb-0">
-                                            <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked3">
-                                            <label class="form-check-label" for="flexCheckChecked3">
-                                                Allow users to show your followers
-                                            </label>
-                                        </div>
+                                    <div class="border rounded-3 p-3 mb-3">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary p-2 fs-12 fw-normal mb-2">
+                                            Owner
+                                        </span>
+                                        <p class="text-body fs-13 mb-0">
+                                            Pemilik aplikasi atau toko. Disarankan untuk akses penuh.
+                                        </p>
                                     </div>
-                                    
-                                    <label class="label text-secondary">Select Your Skills</label>
-                                    <select class="form-select form-control h-55" aria-label="Default select example">
-                                        <option selected>Select</option>
-                                        <option value="1">Data Analysis</option>
-                                        <option value="2">Project Management</option>
-                                        <option value="3">Teamwork</option>
-                                        <option value="4">Leadership</option>
-                                    </select>
+
+                                    <div class="border rounded-3 p-3 mb-3">
+                                        <span class="badge bg-info bg-opacity-10 text-info p-2 fs-12 fw-normal mb-2">
+                                            Admin
+                                        </span>
+                                        <p class="text-body fs-13 mb-0">
+                                            Mengelola master data, laporan, order online, dan pengaturan operasional.
+                                        </p>
+                                    </div>
+
+                                    <div class="border rounded-3 p-3">
+                                        <span class="badge bg-warning bg-opacity-10 text-warning p-2 fs-12 fw-normal mb-2">
+                                            Kasir
+                                        </span>
+                                        <p class="text-body fs-13 mb-0">
+                                            Fokus untuk transaksi POS, pembayaran, dan proses order harian.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-white border-0 rounded-3">
+                                <div class="card-body p-4">
+                                    <h3 class="mb-3">Catatan</h3>
+                                    <p class="text-body fs-13 mb-0">
+                                        Tahap ini baru mengelola data user dan role. Pembatasan akses per role bisa dibuat pada tahap berikutnya agar menu dan aksi mengikuti role user.
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-				<div class="flex-grow-1"></div>
+                <div class="flex-grow-1"></div>
 
-				<!-- Start Footer Area -->
-				@include('partials.footer')
-				<!-- End Footer Area -->
-			</div>
-		</div>
+                @include('partials.footer')
+            </div>
+        </div>
 
-        
         @include('partials.theme_settings')
         @include('partials.scripts')
     </body>
 </html>
-

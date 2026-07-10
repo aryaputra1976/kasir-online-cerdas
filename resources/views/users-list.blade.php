@@ -4,386 +4,308 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Kasir Online Cerdas - POS & Order Online UMKM</title>
-        <!-- Styles -->
+        <title>User & Role - Kasir Online Cerdas</title>
+
         @include('partials.styles')
+
+        <style>
+            .koc-summary-icon {
+                width: 48px;
+                height: 48px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 14px;
+            }
+
+            .koc-user-avatar {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                border-radius: 14px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .koc-filter-card .form-control,
+            .koc-filter-card .form-select {
+                min-height: 48px;
+            }
+        </style>
     </head>
+
     <body class="boxed-size">
         @include('partials.preloader')
         @include('partials.sidebar')
 
-        <div class="container-fluid">
-			<div class="main-content d-flex flex-column">
-				<!-- Start Header Area -->
-				@include('partials.header')
-				<!-- End Header Area -->
+        @php
+            $summaryCards = [
+                [
+                    'title' => 'Total User',
+                    'value' => number_format($totalUsers, 0, ',', '.'),
+                    'note' => 'Semua akun pengguna',
+                    'icon' => 'groups',
+                    'color' => 'bg-primary bg-opacity-10 text-primary',
+                ],
+                [
+                    'title' => 'User Aktif',
+                    'value' => number_format($activeUsers, 0, ',', '.'),
+                    'note' => 'Akun yang bisa digunakan',
+                    'icon' => 'verified_user',
+                    'color' => 'bg-success bg-opacity-10 text-success',
+                ],
+                [
+                    'title' => 'Owner / Admin',
+                    'value' => number_format($ownerUsers + $adminUsers, 0, ',', '.'),
+                    'note' => 'Pengelola utama aplikasi',
+                    'icon' => 'admin_panel_settings',
+                    'color' => 'bg-info bg-opacity-10 text-info',
+                ],
+                [
+                    'title' => 'Kasir',
+                    'value' => number_format($kasirUsers, 0, ',', '.'),
+                    'note' => 'Akun operator kasir',
+                    'icon' => 'point_of_sale',
+                    'color' => 'bg-warning bg-opacity-10 text-warning',
+                ],
+            ];
+        @endphp
 
-				<div class="main-content-container overflow-hidden">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                        <h3 class="mb-0">Users List</h3>
+        <div class="container-fluid">
+            <div class="main-content d-flex flex-column">
+                @include('partials.header')
+
+                <div class="main-content-container overflow-hidden">
+                    <div class="d-flex justify-content-between align-items-start align-items-lg-center flex-wrap gap-3 mb-4">
+                        <div>
+                            <h3 class="mb-1">User &amp; Role</h3>
+                            <p class="text-body mb-0">
+                                Kelola akun pengguna aplikasi, role, dan status aktif user.
+                            </p>
+                        </div>
 
                         <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
                             <ol class="breadcrumb align-items-center mb-0 lh-1">
                                 <li class="breadcrumb-item">
-                                    <a href="#" class="d-flex align-items-center text-decoration-none">
+                                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none">
                                         <i class="ri-home-4-line fs-18 text-primary me-1"></i>
                                         <span class="text-secondary fw-medium hover">Dashboard</span>
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">User</span>
+                                    <span class="fw-medium">Pengaturan</span>
                                 </li>
                                 <li class="breadcrumb-item active" aria-current="page">
-                                    <span class="fw-medium">Users List</span>
+                                    <span class="fw-medium">User &amp; Role</span>
                                 </li>
                             </ol>
                         </nav>
                     </div>
 
+                    @if (session('success'))
+                        <div class="alert alert-success border-0 rounded-3 mb-4">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="alert alert-danger border-0 rounded-3 mb-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
+                    <div class="row g-4 mb-4">
+                        @foreach ($summaryCards as $card)
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-white border-0 rounded-3 h-100">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-between align-items-center gap-3">
+                                            <div>
+                                                <span class="d-block text-body mb-2">{{ $card['title'] }}</span>
+                                                <h3 class="fs-22 fw-semibold mb-1">
+                                                    {{ $card['value'] }}
+                                                </h3>
+                                                <p class="fs-13 text-body mb-0">{{ $card['note'] }}</p>
+                                            </div>
+
+                                            <div class="koc-summary-icon {{ $card['color'] }}">
+                                                <i class="material-symbols-outlined">{{ $card['icon'] }}</i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
                     <div class="card bg-white border-0 rounded-3 mb-4">
-                        <div class="card-body p-0">
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-4">
-                                <form class="position-relative table-src-form me-0">
-                                    <input type="text" class="form-control" placeholder="Search here">
-                                    <i class="material-symbols-outlined position-absolute top-50 start-0 translate-middle-y">search</i>
-                                </form>
-                                <a href="add-user" class="btn btn-outline-primary py-1 px-2 px-sm-4 fs-14 fw-medium rounded-3 hover-bg">
-                                    <span class="py-sm-1 d-block">
-                                        <i class="ri-add-line d-none d-sm-inline-block"></i>
-                                        <span>Add New User</span>
-                                    </span>
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                                <div>
+                                    <h3 class="mb-1">Daftar User</h3>
+                                    <p class="text-body mb-0 fs-13">
+                                        Cari user berdasarkan nama, email, nomor HP, role, atau status.
+                                    </p>
+                                </div>
+
+                                <a href="{{ route('settings.users.create') }}" class="btn btn-primary text-white">
+                                    <i class="material-symbols-outlined align-middle fs-18 me-1">person_add</i>
+                                    Tambah User
                                 </a>
                             </div>
+
+                            <form action="{{ route('settings.users.index') }}" method="get" class="koc-filter-card mb-4">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-xl-5 col-lg-5 col-md-12">
+                                        <div class="position-relative table-src-form me-0">
+                                            <input
+                                                type="text"
+                                                name="q"
+                                                value="{{ $search }}"
+                                                class="form-control"
+                                                placeholder="Cari nama, email, nomor HP..."
+                                            >
+                                            <i class="material-symbols-outlined position-absolute top-50 start-0 translate-middle-y">search</i>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xl-3 col-lg-3 col-md-6">
+                                        <select name="role" class="form-select form-control">
+                                            <option value="">Semua Role</option>
+                                            @foreach ($roleOptions as $roleValue => $roleLabel)
+                                                <option value="{{ $roleValue }}" @selected($role === $roleValue)>
+                                                    {{ $roleLabel }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-xl-2 col-lg-2 col-md-6">
+                                        <select name="status" class="form-select form-control">
+                                            <option value="">Semua Status</option>
+                                            <option value="active" @selected($status === 'active')>Aktif</option>
+                                            <option value="inactive" @selected($status === 'inactive')>Nonaktif</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-xl-auto col-lg-auto col-md-auto">
+                                        <button type="submit" class="btn btn-outline-primary w-100">
+                                            Filter
+                                        </button>
+                                    </div>
+
+                                    <div class="col-xl-auto col-lg-auto col-md-auto">
+                                        <a href="{{ route('settings.users.index') }}" class="btn btn-outline-secondary w-100">
+                                            Reset
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
 
                             <div class="default-table-area style-two all-products">
                                 <div class="table-responsive">
                                     <table class="table align-middle">
                                         <thead>
                                             <tr>
-                                                <th scope="col">User ID</th>
-                                                <th scope="col">User</th>
-                                                <th scope="col">Email</th>
-                                                <th scope="col">Location</th>
-                                                <th scope="col">Phone</th>
-                                                <th scope="col">Projects</th>
-                                                <th scope="col">Join Date</th>
-                                                <th scope="col">Action</th>
+                                                <th>User</th>
+                                                <th>Email</th>
+                                                <th>Nomor HP</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Dibuat</th>
+                                                <th class="text-end">Aksi</th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
-                                            <tr>
-                                                <td class="text-body">#JAN-158</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-6.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Marcia Baker</h6>
+                                            @forelse ($users as $user)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="koc-user-avatar bg-primary bg-opacity-10 text-primary me-3">
+                                                                <i class="material-symbols-outlined">person</i>
+                                                            </div>
+
+                                                            <div>
+                                                                <h6 class="fw-semibold fs-14 mb-1">
+                                                                    {{ $user->name }}
+                                                                </h6>
+                                                                <span class="fs-12 text-body">
+                                                                    ID: #{{ str_pad((string) $user->id, 4, '0', STR_PAD_LEFT) }}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">marcia@trezo.com</td>
-                                                <td class="text-secondary">Washington D.C</td>
-                                                <td class="text-secondary">+1 555-445-4455</td>
-                                                <td class="text-secondary">6</td>
-                                                <td class="text-secondary">01 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-325</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-7.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Carolyn Barnes</h6>
+                                                    </td>
+
+                                                    <td>{{ $user->email }}</td>
+
+                                                    <td>{{ $user->phone ?: '-' }}</td>
+
+                                                    <td>
+                                                        <span class="badge {{ $user->role_badge_class }} p-2 fs-12 fw-normal">
+                                                            {{ $user->role_label }}
+                                                        </span>
+                                                    </td>
+
+                                                    <td>
+                                                        <span class="badge {{ $user->status_badge_class }} p-2 fs-12 fw-normal">
+                                                            {{ $user->status_label }}
+                                                        </span>
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $user->created_at?->format('d/m/Y H:i') ?: '-' }}
+                                                    </td>
+
+                                                    <td>
+                                                        <div class="d-flex justify-content-end align-items-center gap-2">
+                                                            <a href="{{ route('settings.users.edit', $user) }}" class="btn btn-outline-primary btn-sm">
+                                                                Edit
+                                                            </a>
+
+                                                            <form
+                                                                action="{{ route('settings.users.destroy', $user) }}"
+                                                                method="post"
+                                                                onsubmit="return confirm('Hapus user ini?')"
+                                                            >
+                                                                @csrf
+                                                                @method('DELETE')
+
+                                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                                    Hapus
+                                                                </button>
+                                                            </form>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">barnes@trezo.com</td>
-                                                <td class="text-secondary">Chicago</td>
-                                                <td class="text-secondary">+1 555-455-9966</td>
-                                                <td class="text-secondary">10</td>
-                                                <td class="text-secondary">02 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-286</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-8.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Donna Miller</h6>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="7">
+                                                        <div class="text-center py-5">
+                                                            <i class="material-symbols-outlined text-body fs-40 mb-2">groups</i>
+                                                            <h6 class="fw-semibold mb-1">Belum ada user</h6>
+                                                            <p class="text-body mb-3 fs-13">
+                                                                Tambahkan user agar akses aplikasi bisa dikelola.
+                                                            </p>
+                                                            <a href="{{ route('settings.users.create') }}" class="btn btn-primary text-white">
+                                                                Tambah User
+                                                            </a>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">donna@trezo.com</td>
-                                                <td class="text-secondary">Oklahoma City</td>
-                                                <td class="text-secondary">+1 555-555-9922</td>
-                                                <td class="text-secondary">6</td>
-                                                <td class="text-secondary">03 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-463</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-9.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Barbara Cross</h6>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">cross@trezo.com</td>
-                                                <td class="text-secondary">San Diego</td>
-                                                <td class="text-secondary">+1 555-445-7788</td>
-                                                <td class="text-secondary">4</td>
-                                                <td class="text-secondary">04 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-998</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-10.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Rebecca Block</h6>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">block@trezo.com</td>
-                                                <td class="text-secondary">Los Angeles</td>
-                                                <td class="text-secondary">+1 555-333-2288</td>
-                                                <td class="text-secondary">2</td>
-                                                <td class="text-secondary">05 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-436</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-11.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Ramiro McCarty</h6>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">ramiro@trezo.com</td>
-                                                <td class="text-secondary">Las Vegas</td>
-                                                <td class="text-secondary">+1 555-445-4455</td>
-                                                <td class="text-secondary">8</td>
-                                                <td class="text-secondary">06 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-860</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-12.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Robert Fairweather</h6>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">robert@trezo.com</td>
-                                                <td class="text-secondary">San Francisco</td>
-                                                <td class="text-secondary">+1 555-555-9922</td>
-                                                <td class="text-secondary">6</td>
-                                                <td class="text-secondary">07 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-491</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-13.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Marcelino Haddock</h6>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">haddock@trezo.com</td>
-                                                <td class="text-secondary">Washington D.C</td>
-                                                <td class="text-secondary">+1 555-455-9966</td>
-                                                <td class="text-secondary">9</td>
-                                                <td class="text-secondary">08 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-125</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-14.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Thomas Wilson</h6>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">wildon@trezo.com</td>
-                                                <td class="text-secondary">San Diego</td>
-                                                <td class="text-secondary">+1 555-333-2288</td>
-                                                <td class="text-secondary">5</td>
-                                                <td class="text-secondary">10 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
-                                            <tr>
-                                                <td class="text-body">#JAN-579</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="assets/images/user-15.jpg" class="wh-40 rounded-3" alt="user">
-                                                        <div class="ms-2 ps-1">
-                                                            <h6 class="fw-medium fs-14 mb-0">Nathaniel Hulsey</h6>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-secondary">hulsey@trezo.com</td>
-                                                <td class="text-secondary">Chicago</td>
-                                                <td class="text-secondary">+1 555-445-7788</td>
-                                                <td class="text-secondary">6</td>
-                                                <td class="text-secondary">11 Dec 2024</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1">
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
-                                                            <i class="material-symbols-outlined fs-16 text-primary">visibility</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                            <i class="material-symbols-outlined fs-16 text-body">edit</i>
-                                                        </button>
-                                                        <button class="ps-0 border-0 bg-transparent lh-1 position-relative top-2" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
-                                                            <i class="material-symbols-outlined fs-16 text-danger">delete</i>
-                                                        </button>
-                                                    </div>
-                                                </td> 
-                                            </tr>
+                                                    </td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
-        
-                                <div class="d-flex justify-content-center justify-content-sm-between align-items-center text-center flex-wrap gap-2 showing-wrap p-4">
-                                    <span class="fs-13 fw-medium">Items per pages: 10</span>
-        
-                                    <div class="d-flex align-items-center">
-                                        <span class="fs-13 fw-medium me-2">1 - 10 of 12</span>
-                                        <nav aria-label="Page navigation example">
-                                            <ul class="pagination mb-0 justify-content-center">
-                                                <li class="page-item">
-                                                    <a class="page-link icon" href="users-list" aria-label="Previous">
-                                                        <i class="material-symbols-outlined">keyboard_arrow_left</i>
-                                                    </a>
-                                                </li>
-                                                <li class="page-item">
-                                                    <a class="page-link icon" href="users-list" aria-label="Next">
-                                                        <i class="material-symbols-outlined">keyboard_arrow_right</i>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </nav>
+
+                                <div class="d-flex justify-content-center justify-content-sm-between align-items-center text-center flex-wrap gap-2 showing-wrap mt-4">
+                                    <span class="fs-13 fw-medium">
+                                        Menampilkan {{ $users->count() }} dari {{ $users->total() }} user
+                                    </span>
+
+                                    <div>
+                                        {{ $users->links('pagination::bootstrap-5') }}
                                     </div>
                                 </div>
                             </div>
@@ -391,17 +313,13 @@
                     </div>
                 </div>
 
-				<div class="flex-grow-1"></div>
+                <div class="flex-grow-1"></div>
 
-				<!-- Start Footer Area -->
-				@include('partials.footer')
-				<!-- End Footer Area -->
-			</div>
-		</div>
+                @include('partials.footer')
+            </div>
+        </div>
 
-        
         @include('partials.theme_settings')
         @include('partials.scripts')
     </body>
 </html>
-

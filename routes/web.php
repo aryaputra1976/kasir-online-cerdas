@@ -20,6 +20,7 @@ use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\StoreSettingController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserManagementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -223,11 +224,20 @@ Route::put('/pengaturan/profil-toko', [StoreSettingController::class, 'update'])
 Route::delete('/pengaturan/profil-toko/logo', [StoreSettingController::class, 'removeLogo'])
     ->name('settings.store.logo.destroy');
 
-Route::view('/pengaturan/user-role', 'users-list')
-    ->name('settings.users');
+Route::prefix('pengaturan/user-role')
+    ->name('settings.users.')
+    ->controller(UserManagementController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/tambah', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{user}/edit', 'edit')->name('edit');
+        Route::put('/{user}', 'update')->name('update');
+        Route::delete('/{user}', 'destroy')->name('destroy');
+    });
 
-Route::view('/pengaturan/tambah-user', 'add-user')
-    ->name('settings.users.create');
+Route::get('/pengaturan/tambah-user', [UserManagementController::class, 'create'])
+    ->name('settings.users.create-legacy');
 
 Route::get('/pengaturan/template-struk', [ReceiptTemplateController::class, 'edit'])
     ->name('settings.receipt-template');
