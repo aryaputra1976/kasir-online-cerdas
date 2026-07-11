@@ -18,10 +18,22 @@
                 border-radius: 14px;
             }
 
+            .koc-user-card {
+                border: 1px solid #eef0f7;
+                border-radius: 14px;
+                padding: 18px 20px;
+                background-color: #ffffff;
+                transition: 0.2s ease;
+            }
+
+            .koc-user-card:hover {
+                background-color: #fafaff;
+            }
+
             .koc-user-avatar {
-                width: 44px;
-                height: 44px;
-                min-width: 44px;
+                width: 46px;
+                height: 46px;
+                min-width: 46px;
                 border-radius: 14px;
                 display: inline-flex;
                 align-items: center;
@@ -31,6 +43,25 @@
             .koc-filter-card .form-control,
             .koc-filter-card .form-select {
                 min-height: 48px;
+            }
+
+            .koc-user-meta {
+                min-width: 130px;
+            }
+
+            @media (max-width: 767.98px) {
+                .koc-user-actions {
+                    width: 100%;
+                }
+
+                .koc-user-actions .btn,
+                .koc-user-actions form {
+                    width: 100%;
+                }
+
+                .koc-user-actions form button {
+                    width: 100%;
+                }
             }
         </style>
     </head>
@@ -203,110 +234,114 @@
                                 </div>
                             </form>
 
-                            <div class="default-table-area style-two all-products">
-                                <div class="table-responsive">
-                                    <table class="table align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th>User</th>
-                                                <th>Email</th>
-                                                <th>Nomor HP</th>
-                                                <th>Role</th>
-                                                <th>Status</th>
-                                                <th>Dibuat</th>
-                                                <th class="text-end">Aksi</th>
-                                            </tr>
-                                        </thead>
+                            <div class="d-flex flex-column gap-3">
+                                @forelse ($users as $user)
+                                    <div class="koc-user-card">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                            <div class="d-flex align-items-start">
+                                                <div class="koc-user-avatar bg-primary bg-opacity-10 text-primary me-3">
+                                                    <i class="material-symbols-outlined">person</i>
+                                                </div>
 
-                                        <tbody>
-                                            @forelse ($users as $user)
-                                                <tr>
-                                                    <td>
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="koc-user-avatar bg-primary bg-opacity-10 text-primary me-3">
-                                                                <i class="material-symbols-outlined">person</i>
-                                                            </div>
+                                                <div>
+                                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                                        <h6 class="fw-semibold fs-16 mb-0">
+                                                            {{ $user->name }}
+                                                        </h6>
 
-                                                            <div>
-                                                                <h6 class="fw-semibold fs-14 mb-1">
-                                                                    {{ $user->name }}
-                                                                </h6>
-                                                                <span class="fs-12 text-body">
-                                                                    ID: #{{ str_pad((string) $user->id, 4, '0', STR_PAD_LEFT) }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    <td>{{ $user->email }}</td>
-
-                                                    <td>{{ $user->phone ?: '-' }}</td>
-
-                                                    <td>
                                                         <span class="badge {{ $user->role_badge_class }} p-2 fs-12 fw-normal">
                                                             {{ $user->role_label }}
                                                         </span>
-                                                    </td>
 
-                                                    <td>
                                                         <span class="badge {{ $user->status_badge_class }} p-2 fs-12 fw-normal">
                                                             {{ $user->status_label }}
                                                         </span>
-                                                    </td>
+                                                    </div>
 
-                                                    <td>
-                                                        {{ $user->created_at?->format('d/m/Y H:i') ?: '-' }}
-                                                    </td>
+                                                    <p class="text-body fs-13 mb-2">
+                                                        ID: #{{ str_pad((string) $user->id, 4, '0', STR_PAD_LEFT) }}
+                                                    </p>
 
-                                                    <td>
-                                                        <div class="d-flex justify-content-end align-items-center gap-2">
-                                                            <a href="{{ route('settings.users.edit', $user) }}" class="btn btn-outline-primary btn-sm">
-                                                                Edit
-                                                            </a>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                            Email: {{ $user->email }}
+                                                        </span>
 
-                                                            <form
-                                                                action="{{ route('settings.users.destroy', $user) }}"
-                                                                method="post"
-                                                                onsubmit="return confirm('Hapus user ini?')"
-                                                            >
-                                                                @csrf
-                                                                @method('DELETE')
+                                                        <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                            HP: {{ $user->phone ?: '-' }}
+                                                        </span>
 
-                                                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                                    Hapus
-                                                                </button>
-                                                            </form>
+                                                        <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
+                                                            Dibuat: {{ $user->created_at?->format('d/m/Y H:i') ?: '-' }}
+                                                        </span>
+                                                    </div>
+
+                                                    <div class="row g-3 mt-2">
+                                                        <div class="col-sm-4">
+                                                            <div class="koc-user-meta">
+                                                                <span class="text-body fs-13 d-block">Role</span>
+                                                                <strong>{{ $user->role_label }}</strong>
+                                                            </div>
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="7">
-                                                        <div class="text-center py-5">
-                                                            <i class="material-symbols-outlined text-body fs-40 mb-2">groups</i>
-                                                            <h6 class="fw-semibold mb-1">Belum ada user</h6>
-                                                            <p class="text-body mb-3 fs-13">
-                                                                Tambahkan user agar akses aplikasi bisa dikelola.
-                                                            </p>
-                                                            <a href="{{ route('settings.users.create') }}" class="btn btn-primary text-white">
-                                                                Tambah User
-                                                            </a>
+
+                                                        <div class="col-sm-4">
+                                                            <div class="koc-user-meta">
+                                                                <span class="text-body fs-13 d-block">Status</span>
+                                                                <strong>{{ $user->status_label }}</strong>
+                                                            </div>
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
 
-                                <div class="d-flex justify-content-center justify-content-sm-between align-items-center text-center flex-wrap gap-2 showing-wrap mt-4">
-                                    <span class="fs-13 fw-medium">
-                                        Menampilkan {{ $users->count() }} dari {{ $users->total() }} user
-                                    </span>
+                                                        <div class="col-sm-4">
+                                                            <div class="koc-user-meta">
+                                                                <span class="text-body fs-13 d-block">Update Terakhir</span>
+                                                                <strong>{{ $user->updated_at?->format('d/m/Y') ?: '-' }}</strong>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                    <div>
-                                        {{ $users->links('pagination::bootstrap-5') }}
+                                            <div class="d-flex flex-wrap gap-2 koc-user-actions">
+                                                <a href="{{ route('settings.users.edit', $user) }}" class="btn btn-outline-primary btn-sm">
+                                                    Edit
+                                                </a>
+
+                                                <form
+                                                    action="{{ route('settings.users.destroy', $user) }}"
+                                                    method="post"
+                                                    onsubmit="return confirm('Hapus user ini?')"
+                                                >
+                                                    @csrf
+                                                    @method('DELETE')
+
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                        Hapus
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
+                                @empty
+                                    <div class="text-center py-5 border rounded-3">
+                                        <i class="material-symbols-outlined text-body fs-40 mb-2">groups</i>
+                                        <h6 class="fw-semibold mb-1">Belum ada user</h6>
+                                        <p class="text-body mb-3 fs-13">
+                                            Tambahkan user agar akses aplikasi bisa dikelola.
+                                        </p>
+                                        <a href="{{ route('settings.users.create') }}" class="btn btn-primary text-white">
+                                            Tambah User
+                                        </a>
+                                    </div>
+                                @endforelse
+                            </div>
+
+                            <div class="d-flex justify-content-center justify-content-sm-between align-items-center text-center flex-wrap gap-2 showing-wrap mt-4">
+                                <span class="fs-13 fw-medium">
+                                    Menampilkan {{ $users->count() }} dari {{ $users->total() }} user
+                                </span>
+
+                                <div>
+                                    {{ $users->links('pagination::bootstrap-5') }}
                                 </div>
                             </div>
                         </div>
