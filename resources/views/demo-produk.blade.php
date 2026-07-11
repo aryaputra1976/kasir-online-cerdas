@@ -4,12 +4,29 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Kasir Online Cerdas - Aplikasi POS dan Order Online UMKM</title>
+    <title>Kasir Online Cerdas - Aplikasi POS & Order Online untuk UMKM</title>
 
     <meta
         name="description"
-        content="Kasir Online Cerdas adalah aplikasi POS, stok, order online, pelanggan, dan laporan usaha untuk UMKM, cafe, warung kopi, dan toko retail."
+        content="Kasir Online Cerdas membantu UMKM mengelola transaksi POS, stok, order online, pelanggan, pembayaran, dan laporan usaha dalam satu aplikasi."
     >
+
+    @php
+        /*
+        |--------------------------------------------------------------------------
+        | Pengaturan CTA Landing Page
+        |--------------------------------------------------------------------------
+        | Ganti URL Mayar dan nomor WhatsApp di bawah sebelum dipublikasikan.
+        | Nomor WhatsApp harus memakai format internasional tanpa tanda +.
+        | Contoh: 6281234567890
+        */
+        $mayarUrl = 'https://mayar.to/ruangcerdas';
+        $whatsappNumber = '6280000000000';
+        $whatsappMessage = rawurlencode(
+            'Halo Ruang Cerdas, saya tertarik dengan Kasir Online Cerdas. Mohon informasi paket dan cara pembeliannya.'
+        );
+        $whatsappUrl = "https://wa.me/{$whatsappNumber}?text={$whatsappMessage}";
+    @endphp
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -23,15 +40,18 @@
 
     <style>
         :root {
-            --primary-color: #605dff;
-            --primary-dark: #4b47db;
-            --secondary-color: #f3f2ff;
-            --dark-color: #1f2937;
-            --muted-color: #64748b;
-            --border-color: #e8e7f2;
-            --success-color: #22c55e;
-            --warning-color: #f59e0b;
-            --page-background: #f8f9fc;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-soft: #eff6ff;
+            --accent: #f59e0b;
+            --accent-dark: #d97706;
+            --success: #16a34a;
+            --dark: #0f172a;
+            --text: #334155;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --soft: #f8fafc;
+            --white: #ffffff;
         }
 
         html {
@@ -40,8 +60,8 @@
 
         body {
             margin: 0;
-            color: var(--dark-color);
-            background: #ffffff;
+            color: var(--text);
+            background: var(--white);
             font-family:
                 Inter,
                 ui-sans-serif,
@@ -56,19 +76,26 @@
             text-decoration: none;
         }
 
+        section {
+            scroll-margin-top: 90px;
+        }
+
         .landing-navbar {
-            background: rgba(255, 255, 255, 0.94);
-            border-bottom: 1px solid rgba(232, 231, 242, 0.9);
-            backdrop-filter: blur(14px);
+            background: rgba(255, 255, 255, 0.96);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+            backdrop-filter: blur(12px);
         }
 
         .brand-logo {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            color: var(--dark-color);
-            font-size: 1.1rem;
+            gap: 11px;
+            color: var(--dark);
             font-weight: 800;
+        }
+
+        .brand-logo:hover {
+            color: var(--dark);
         }
 
         .brand-icon {
@@ -77,127 +104,174 @@
             justify-content: center;
             width: 42px;
             height: 42px;
-            color: #ffffff;
-            background: linear-gradient(
-                135deg,
-                var(--primary-color),
-                #8b5cf6
-            );
+            color: var(--white);
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
             border-radius: 13px;
-            box-shadow: 0 10px 24px rgba(96, 93, 255, 0.25);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
         }
 
         .navbar-nav .nav-link {
             color: #475569;
-            font-weight: 600;
+            font-weight: 650;
         }
 
         .navbar-nav .nav-link:hover {
-            color: var(--primary-color);
+            color: var(--primary);
         }
 
-        .btn-primary-custom {
+        .btn-main,
+        .btn-outline-main,
+        .btn-accent,
+        .btn-whatsapp,
+        .btn-white {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            min-height: 46px;
-            padding: 11px 22px;
-            color: #ffffff;
-            background: var(--primary-color);
-            border: 1px solid var(--primary-color);
+            gap: 9px;
+            min-height: 48px;
+            padding: 12px 22px;
             border-radius: 12px;
-            font-weight: 700;
+            font-weight: 800;
             transition: all 0.2s ease;
         }
 
-        .btn-primary-custom:hover {
-            color: #ffffff;
+        .btn-main {
+            color: var(--white);
+            background: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-main:hover {
+            color: var(--white);
             background: var(--primary-dark);
             border-color: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 12px 26px rgba(96, 93, 255, 0.25);
+            box-shadow: 0 12px 28px rgba(37, 99, 235, 0.24);
         }
 
-        .btn-light-custom {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-height: 46px;
-            padding: 11px 22px;
-            color: var(--dark-color);
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-weight: 700;
-            transition: all 0.2s ease;
+        .btn-outline-main {
+            color: var(--dark);
+            background: var(--white);
+            border: 1px solid var(--border);
         }
 
-        .btn-light-custom:hover {
-            color: var(--primary-color);
-            border-color: var(--primary-color);
+        .btn-outline-main:hover {
+            color: var(--primary);
+            border-color: var(--primary);
             transform: translateY(-2px);
         }
 
-        .hero-section {
-            position: relative;
-            overflow: hidden;
-            padding: 150px 0 100px;
-            background:
-                radial-gradient(
-                    circle at 85% 20%,
-                    rgba(96, 93, 255, 0.18),
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 10% 85%,
-                    rgba(34, 197, 94, 0.12),
-                    transparent 28%
-                ),
-                linear-gradient(180deg, #fafaff 0%, #ffffff 100%);
+        .btn-accent {
+            color: #111827;
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
         }
 
-        .hero-badge {
+        .btn-accent:hover {
+            color: #111827;
+            background: #fbbf24;
+            border-color: #fbbf24;
+            transform: translateY(-2px);
+        }
+
+        .btn-whatsapp {
+            color: var(--white);
+            background: #16a34a;
+            border: 1px solid #16a34a;
+        }
+
+        .btn-whatsapp:hover {
+            color: var(--white);
+            background: #15803d;
+            border-color: #15803d;
+            transform: translateY(-2px);
+        }
+
+        .btn-white {
+            color: var(--primary);
+            background: var(--white);
+            border: 1px solid var(--white);
+        }
+
+        .btn-white:hover {
+            color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 145px 0 90px;
+            background:
+                radial-gradient(circle at 85% 20%, rgba(37, 99, 235, 0.16), transparent 30%),
+                radial-gradient(circle at 10% 80%, rgba(245, 158, 11, 0.12), transparent 28%),
+                linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+        }
+
+        .hero-badge,
+        .eyebrow {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 22px;
+            color: var(--primary);
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .hero-badge {
+            margin-bottom: 20px;
             padding: 8px 14px;
-            color: var(--primary-color);
-            background: var(--secondary-color);
-            border: 1px solid #dedcff;
+            background: var(--primary-soft);
+            border: 1px solid #bfdbfe;
             border-radius: 999px;
-            font-size: 0.88rem;
-            font-weight: 700;
+            font-size: 0.8rem;
         }
 
         .hero-title {
-            max-width: 720px;
+            max-width: 760px;
             margin-bottom: 20px;
-            font-size: clamp(2.6rem, 6vw, 4.8rem);
+            color: var(--dark);
+            font-size: clamp(2.6rem, 6vw, 4.7rem);
             line-height: 1.05;
-            letter-spacing: -0.04em;
-            font-weight: 850;
+            letter-spacing: -0.045em;
+            font-weight: 900;
         }
 
         .text-gradient {
             color: transparent;
-            background: linear-gradient(
-                135deg,
-                var(--primary-color),
-                #8b5cf6
-            );
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
             background-clip: text;
             -webkit-background-clip: text;
         }
 
         .hero-description {
-            max-width: 650px;
-            margin-bottom: 30px;
-            color: var(--muted-color);
-            font-size: 1.1rem;
+            max-width: 680px;
+            margin-bottom: 26px;
+            color: var(--muted);
+            font-size: 1.08rem;
             line-height: 1.8;
+        }
+
+        .hero-checks {
+            display: grid;
+            gap: 11px;
+            margin: 0 0 28px;
+            padding: 0;
+            list-style: none;
+        }
+
+        .hero-checks li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: #334155;
+            font-weight: 650;
+        }
+
+        .hero-checks i {
+            color: var(--success);
         }
 
         .hero-actions {
@@ -206,48 +280,44 @@
             gap: 12px;
         }
 
-        .hero-note {
+        .trust-note {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 30px;
-            color: #475569;
-            font-size: 0.9rem;
-            font-weight: 600;
+            gap: 18px;
+            margin-top: 24px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 650;
         }
 
-        .hero-note span {
+        .trust-note span {
             display: inline-flex;
             align-items: center;
             gap: 7px;
         }
 
-        .hero-note i {
-            color: var(--success-color);
-        }
-
-        .dashboard-preview {
+        .app-preview {
             position: relative;
             padding: 18px;
-            background: rgba(255, 255, 255, 0.92);
-            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid var(--border);
             border-radius: 24px;
-            box-shadow: 0 30px 70px rgba(31, 41, 55, 0.14);
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.14);
         }
 
         .preview-window {
             overflow: hidden;
-            background: var(--page-background);
-            border-radius: 17px;
+            background: var(--soft);
+            border-radius: 16px;
         }
 
-        .preview-header {
+        .preview-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px;
-            background: #ffffff;
-            border-bottom: 1px solid var(--border-color);
+            padding: 15px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
         }
 
         .preview-dots {
@@ -256,7 +326,6 @@
         }
 
         .preview-dots span {
-            display: block;
             width: 9px;
             height: 9px;
             background: #cbd5e1;
@@ -264,212 +333,217 @@
         }
 
         .preview-content {
-            padding: 18px;
+            padding: 17px;
         }
 
-        .preview-stat {
+        .mini-stat {
             height: 100%;
-            padding: 18px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
+            padding: 16px;
+            background: var(--white);
+            border: 1px solid var(--border);
             border-radius: 14px;
         }
 
-        .preview-stat-icon {
+        .mini-stat i {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 38px;
-            height: 38px;
-            margin-bottom: 14px;
-            color: var(--primary-color);
-            background: var(--secondary-color);
+            width: 37px;
+            height: 37px;
+            margin-bottom: 12px;
+            color: var(--primary);
+            background: var(--primary-soft);
             border-radius: 11px;
         }
 
-        .preview-label {
-            margin-bottom: 5px;
-            color: var(--muted-color);
-            font-size: 0.77rem;
+        .mini-stat small {
+            display: block;
+            color: var(--muted);
         }
 
-        .preview-value {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 800;
+        .mini-stat strong {
+            color: var(--dark);
+            font-size: 1rem;
         }
 
-        .preview-chart {
-            margin-top: 16px;
-            padding: 18px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
+        .chart-card {
+            margin-top: 15px;
+            padding: 17px;
+            background: var(--white);
+            border: 1px solid var(--border);
             border-radius: 14px;
         }
 
         .chart-bars {
             display: flex;
             align-items: flex-end;
-            gap: 10px;
-            height: 150px;
-            padding-top: 20px;
+            gap: 9px;
+            height: 135px;
+            margin-top: 16px;
         }
 
         .chart-bars span {
             flex: 1;
-            min-width: 12px;
-            background: linear-gradient(
-                180deg,
-                var(--primary-color),
-                #aaa8ff
-            );
+            min-width: 10px;
+            background: linear-gradient(180deg, var(--primary), #93c5fd);
             border-radius: 7px 7px 2px 2px;
         }
 
-        .floating-card {
+        .floating-proof {
             position: absolute;
-            right: -25px;
-            bottom: 42px;
+            right: -20px;
+            bottom: 35px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            min-width: 190px;
+            gap: 11px;
+            min-width: 205px;
             padding: 14px 16px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
+            background: var(--white);
+            border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 18px 40px rgba(31, 41, 55, 0.14);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
         }
 
-        .floating-icon {
+        .floating-proof i {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 42px;
             height: 42px;
-            color: #ffffff;
-            background: var(--success-color);
+            color: var(--white);
+            background: var(--success);
             border-radius: 12px;
         }
 
+        .trust-strip {
+            padding: 22px 0;
+            background: var(--dark);
+        }
+
+        .trust-strip .item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            color: #e2e8f0;
+            font-weight: 700;
+        }
+
+        .trust-strip i {
+            color: #fbbf24;
+        }
+
         .section-space {
-            padding: 96px 0;
+            padding: 92px 0;
         }
 
         .section-soft {
-            background: var(--page-background);
+            background: var(--soft);
         }
 
         .section-heading {
-            max-width: 700px;
-            margin: 0 auto 50px;
+            max-width: 760px;
+            margin: 0 auto 48px;
             text-align: center;
         }
 
-        .section-eyebrow {
-            display: inline-block;
-            margin-bottom: 12px;
-            color: var(--primary-color);
-            font-size: 0.82rem;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
+        .eyebrow {
+            margin-bottom: 11px;
+            font-size: 0.8rem;
         }
 
         .section-title {
-            margin-bottom: 16px;
+            margin-bottom: 15px;
+            color: var(--dark);
             font-size: clamp(2rem, 4vw, 3rem);
             letter-spacing: -0.03em;
-            font-weight: 820;
+            font-weight: 900;
         }
 
         .section-description {
             margin: 0;
-            color: var(--muted-color);
-            font-size: 1.02rem;
+            color: var(--muted);
             line-height: 1.8;
         }
 
-        .feature-card {
+        .problem-card,
+        .feature-card,
+        .business-card,
+        .workflow-card,
+        .demo-card,
+        .bonus-card {
             height: 100%;
-            padding: 28px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
+            padding: 26px;
+            background: var(--white);
+            border: 1px solid var(--border);
             border-radius: 18px;
             transition: all 0.22s ease;
         }
 
-        .feature-card:hover {
-            transform: translateY(-6px);
-            border-color: #cbc9ff;
-            box-shadow: 0 18px 45px rgba(31, 41, 55, 0.08);
+        .problem-card:hover,
+        .feature-card:hover,
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
         }
 
-        .feature-icon {
+        .card-icon {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 54px;
             height: 54px;
-            margin-bottom: 20px;
-            color: var(--primary-color);
-            background: var(--secondary-color);
+            margin-bottom: 18px;
+            color: var(--primary);
+            background: var(--primary-soft);
             border-radius: 15px;
-            font-size: 1.4rem;
+            font-size: 1.35rem;
         }
 
-        .feature-card h3 {
-            margin-bottom: 10px;
-            font-size: 1.08rem;
-            font-weight: 800;
+        .problem-card .card-icon {
+            color: #dc2626;
+            background: #fef2f2;
         }
 
-        .feature-card p {
+        .problem-card h3,
+        .feature-card h3,
+        .workflow-card h3,
+        .demo-card h3,
+        .bonus-card h3 {
+            margin-bottom: 9px;
+            color: var(--dark);
+            font-size: 1.05rem;
+            font-weight: 850;
+        }
+
+        .problem-card p,
+        .feature-card p,
+        .workflow-card p,
+        .demo-card p,
+        .bonus-card p {
             margin: 0;
-            color: var(--muted-color);
-            font-size: 0.94rem;
+            color: var(--muted);
+            font-size: 0.93rem;
             line-height: 1.7;
         }
 
         .business-card {
-            height: 100%;
-            padding: 28px 20px;
+            padding: 24px 16px;
             text-align: center;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
         }
 
-        .business-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 64px;
-            height: 64px;
-            margin-bottom: 18px;
-            color: var(--primary-color);
-            background: var(--secondary-color);
-            border-radius: 18px;
-            font-size: 1.65rem;
+        .business-card .card-icon {
+            width: 62px;
+            height: 62px;
+            margin-bottom: 16px;
+            font-size: 1.55rem;
         }
 
         .business-card h3 {
             margin: 0;
+            color: var(--dark);
             font-size: 1rem;
-            font-weight: 800;
-        }
-
-        .workflow-wrapper {
-            position: relative;
-        }
-
-        .workflow-item {
-            position: relative;
-            height: 100%;
-            padding: 28px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
+            font-weight: 850;
         }
 
         .workflow-number {
@@ -478,244 +552,192 @@
             justify-content: center;
             width: 42px;
             height: 42px;
-            margin-bottom: 18px;
-            color: #ffffff;
-            background: var(--primary-color);
+            margin-bottom: 17px;
+            color: var(--white);
+            background: var(--primary);
             border-radius: 50%;
-            font-weight: 800;
+            font-weight: 900;
         }
 
-        .workflow-item h3 {
-            margin-bottom: 10px;
-            font-size: 1.05rem;
-            font-weight: 800;
-        }
-
-        .workflow-item p {
-            margin: 0;
-            color: var(--muted-color);
-            font-size: 0.92rem;
-            line-height: 1.7;
-        }
-
-        .pricing-card {
-            position: relative;
-            height: 100%;
-            padding: 32px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
+        .value-box {
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--border);
             border-radius: 22px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
         }
 
-        .pricing-card.featured {
-            border: 2px solid var(--primary-color);
-            box-shadow: 0 22px 55px rgba(96, 93, 255, 0.14);
+        .value-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .pricing-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 6px 10px;
-            color: var(--primary-color);
-            background: var(--secondary-color);
+        .value-row:last-child {
+            border-bottom: 0;
+        }
+
+        .value-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--dark);
+            font-weight: 750;
+        }
+
+        .value-item i {
+            color: var(--success);
+        }
+
+        .value-price {
+            color: var(--muted);
+            text-decoration: line-through;
+            white-space: nowrap;
+        }
+
+        .value-total {
+            padding: 24px;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+        }
+
+        .value-total strong {
+            font-size: clamp(1.9rem, 4vw, 3rem);
+        }
+
+        .offer-card {
+            position: relative;
+            overflow: hidden;
+            padding: 38px;
+            background: var(--white);
+            border: 2px solid var(--primary);
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(37, 99, 235, 0.14);
+        }
+
+        .offer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 17px;
+            padding: 7px 12px;
+            color: #92400e;
+            background: #fef3c7;
             border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 800;
-        }
-
-        .pricing-name {
-            margin-bottom: 8px;
-            font-size: 1.35rem;
+            font-size: 0.78rem;
             font-weight: 850;
         }
 
-        .pricing-description {
-            min-height: 50px;
-            margin-bottom: 22px;
-            color: var(--muted-color);
-            font-size: 0.92rem;
-            line-height: 1.6;
+        .normal-price {
+            color: var(--muted);
+            text-decoration: line-through;
         }
 
-        .pricing-price {
-            margin-bottom: 5px;
-            font-size: 2rem;
-            font-weight: 850;
+        .promo-price {
+            margin: 4px 0;
+            color: var(--primary);
+            font-size: clamp(2.5rem, 7vw, 4.2rem);
+            line-height: 1;
+            font-weight: 900;
         }
 
-        .pricing-note {
-            margin-bottom: 25px;
-            color: var(--muted-color);
-            font-size: 0.85rem;
-        }
-
-        .pricing-list {
+        .offer-list {
             display: grid;
-            gap: 13px;
-            margin: 0 0 28px;
+            gap: 12px;
+            margin: 25px 0;
             padding: 0;
             list-style: none;
         }
 
-        .pricing-list li {
+        .offer-list li {
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            color: #475569;
-            font-size: 0.92rem;
         }
 
-        .pricing-list i {
-            color: var(--success-color);
+        .offer-list i {
+            color: var(--success);
         }
 
-        .demo-card {
-            height: 100%;
-            padding: 28px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            transition: all 0.2s ease;
-        }
-
-        .demo-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 18px 45px rgba(31, 41, 55, 0.08);
-        }
-
-        .demo-card-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            margin-bottom: 18px;
-            color: var(--primary-color);
-            background: var(--secondary-color);
-            border-radius: 14px;
-            font-size: 1.3rem;
-        }
-
-        .demo-card h3 {
-            margin-bottom: 10px;
-            font-size: 1.05rem;
-            font-weight: 800;
+        .security-note {
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 0.86rem;
+            text-align: center;
         }
 
         .demo-card p {
-            min-height: 52px;
-            margin-bottom: 20px;
-            color: var(--muted-color);
-            font-size: 0.9rem;
-            line-height: 1.65;
+            min-height: 74px;
         }
 
-        .cta-section {
-            padding: 90px 0;
-        }
-
-        .cta-wrapper {
-            position: relative;
+        .accordion-item {
             overflow: hidden;
-            padding: 70px 40px;
-            color: #ffffff;
+            margin-bottom: 14px;
+            border: 1px solid var(--border);
+            border-radius: 14px !important;
+        }
+
+        .accordion-button {
+            color: var(--dark);
+            background: var(--white);
+            font-weight: 800;
+        }
+
+        .accordion-button:not(.collapsed) {
+            color: var(--primary);
+            background: var(--primary-soft);
+            box-shadow: none;
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+        }
+
+        .final-cta {
+            padding: 85px 0;
+        }
+
+        .final-cta-box {
+            padding: 65px 38px;
+            color: var(--white);
             text-align: center;
             background:
-                radial-gradient(
-                    circle at 10% 20%,
-                    rgba(255, 255, 255, 0.17),
-                    transparent 25%
-                ),
-                linear-gradient(
-                    135deg,
-                    var(--primary-color),
-                    #7c3aed
-                );
+                radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.18), transparent 26%),
+                linear-gradient(135deg, var(--primary), #7c3aed);
             border-radius: 28px;
         }
 
-        .cta-wrapper h2 {
+        .final-cta-box h2 {
             max-width: 760px;
-            margin: 0 auto 18px;
+            margin: 0 auto 17px;
             font-size: clamp(2rem, 4vw, 3.1rem);
-            font-weight: 850;
             letter-spacing: -0.03em;
+            font-weight: 900;
         }
 
-        .cta-wrapper p {
+        .final-cta-box p {
             max-width: 650px;
-            margin: 0 auto 30px;
+            margin: 0 auto 28px;
             color: rgba(255, 255, 255, 0.86);
             line-height: 1.8;
         }
 
-        .cta-actions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 12px;
+        .footer {
+            padding: 48px 0 100px;
+            background: #0f172a;
         }
 
-        .btn-white {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-height: 47px;
-            padding: 12px 24px;
-            color: var(--primary-color);
-            background: #ffffff;
-            border: 1px solid #ffffff;
-            border-radius: 12px;
-            font-weight: 800;
-            transition: all 0.2s ease;
+        .footer .brand-logo {
+            color: var(--white);
         }
 
-        .btn-white:hover {
-            color: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .btn-outline-white {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-height: 47px;
-            padding: 12px 24px;
-            color: #ffffff;
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.65);
-            border-radius: 12px;
-            font-weight: 800;
-            transition: all 0.2s ease;
-        }
-
-        .btn-outline-white:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.12);
-            border-color: #ffffff;
-        }
-
-        .landing-footer {
-            padding: 50px 0 25px;
-            background: #111827;
-        }
-
-        .footer-brand {
-            color: #ffffff;
-        }
-
-        .footer-brand:hover {
-            color: #ffffff;
-        }
-
-        .footer-description {
-            max-width: 450px;
+        .footer p {
+            max-width: 470px;
             margin-top: 15px;
             color: #94a3b8;
-            font-size: 0.92rem;
             line-height: 1.7;
         }
 
@@ -723,88 +745,129 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: flex-end;
-            gap: 22px;
+            gap: 20px;
         }
 
         .footer-links a {
             color: #cbd5e1;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-weight: 650;
         }
 
         .footer-links a:hover {
-            color: #ffffff;
+            color: var(--white);
         }
 
         .footer-bottom {
-            margin-top: 35px;
-            padding-top: 25px;
+            margin-top: 32px;
+            padding-top: 23px;
             color: #64748b;
-            border-top: 1px solid #273244;
+            border-top: 1px solid #273449;
             font-size: 0.85rem;
         }
 
+        .mobile-buy-bar {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1050;
+            display: none;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.97);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .mobile-buy-price small {
+            display: block;
+            color: var(--muted);
+            text-decoration: line-through;
+        }
+
+        .mobile-buy-price strong {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
         @media (max-width: 991.98px) {
-            .hero-section {
-                padding-top: 125px;
+            .hero {
+                padding-top: 120px;
             }
 
-            .dashboard-preview {
-                margin-top: 55px;
+            .app-preview {
+                margin-top: 50px;
             }
 
-            .floating-card {
+            .floating-proof {
                 right: 15px;
             }
 
             .footer-links {
                 justify-content: flex-start;
-                margin-top: 25px;
+                margin-top: 24px;
             }
         }
 
         @media (max-width: 767.98px) {
-            .hero-section {
-                padding: 115px 0 75px;
+            body {
+                padding-bottom: 78px;
             }
 
-            .section-space {
-                padding: 75px 0;
+            .hero {
+                padding: 110px 0 70px;
             }
 
             .hero-title {
-                font-size: 2.7rem;
-            }
-
-            .hero-description {
-                font-size: 1rem;
+                font-size: 2.65rem;
             }
 
             .hero-actions > a {
                 width: 100%;
             }
 
-            .hero-note {
+            .trust-note {
                 display: grid;
-                gap: 10px;
+                gap: 9px;
             }
 
-            .floating-card {
+            .floating-proof {
                 position: static;
-                margin-top: 16px;
+                margin-top: 14px;
             }
 
-            .cta-section {
-                padding: 70px 0;
+            .section-space {
+                padding: 72px 0;
             }
 
-            .cta-wrapper {
-                padding: 55px 22px;
+            .value-row {
+                align-items: flex-start;
+                padding: 16px;
+            }
+
+            .value-price {
+                font-size: 0.84rem;
+            }
+
+            .offer-card {
+                padding: 26px 22px;
+            }
+
+            .final-cta {
+                padding: 65px 0;
+            }
+
+            .final-cta-box {
+                padding: 50px 20px;
                 border-radius: 22px;
             }
 
-            .cta-actions > a {
+            .final-cta-box .d-flex > a {
                 width: 100%;
+            }
+
+            .mobile-buy-bar {
+                display: block;
             }
         }
     </style>
@@ -817,7 +880,6 @@
                 <span class="brand-icon">
                     <i class="bi bi-shop"></i>
                 </span>
-
                 <span>Kasir Online Cerdas</span>
             </a>
 
@@ -833,209 +895,181 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <div
-                class="collapse navbar-collapse"
-                id="landingNavbar"
-            >
-                <ul class="navbar-nav mx-auto mb-3 mb-lg-0 gap-lg-2">
+            <div class="collapse navbar-collapse" id="landingNavbar">
+                <ul class="navbar-nav mx-auto mb-3 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link" href="#fitur">Fitur</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link" href="#cocok-untuk">
-                            Cocok Untuk
-                        </a>
+                        <a class="nav-link" href="#yang-didapat">Yang Didapat</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link" href="#alur">Cara Kerja</a>
+                        <a class="nav-link" href="#harga">Harga</a>
                     </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="#paket">Paket</a>
-                    </li>
-
                     <li class="nav-item">
                         <a class="nav-link" href="#demo">Demo</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#faq">FAQ</a>
                     </li>
                 </ul>
 
                 <a
-                    href="{{ route('dashboard') }}"
-                    class="btn-primary-custom"
+                    href="{{ $mayarUrl }}"
+                    class="btn-accent"
+                    target="_blank"
+                    rel="noopener noreferrer"
                 >
-                    <i class="bi bi-grid-1x2-fill"></i>
-                    Masuk Dashboard
+                    <i class="bi bi-bag-check-fill"></i>
+                    Beli Sekarang
                 </a>
             </div>
         </div>
     </nav>
 
     <main>
-        <section class="hero-section">
+        <section class="hero">
             <div class="container">
                 <div class="row align-items-center g-5">
                     <div class="col-lg-7">
                         <span class="hero-badge">
                             <i class="bi bi-stars"></i>
-                            Solusi Kasir Digital untuk UMKM
+                            Aplikasi POS + Order Online untuk UMKM
                         </span>
 
                         <h1 class="hero-title">
-                            Kelola usaha lebih mudah dengan
-                            <span class="text-gradient">
-                                Kasir Online Cerdas
-                            </span>
+                            Kelola kasir, stok, order online, dan laporan
+                            <span class="text-gradient">dalam satu aplikasi</span>
                         </h1>
 
                         <p class="hero-description">
-                            Aplikasi POS dan order online untuk membantu
-                            UMKM mengelola transaksi kasir, produk, stok,
-                            pembayaran, pelanggan, serta laporan bisnis
-                            dalam satu sistem.
+                            Kasir Online Cerdas membantu cafe, warung kopi,
+                            toko kecil, dan UMKM mengelola transaksi POS,
+                            persediaan, pelanggan, pembayaran, serta laporan
+                            bisnis dengan lebih cepat dan teratur.
                         </p>
 
+                        <ul class="hero-checks">
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                Kasir POS, produk, stok, pelanggan, dan laporan terintegrasi
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                Pelanggan dapat memesan melalui menu online
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                Pembayaran tunai, QRIS, transfer, EDC, dan COD
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                Source code Laravel lengkap dan dapat dikembangkan
+                            </li>
+                        </ul>
+
                         <div class="hero-actions">
-                            <a
-                                href="{{ route('pos.index') }}"
-                                class="btn-primary-custom"
-                            >
-                                <i class="bi bi-cart-check-fill"></i>
-                                Coba Demo Kasir
+                            <a href="{{ route('dashboard') }}" class="btn-main">
+                                <i class="bi bi-play-circle-fill"></i>
+                                Coba Demo Aplikasi
                             </a>
 
                             <a
-                                href="{{ route('public.menu') }}"
-                                class="btn-light-custom"
+                                href="{{ $mayarUrl }}"
+                                class="btn-accent"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <i class="bi bi-phone"></i>
-                                Lihat Menu Online
+                                <i class="bi bi-bag-check-fill"></i>
+                                Beli Sekarang
                             </a>
 
                             <a
-                                href="{{ route('dashboard') }}"
-                                class="btn-light-custom"
+                                href="{{ $whatsappUrl }}"
+                                class="btn-outline-main"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
-                                <i class="bi bi-speedometer2"></i>
-                                Masuk Dashboard
+                                <i class="bi bi-whatsapp"></i>
+                                Tanya Admin
                             </a>
                         </div>
 
-                        <div class="hero-note">
+                        <div class="trust-note">
                             <span>
-                                <i class="bi bi-check-circle-fill"></i>
-                                Mudah digunakan
+                                <i class="bi bi-shield-check"></i>
+                                Pembayaran melalui Mayar
                             </span>
-
                             <span>
-                                <i class="bi bi-check-circle-fill"></i>
-                                Tampilan responsive
+                                <i class="bi bi-infinity"></i>
+                                Sekali bayar
                             </span>
-
                             <span>
-                                <i class="bi bi-check-circle-fill"></i>
-                                Cocok untuk UMKM
+                                <i class="bi bi-code-slash"></i>
+                                Source code lengkap
                             </span>
                         </div>
                     </div>
 
                     <div class="col-lg-5">
-                        <div class="dashboard-preview">
+                        <div class="app-preview">
                             <div class="preview-window">
-                                <div class="preview-header">
+                                <div class="preview-top">
                                     <div class="preview-dots">
                                         <span></span>
                                         <span></span>
                                         <span></span>
                                     </div>
-
                                     <small class="text-secondary fw-semibold">
-                                        Dashboard Bisnis
+                                        Dashboard Kasir Online Cerdas
                                     </small>
                                 </div>
 
                                 <div class="preview-content">
                                     <div class="row g-3">
                                         <div class="col-6">
-                                            <div class="preview-stat">
-                                                <span class="preview-stat-icon">
-                                                    <i class="bi bi-cash-stack"></i>
-                                                </span>
-
-                                                <div class="preview-label">
-                                                    Penjualan
-                                                </div>
-
-                                                <p class="preview-value">
-                                                    Rp4,8 Jt
-                                                </p>
+                                            <div class="mini-stat">
+                                                <i class="bi bi-cash-stack"></i>
+                                                <small>Penjualan</small>
+                                                <strong>Rp4,8 Jt</strong>
                                             </div>
                                         </div>
 
                                         <div class="col-6">
-                                            <div class="preview-stat">
-                                                <span class="preview-stat-icon">
-                                                    <i class="bi bi-bag-check"></i>
-                                                </span>
-
-                                                <div class="preview-label">
-                                                    Order Online
-                                                </div>
-
-                                                <p class="preview-value">
-                                                    128 Order
-                                                </p>
+                                            <div class="mini-stat">
+                                                <i class="bi bi-bag-check"></i>
+                                                <small>Order Online</small>
+                                                <strong>128 Order</strong>
                                             </div>
                                         </div>
 
                                         <div class="col-6">
-                                            <div class="preview-stat">
-                                                <span class="preview-stat-icon">
-                                                    <i class="bi bi-box-seam"></i>
-                                                </span>
-
-                                                <div class="preview-label">
-                                                    Produk Aktif
-                                                </div>
-
-                                                <p class="preview-value">
-                                                    65 Produk
-                                                </p>
+                                            <div class="mini-stat">
+                                                <i class="bi bi-box-seam"></i>
+                                                <small>Produk Aktif</small>
+                                                <strong>65 Produk</strong>
                                             </div>
                                         </div>
 
                                         <div class="col-6">
-                                            <div class="preview-stat">
-                                                <span class="preview-stat-icon">
-                                                    <i class="bi bi-people"></i>
-                                                </span>
-
-                                                <div class="preview-label">
-                                                    Pelanggan
-                                                </div>
-
-                                                <p class="preview-value">
-                                                    245 Orang
-                                                </p>
+                                            <div class="mini-stat">
+                                                <i class="bi bi-people"></i>
+                                                <small>Pelanggan</small>
+                                                <strong>245 Orang</strong>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="preview-chart">
-                                        <div class="d-flex justify-content-between align-items-center">
+                                    <div class="chart-card">
+                                        <div class="d-flex justify-content-between">
                                             <div>
-                                                <strong class="d-block">
+                                                <strong class="d-block text-dark">
                                                     Tren Penjualan
                                                 </strong>
-
                                                 <small class="text-secondary">
-                                                    Ringkasan transaksi
+                                                    Ringkasan tujuh hari
                                                 </small>
                                             </div>
-
                                             <i class="bi bi-graph-up-arrow text-success fs-4"></i>
                                         </div>
 
@@ -1052,17 +1086,15 @@
                                 </div>
                             </div>
 
-                            <div class="floating-card">
-                                <span class="floating-icon">
-                                    <i class="bi bi-check-lg"></i>
-                                </span>
-
+                            <div class="floating-proof">
+                                <i class="bi bi-check-lg"></i>
                                 <div>
                                     <small class="text-secondary d-block">
                                         Transaksi berhasil
                                     </small>
-
-                                    <strong>Stok otomatis terupdate</strong>
+                                    <strong class="text-dark">
+                                        Stok otomatis terupdate
+                                    </strong>
                                 </div>
                             </div>
                         </div>
@@ -1071,142 +1103,99 @@
             </div>
         </section>
 
-        <section
-            class="section-space"
-            id="fitur"
-        >
+        <div class="trust-strip">
+            <div class="container">
+                <div class="row g-3">
+                    <div class="col-6 col-lg-3">
+                        <div class="item">
+                            <i class="bi bi-check-circle-fill"></i>
+                            POS Terintegrasi
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="item">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Order Online
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="item">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Stok Otomatis
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="item">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Laporan Bisnis
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="section-space" id="masalah">
             <div class="container">
                 <div class="section-heading">
-                    <span class="section-eyebrow">Fitur Utama</span>
-
+                    <span class="eyebrow">Masalah UMKM</span>
                     <h2 class="section-title">
-                        Semua kebutuhan operasional usaha dalam satu aplikasi
+                        Apakah usaha Anda masih mengalami hal-hal ini?
                     </h2>
-
                     <p class="section-description">
-                        Dari transaksi kasir sampai laporan bisnis,
-                        Kasir Online Cerdas membantu pekerjaan harian
-                        menjadi lebih teratur dan mudah dipantau.
+                        Pencatatan manual sering membuat pemilik usaha kesulitan
+                        mengetahui kondisi bisnis secara cepat dan akurat.
                     </p>
                 </div>
 
                 <div class="row g-4">
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-cart-check"></i>
+                    <div class="col-md-6 col-lg-3">
+                        <article class="problem-card">
+                            <span class="card-icon">
+                                <i class="bi bi-journal-x"></i>
                             </span>
-
-                            <h3>Kasir POS</h3>
-
+                            <h3>Transaksi Masih Manual</h3>
                             <p>
-                                Proses transaksi penjualan dengan keranjang
-                                belanja, metode pembayaran, pajak, dan struk.
+                                Penjualan dicatat di buku atau spreadsheet
+                                sehingga mudah terlewat dan sulit direkap.
                             </p>
                         </article>
                     </div>
 
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-boxes"></i>
+                    <div class="col-md-6 col-lg-3">
+                        <article class="problem-card">
+                            <span class="card-icon">
+                                <i class="bi bi-box2-heart"></i>
                             </span>
-
-                            <h3>Produk & Stok</h3>
-
+                            <h3>Stok Tidak Terkontrol</h3>
                             <p>
-                                Kelola kategori, produk, stok tersedia,
-                                stok menipis, dan seluruh mutasi barang.
+                                Barang habis tidak diketahui lebih awal dan
+                                mutasi stok sulit ditelusuri.
                             </p>
                         </article>
                     </div>
 
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-phone"></i>
+                    <div class="col-md-6 col-lg-3">
+                        <article class="problem-card">
+                            <span class="card-icon">
+                                <i class="bi bi-chat-left-dots"></i>
                             </span>
-
-                            <h3>Order Online</h3>
-
+                            <h3>Order WhatsApp Berantakan</h3>
                             <p>
-                                Pelanggan dapat melihat menu, membuat order,
-                                checkout, dan melacak status pesanan.
+                                Pesanan pelanggan bercampur dengan chat lain
+                                dan statusnya sulit dipantau.
                             </p>
                         </article>
                     </div>
 
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-qr-code-scan"></i>
+                    <div class="col-md-6 col-lg-3">
+                        <article class="problem-card">
+                            <span class="card-icon">
+                                <i class="bi bi-graph-down-arrow"></i>
                             </span>
-
-                            <h3>Pembayaran Fleksibel</h3>
-
+                            <h3>Tidak Tahu Laba Usaha</h3>
                             <p>
-                                Mendukung pembayaran tunai, QRIS, transfer,
-                                kartu EDC, dan COD sesuai kebutuhan usaha.
-                            </p>
-                        </article>
-                    </div>
-
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-file-earmark-bar-graph"></i>
-                            </span>
-
-                            <h3>Laporan Penjualan</h3>
-
-                            <p>
-                                Pantau transaksi, omzet, metode pembayaran,
-                                produk terlaris, dan laporan order online.
-                            </p>
-                        </article>
-                    </div>
-
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-graph-up-arrow"></i>
-                            </span>
-
-                            <h3>Laba Rugi Sederhana</h3>
-
-                            <p>
-                                Lihat ringkasan pendapatan, modal produk,
-                                laba kotor, serta margin penjualan.
-                            </p>
-                        </article>
-                    </div>
-
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-people"></i>
-                            </span>
-
-                            <h3>Data Pelanggan</h3>
-
-                            <p>
-                                Simpan profil pelanggan, riwayat transaksi,
-                                total pembelian, dan aktivitas terakhir.
-                            </p>
-                        </article>
-                    </div>
-
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="feature-card">
-                            <span class="feature-icon">
-                                <i class="bi bi-speedometer2"></i>
-                            </span>
-
-                            <h3>Dashboard Analitik</h3>
-
-                            <p>
-                                Pantau kondisi usaha melalui ringkasan
-                                penjualan, order, pembayaran, dan stok.
+                                Omzet terlihat, tetapi modal, laba kotor,
+                                produk terlaris, dan margin tidak terbaca.
                             </p>
                         </article>
                     </div>
@@ -1214,500 +1203,448 @@
             </div>
         </section>
 
-        <section
-            class="section-space section-soft"
-            id="cocok-untuk"
-        >
+        <section class="section-space section-soft" id="fitur">
             <div class="container">
                 <div class="section-heading">
-                    <span class="section-eyebrow">Cocok Digunakan</span>
-
+                    <span class="eyebrow">Solusi Lengkap</span>
                     <h2 class="section-title">
-                        Dibuat untuk berbagai jenis usaha kecil
+                        Semua operasional usaha dalam satu sistem
                     </h2>
-
                     <p class="section-description">
-                        Tampilan sederhana dan fitur yang praktis membuat
-                        aplikasi mudah disesuaikan untuk kebutuhan usaha.
-                    </p>
-                </div>
-
-                <div class="row g-4 justify-content-center">
-                    <div class="col-6 col-md-4 col-lg">
-                        <div class="business-card">
-                            <span class="business-icon">
-                                <i class="bi bi-cup-hot"></i>
-                            </span>
-
-                            <h3>Cafe</h3>
-                        </div>
-                    </div>
-
-                    <div class="col-6 col-md-4 col-lg">
-                        <div class="business-card">
-                            <span class="business-icon">
-                                <i class="bi bi-cup-straw"></i>
-                            </span>
-
-                            <h3>Warung Kopi</h3>
-                        </div>
-                    </div>
-
-                    <div class="col-6 col-md-4 col-lg">
-                        <div class="business-card">
-                            <span class="business-icon">
-                                <i class="bi bi-shop-window"></i>
-                            </span>
-
-                            <h3>Toko Kelontong</h3>
-                        </div>
-                    </div>
-
-                    <div class="col-6 col-md-4 col-lg">
-                        <div class="business-card">
-                            <span class="business-icon">
-                                <i class="bi bi-basket"></i>
-                            </span>
-
-                            <h3>UMKM Kuliner</h3>
-                        </div>
-                    </div>
-
-                    <div class="col-6 col-md-4 col-lg">
-                        <div class="business-card">
-                            <span class="business-icon">
-                                <i class="bi bi-bag"></i>
-                            </span>
-
-                            <h3>Toko Retail</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section
-            class="section-space"
-            id="alur"
-        >
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-eyebrow">Alur Kerja</span>
-
-                    <h2 class="section-title">
-                        Mulai dari produk sampai laporan bisnis
-                    </h2>
-
-                    <p class="section-description">
-                        Proses operasional dirancang berurutan agar mudah
-                        dipahami oleh pemilik usaha maupun petugas kasir.
-                    </p>
-                </div>
-
-                <div class="workflow-wrapper">
-                    <div class="row g-4">
-                        <div class="col-md-6 col-lg">
-                            <article class="workflow-item">
-                                <span class="workflow-number">1</span>
-
-                                <h3>Input Produk</h3>
-
-                                <p>
-                                    Tambahkan kategori, nama produk, harga,
-                                    stok awal, dan batas minimum stok.
-                                </p>
-                            </article>
-                        </div>
-
-                        <div class="col-md-6 col-lg">
-                            <article class="workflow-item">
-                                <span class="workflow-number">2</span>
-
-                                <h3>Transaksi POS</h3>
-
-                                <p>
-                                    Pilih produk, pelanggan, metode pembayaran,
-                                    lalu selesaikan transaksi kasir.
-                                </p>
-                            </article>
-                        </div>
-
-                        <div class="col-md-6 col-lg">
-                            <article class="workflow-item">
-                                <span class="workflow-number">3</span>
-
-                                <h3>Order Online</h3>
-
-                                <p>
-                                    Pelanggan membuat pesanan melalui
-                                    halaman menu online yang responsive.
-                                </p>
-                            </article>
-                        </div>
-
-                        <div class="col-md-6 col-lg">
-                            <article class="workflow-item">
-                                <span class="workflow-number">4</span>
-
-                                <h3>Stok Otomatis</h3>
-
-                                <p>
-                                    Stok barang diperbarui saat transaksi
-                                    atau order online berhasil diproses.
-                                </p>
-                            </article>
-                        </div>
-
-                        <div class="col-md-6 col-lg">
-                            <article class="workflow-item">
-                                <span class="workflow-number">5</span>
-
-                                <h3>Laporan Bisnis</h3>
-
-                                <p>
-                                    Pemilik usaha dapat melihat omzet,
-                                    produk terlaris, stok, dan laba rugi.
-                                </p>
-                            </article>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section
-            class="section-space section-soft"
-            id="paket"
-        >
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-eyebrow">Paket Produk</span>
-
-                    <h2 class="section-title">
-                        Pilihan paket sesuai kebutuhan usaha
-                    </h2>
-
-                    <p class="section-description">
-                        Paket berikut merupakan contoh penawaran produk.
-                        Harga dan cakupan layanan dapat disesuaikan kembali
-                        sebelum dipublikasikan.
-                    </p>
-                </div>
-
-                <div class="row g-4 justify-content-center">
-                    <div class="col-md-6 col-lg-4">
-                        <article class="pricing-card">
-                            <h3 class="pricing-name">Basic</h3>
-
-                            <p class="pricing-description">
-                                Cocok untuk usaha kecil yang baru mulai
-                                menggunakan aplikasi kasir digital.
-                            </p>
-
-                            <div class="pricing-price">
-                                Hubungi Kami
-                            </div>
-
-                            <div class="pricing-note">
-                                Paket dasar aplikasi POS
-                            </div>
-
-                            <ul class="pricing-list">
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Kasir POS dan cetak struk
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Manajemen produk dan kategori
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Stok dan mutasi barang
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Laporan penjualan
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Pengaturan profil toko
-                                </li>
-                            </ul>
-
-                            <a
-                                href="{{ route('pos.index') }}"
-                                class="btn-light-custom w-100"
-                            >
-                                Lihat Demo Basic
-                            </a>
-                        </article>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <article class="pricing-card featured">
-                            <span class="pricing-badge">
-                                PALING LENGKAP
-                            </span>
-
-                            <h3 class="pricing-name">Pro</h3>
-
-                            <p class="pricing-description">
-                                Cocok untuk usaha yang membutuhkan POS,
-                                order online, pelanggan, dan analitik.
-                            </p>
-
-                            <div class="pricing-price">
-                                Hubungi Kami
-                            </div>
-
-                            <div class="pricing-note">
-                                Paket lengkap untuk operasional usaha
-                            </div>
-
-                            <ul class="pricing-list">
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Semua fitur paket Basic
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Menu dan checkout online
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    QRIS, transfer, COD, dan EDC
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Manajemen dan analitik pelanggan
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Dashboard analitik bisnis
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Laporan laba rugi sederhana
-                                </li>
-                            </ul>
-
-                            <a
-                                href="{{ route('dashboard') }}"
-                                class="btn-primary-custom w-100"
-                            >
-                                Lihat Demo Pro
-                            </a>
-                        </article>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <article class="pricing-card">
-                            <h3 class="pricing-name">Custom</h3>
-
-                            <p class="pricing-description">
-                                Cocok untuk usaha yang memerlukan branding,
-                                fitur, dan penyesuaian khusus.
-                            </p>
-
-                            <div class="pricing-price">
-                                Sesuai Kebutuhan
-                            </div>
-
-                            <div class="pricing-note">
-                                Pengembangan berdasarkan permintaan
-                            </div>
-
-                            <ul class="pricing-list">
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Semua fitur paket Pro
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Branding dan identitas usaha
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Penyesuaian fitur tertentu
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Penyesuaian laporan
-                                </li>
-
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Dukungan implementasi
-                                </li>
-                            </ul>
-
-                            <a
-                                href="#demo"
-                                class="btn-light-custom w-100"
-                            >
-                                Jelajahi Aplikasi
-                            </a>
-                        </article>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section
-            class="section-space"
-            id="demo"
-        >
-            <div class="container">
-                <div class="section-heading">
-                    <span class="section-eyebrow">Demo Aplikasi</span>
-
-                    <h2 class="section-title">
-                        Jelajahi fitur Kasir Online Cerdas
-                    </h2>
-
-                    <p class="section-description">
-                        Buka langsung halaman utama aplikasi untuk melihat
-                        alur kasir, menu pelanggan, dan laporan penjualan.
+                        Dirancang agar pemilik usaha dan petugas kasir dapat
+                        bekerja lebih cepat tanpa berpindah-pindah aplikasi.
                     </p>
                 </div>
 
                 <div class="row g-4">
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="demo-card">
-                            <span class="demo-card-icon">
-                                <i class="bi bi-speedometer2"></i>
-                            </span>
+                    @foreach ([
+                        ['bi-cart-check', 'Kasir POS', 'Keranjang transaksi, pelanggan, pajak, metode pembayaran, checkout, dan cetak struk.'],
+                        ['bi-boxes', 'Produk & Stok', 'Kategori, produk, stok tersedia, stok menipis, dan mutasi barang.'],
+                        ['bi-phone', 'Order Online', 'Menu publik, checkout pelanggan, pelacakan pesanan, dan bukti pembayaran.'],
+                        ['bi-qr-code-scan', 'Pembayaran Fleksibel', 'Tunai, QRIS, transfer, kartu EDC, dan COD sesuai kebutuhan.'],
+                        ['bi-file-earmark-bar-graph', 'Laporan Penjualan', 'Riwayat transaksi, omzet, pembayaran, order online, dan export laporan.'],
+                        ['bi-graph-up-arrow', 'Laba Rugi Sederhana', 'Pendapatan, modal produk, laba kotor, dan margin penjualan.'],
+                        ['bi-people', 'Manajemen Pelanggan', 'Profil, riwayat transaksi, total pembelian, dan aktivitas pelanggan.'],
+                        ['bi-speedometer2', 'Dashboard Analitik', 'Ringkasan penjualan, pembayaran, stok, order, dan pelanggan.'],
+                    ] as [$icon, $title, $description])
+                        <div class="col-sm-6 col-lg-3">
+                            <article class="feature-card">
+                                <span class="card-icon">
+                                    <i class="bi {{ $icon }}"></i>
+                                </span>
+                                <h3>{{ $title }}</h3>
+                                <p>{{ $description }}</p>
+                            </article>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
 
-                            <h3>Dashboard</h3>
+        <section class="section-space" id="cocok-untuk">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="eyebrow">Cocok Untuk</span>
+                    <h2 class="section-title">
+                        Fleksibel untuk berbagai jenis usaha
+                    </h2>
+                    <p class="section-description">
+                        Struktur produk, pembayaran, dan laporan dapat
+                        digunakan oleh banyak jenis UMKM.
+                    </p>
+                </div>
 
-                            <p>
-                                Lihat ringkasan penjualan, order online,
-                                pembayaran, stok, dan aktivitas usaha.
-                            </p>
+                <div class="row g-4 justify-content-center">
+                    @foreach ([
+                        ['bi-cup-hot', 'Cafe'],
+                        ['bi-cup-straw', 'Warung Kopi'],
+                        ['bi-shop-window', 'Toko Kelontong'],
+                        ['bi-basket', 'UMKM Kuliner'],
+                        ['bi-bag', 'Toko Retail'],
+                        ['bi-snow', 'Frozen Food'],
+                    ] as [$icon, $title])
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <article class="business-card">
+                                <span class="card-icon">
+                                    <i class="bi {{ $icon }}"></i>
+                                </span>
+                                <h3>{{ $title }}</h3>
+                            </article>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
 
-                            <a
-                                href="{{ route('dashboard') }}"
-                                class="btn-primary-custom w-100"
-                            >
-                                Buka Dashboard
-                            </a>
-                        </article>
+        <section class="section-space section-soft" id="alur">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="eyebrow">Cara Kerja</span>
+                    <h2 class="section-title">
+                        Dari produk sampai laporan hanya dalam lima langkah
+                    </h2>
+                </div>
+
+                <div class="row g-4">
+                    @foreach ([
+                        ['1', 'Input Produk', 'Tambahkan kategori, produk, harga, stok awal, dan batas minimum stok.'],
+                        ['2', 'Transaksi POS', 'Pilih produk dan pelanggan, lalu selesaikan pembayaran di kasir.'],
+                        ['3', 'Terima Order Online', 'Pelanggan dapat memilih menu dan checkout melalui HP.'],
+                        ['4', 'Stok Terupdate', 'Stok berkurang sesuai transaksi dan pergerakannya tercatat.'],
+                        ['5', 'Pantau Laporan', 'Lihat omzet, stok, produk terlaris, pelanggan, dan laba rugi.'],
+                    ] as [$number, $title, $description])
+                        <div class="col-md-6 col-lg">
+                            <article class="workflow-card">
+                                <span class="workflow-number">{{ $number }}</span>
+                                <h3>{{ $title }}</h3>
+                                <p>{{ $description }}</p>
+                            </article>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
+        <section class="section-space" id="yang-didapat">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="eyebrow">Yang Anda Dapatkan</span>
+                    <h2 class="section-title">
+                        Semua ini tersedia dalam satu paket
+                    </h2>
+                    <p class="section-description">
+                        Nilai berikut adalah ilustrasi nilai modul bila dibuat
+                        atau dibeli secara terpisah.
+                    </p>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-9">
+                        <div class="value-box">
+                            @foreach ([
+                                ['Source code Laravel lengkap', 'Rp300.000'],
+                                ['Modul POS dan cetak struk', 'Rp250.000'],
+                                ['Modul produk, stok, dan mutasi', 'Rp200.000'],
+                                ['Modul order online dan tracking', 'Rp250.000'],
+                                ['Modul pembayaran QRIS/transfer/COD', 'Rp100.000'],
+                                ['Dashboard analitik dan laporan', 'Rp250.000'],
+                                ['Manajemen dan analitik pelanggan', 'Rp150.000'],
+                                ['Pengaturan toko dan template struk', 'Rp100.000'],
+                                ['Database demo dan panduan instalasi', 'Rp100.000'],
+                            ] as [$item, $price])
+                                <div class="value-row">
+                                    <div class="value-item">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        <span>{{ $item }}</span>
+                                    </div>
+                                    <span class="value-price">{{ $price }}</span>
+                                </div>
+                            @endforeach
+
+                            <div class="value-total d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                <div>
+                                    <small class="d-block opacity-75">
+                                        Total nilai jika dibeli terpisah
+                                    </small>
+                                    <strong>Rp1.700.000</strong>
+                                </div>
+                                <div class="text-md-end">
+                                    <small class="d-block opacity-75">
+                                        Semua dalam satu paket
+                                    </small>
+                                    <strong>Rp299.000</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-center text-secondary small mt-3 mb-0">
+                            Nilai modul di atas merupakan ilustrasi pemasaran,
+                            bukan harga jual satuan yang berlaku.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-space section-soft" id="bonus">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="eyebrow">Bonus Pembelian</span>
+                    <h2 class="section-title">
+                        Bukan hanya source code
+                    </h2>
+                    <p class="section-description">
+                        Pembeli juga memperoleh bahan pendukung agar lebih
+                        mudah mempelajari dan menjalankan aplikasi.
+                    </p>
+                </div>
+
+                <div class="row g-4 justify-content-center">
+                    @foreach ([
+                        ['bi-file-earmark-pdf', 'Manual Instalasi', 'Panduan persiapan database, konfigurasi environment, dan menjalankan aplikasi.'],
+                        ['bi-database-check', 'Database Demo', 'Struktur database dan data awal agar aplikasi dapat langsung dipelajari.'],
+                        ['bi-play-btn', 'Panduan Penggunaan', 'Panduan alur produk, POS, stok, order online, pelanggan, dan laporan.'],
+                        ['bi-tools', 'Dukungan Awal', 'Bantuan untuk pertanyaan dasar instalasi sesuai ketentuan paket.'],
+                    ] as [$icon, $title, $description])
+                        <div class="col-md-6 col-lg-3">
+                            <article class="bonus-card">
+                                <span class="card-icon">
+                                    <i class="bi {{ $icon }}"></i>
+                                </span>
+                                <h3>{{ $title }}</h3>
+                                <p>{{ $description }}</p>
+                            </article>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
+        <section class="section-space" id="harga">
+            <div class="container">
+                <div class="row justify-content-center align-items-center g-5">
+                    <div class="col-lg-5">
+                        <span class="eyebrow">Penawaran Launching</span>
+                        <h2 class="section-title">
+                            Mulai jual atau gunakan aplikasi POS Anda sendiri
+                        </h2>
+                        <p class="section-description mb-4">
+                            Dapatkan aplikasi Kasir Online Cerdas dengan modul
+                            POS, order online, pelanggan, stok, pembayaran,
+                            dashboard, dan laporan bisnis.
+                        </p>
+
+                        <div class="d-grid gap-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                <div>
+                                    <strong class="text-dark d-block">
+                                        Cocok untuk developer dan UMKM
+                                    </strong>
+                                    <span class="text-secondary">
+                                        Dapat dipelajari, dipakai, dan dikembangkan.
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-3">
+                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                <div>
+                                    <strong class="text-dark d-block">
+                                        Sekali bayar
+                                    </strong>
+                                    <span class="text-secondary">
+                                        Tidak ada biaya langganan untuk source code.
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-3">
+                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                <div>
+                                    <strong class="text-dark d-block">
+                                        Checkout aman
+                                    </strong>
+                                    <span class="text-secondary">
+                                        Pembelian dilakukan melalui halaman Mayar.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="demo-card">
-                            <span class="demo-card-icon">
-                                <i class="bi bi-cart-check"></i>
+                    <div class="col-lg-6">
+                        <article class="offer-card">
+                            <span class="offer-badge">
+                                <i class="bi bi-fire"></i>
+                                HARGA LAUNCHING
                             </span>
 
-                            <h3>Kasir POS</h3>
+                            <h3 class="text-dark fw-bold">
+                                Kasir Online Cerdas — Paket Source Code
+                            </h3>
 
-                            <p>
-                                Simulasikan transaksi kasir, pilih produk,
-                                pelanggan, dan metode pembayaran.
-                            </p>
+                            <div class="normal-price">Harga normal Rp799.000</div>
+                            <div class="promo-price">Rp299.000</div>
+                            <div class="text-secondary">
+                                Bayar sekali · Source code lengkap
+                            </div>
+
+                            <ul class="offer-list">
+                                <li>
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Source code Laravel + Blade + Bootstrap
+                                </li>
+                                <li>
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    POS, stok, order online, pelanggan, dan laporan
+                                </li>
+                                <li>
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Database dan panduan instalasi
+                                </li>
+                                <li>
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Dapat digunakan dan dikembangkan sendiri
+                                </li>
+                            </ul>
 
                             <a
-                                href="{{ route('pos.index') }}"
-                                class="btn-primary-custom w-100"
-                            >
-                                Buka Kasir
-                            </a>
-                        </article>
-                    </div>
-
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="demo-card">
-                            <span class="demo-card-icon">
-                                <i class="bi bi-phone"></i>
-                            </span>
-
-                            <h3>Menu Online</h3>
-
-                            <p>
-                                Lihat tampilan menu pelanggan dan proses
-                                pemesanan melalui perangkat mobile.
-                            </p>
-
-                            <a
-                                href="{{ route('public.menu') }}"
-                                class="btn-primary-custom w-100"
+                                href="{{ $mayarUrl }}"
+                                class="btn-accent w-100"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                Buka Menu
+                                <i class="bi bi-cart-check-fill"></i>
+                                Beli Sekarang melalui Mayar
                             </a>
-                        </article>
-                    </div>
-
-                    <div class="col-sm-6 col-lg-3">
-                        <article class="demo-card">
-                            <span class="demo-card-icon">
-                                <i class="bi bi-file-earmark-bar-graph"></i>
-                            </span>
-
-                            <h3>Laporan</h3>
-
-                            <p>
-                                Tinjau transaksi dan performa penjualan
-                                berdasarkan periode serta pembayaran.
-                            </p>
 
                             <a
-                                href="{{ route('sales.report') }}"
-                                class="btn-primary-custom w-100"
+                                href="{{ $whatsappUrl }}"
+                                class="btn-whatsapp w-100 mt-3"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
-                                Buka Laporan
+                                <i class="bi bi-whatsapp"></i>
+                                Tanya Admin Sebelum Membeli
                             </a>
+
+                            <div class="security-note">
+                                <i class="bi bi-lock-fill"></i>
+                                Pembayaran aman · Produk digital · Tanpa langganan
+                            </div>
                         </article>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="cta-section">
+        <section class="section-space section-soft" id="demo">
             <div class="container">
-                <div class="cta-wrapper">
-                    <h2>
-                        Siap membantu usaha bekerja lebih cepat dan teratur
+                <div class="section-heading">
+                    <span class="eyebrow">Coba Aplikasinya</span>
+                    <h2 class="section-title">
+                        Jelajahi fitur sebelum membeli
                     </h2>
+                    <p class="section-description">
+                        Buka beberapa bagian utama untuk memahami alur kerja
+                        Kasir Online Cerdas.
+                    </p>
+                </div>
 
+                <div class="row g-4">
+                    @foreach ([
+                        ['bi-speedometer2', 'Dashboard', 'Lihat ringkasan penjualan, order, pembayaran, stok, dan aktivitas usaha.', route('dashboard'), 'Buka Dashboard'],
+                        ['bi-cart-check', 'Kasir POS', 'Simulasikan transaksi, pilih produk, pelanggan, dan metode pembayaran.', route('pos.index'), 'Buka Kasir'],
+                        ['bi-phone', 'Menu Online', 'Lihat menu publik dan proses pemesanan dari perangkat pelanggan.', route('public.menu'), 'Buka Menu Online'],
+                        ['bi-file-earmark-bar-graph', 'Laporan Penjualan', 'Tinjau transaksi dan performa penjualan berdasarkan periode.', route('sales.report'), 'Buka Laporan'],
+                    ] as [$icon, $title, $description, $url, $label])
+                        <div class="col-sm-6 col-lg-3">
+                            <article class="demo-card">
+                                <span class="card-icon">
+                                    <i class="bi {{ $icon }}"></i>
+                                </span>
+                                <h3>{{ $title }}</h3>
+                                <p>{{ $description }}</p>
+                                <a href="{{ $url }}" class="btn-main w-100">
+                                    {{ $label }}
+                                </a>
+                            </article>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
+        <section class="section-space" id="faq">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="eyebrow">Pertanyaan Umum</span>
+                    <h2 class="section-title">
+                        Hal yang sering ditanyakan sebelum membeli
+                    </h2>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-9">
+                        <div class="accordion" id="faqAccordion">
+                            @foreach ([
+                                ['Apakah ini aplikasi siap pakai?', 'Produk utama berupa source code aplikasi Laravel. Aplikasi dapat dijalankan di localhost atau hosting yang mendukung kebutuhan Laravel dan MySQL.'],
+                                ['Apakah ada biaya bulanan?', 'Tidak ada biaya bulanan untuk membeli source code. Biaya hosting, domain, layanan pihak ketiga, dan pengembangan lanjutan ditanggung pengguna bila diperlukan.'],
+                                ['Apakah source code dapat diubah?', 'Ya. Source code dapat dipelajari dan dikembangkan untuk kebutuhan sendiri sesuai ketentuan lisensi produk.'],
+                                ['Apakah sudah mendukung QRIS?', 'Aplikasi mendukung pengaturan QRIS manual, transfer, tunai, EDC, dan COD. Integrasi payment gateway otomatis belum termasuk.'],
+                                ['Apakah bisa digunakan untuk cafe dan toko?', 'Bisa. Struktur produk, stok, POS, pelanggan, dan laporan cocok untuk cafe, warung kopi, kuliner, toko kelontong, dan retail kecil.'],
+                                ['Apakah sudah ada order online?', 'Ya. Pelanggan dapat membuka menu publik, menambahkan produk ke keranjang, checkout, mengunggah bukti pembayaran, dan melacak pesanan.'],
+                                ['Apakah instalasi termasuk?', 'Harga source code tidak otomatis mencakup instalasi ke hosting. Layanan instalasi dan branding dapat ditawarkan sebagai paket terpisah.'],
+                                ['Bagaimana produk dikirim setelah pembayaran?', 'Detail pengiriman produk, akses file, lisensi, dan panduan akan mengikuti pengaturan produk Anda di Mayar dan prosedur Ruang Cerdas.'],
+                            ] as $index => [$question, $answer])
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button
+                                            class="accordion-button {{ $index !== 0 ? 'collapsed' : '' }}"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#faq{{ $index }}"
+                                            aria-expanded="{{ $index === 0 ? 'true' : 'false' }}"
+                                            aria-controls="faq{{ $index }}"
+                                        >
+                                            {{ $question }}
+                                        </button>
+                                    </h2>
+
+                                    <div
+                                        id="faq{{ $index }}"
+                                        class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}"
+                                        data-bs-parent="#faqAccordion"
+                                    >
+                                        <div class="accordion-body text-secondary">
+                                            {{ $answer }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="final-cta">
+            <div class="container">
+                <div class="final-cta-box">
+                    <h2>
+                        Siap memiliki aplikasi POS dan order online sendiri?
+                    </h2>
                     <p>
-                        Gunakan Kasir Online Cerdas untuk mengelola
-                        transaksi, stok, order online, pelanggan,
-                        dan laporan bisnis dari satu aplikasi.
+                        Pelajari demonya terlebih dahulu atau lanjutkan
+                        pembelian melalui Mayar. Untuk layanan instalasi,
+                        branding, dan custom fitur, konsultasikan melalui WhatsApp.
                     </p>
 
-                    <div class="cta-actions">
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
                         <a
-                            href="{{ route('pos.index') }}"
+                            href="{{ $mayarUrl }}"
                             class="btn-white"
-                        >
-                            <i class="bi bi-cart-check-fill"></i>
-                            Coba Demo Kasir
-                        </a>
-
-                        <a
-                            href="{{ route('public.menu') }}"
-                            class="btn-outline-white"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            <i class="bi bi-phone"></i>
-                            Lihat Menu Online
+                            <i class="bi bi-bag-check-fill"></i>
+                            Beli Sekarang
+                        </a>
+
+                        <a
+                            href="{{ $whatsappUrl }}"
+                            class="btn-whatsapp"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <i class="bi bi-whatsapp"></i>
+                            Konsultasi WhatsApp
+                        </a>
+
+                        <a href="{{ route('dashboard') }}" class="btn-outline-main">
+                            <i class="bi bi-play-circle"></i>
+                            Coba Demo
                         </a>
                     </div>
                 </div>
@@ -1715,45 +1652,60 @@
         </section>
     </main>
 
-    <footer class="landing-footer">
+    <footer class="footer">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6">
-                    <a
-                        class="brand-logo footer-brand"
-                        href="{{ route('product.demo') }}"
-                    >
+                    <a class="brand-logo" href="{{ route('product.demo') }}">
                         <span class="brand-icon">
                             <i class="bi bi-shop"></i>
                         </span>
-
                         <span>Kasir Online Cerdas</span>
                     </a>
 
-                    <p class="footer-description">
-                        Aplikasi POS dan order online untuk membantu
-                        UMKM mengelola transaksi, stok, pelanggan,
-                        pembayaran, serta laporan bisnis.
+                    <p>
+                        Produk aplikasi dari Ruang Cerdas untuk membantu
+                        UMKM mengelola transaksi, stok, order online,
+                        pelanggan, pembayaran, dan laporan bisnis.
                     </p>
                 </div>
 
                 <div class="col-lg-6">
                     <div class="footer-links">
                         <a href="#fitur">Fitur</a>
-                        <a href="#cocok-untuk">Cocok Untuk</a>
-                        <a href="#paket">Paket</a>
+                        <a href="#yang-didapat">Yang Didapat</a>
+                        <a href="#harga">Harga</a>
                         <a href="#demo">Demo</a>
-                        <a href="{{ route('dashboard') }}">Dashboard</a>
+                        <a href="#faq">FAQ</a>
                     </div>
                 </div>
             </div>
 
             <div class="footer-bottom text-center text-md-start">
-                &copy; {{ date('Y') }} Kasir Online Cerdas.
-                Semua hak dilindungi.
+                &copy; {{ date('Y') }} Ruang Cerdas.
+                Kasir Online Cerdas. Semua hak dilindungi.
             </div>
         </div>
     </footer>
+
+    <div class="mobile-buy-bar">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div class="mobile-buy-price">
+                <small>Rp799.000</small>
+                <strong>Rp299.000</strong>
+            </div>
+
+            <a
+                href="{{ $mayarUrl }}"
+                class="btn-accent flex-grow-1"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <i class="bi bi-cart-check-fill"></i>
+                Beli Sekarang
+            </a>
+        </div>
+    </div>
 
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
