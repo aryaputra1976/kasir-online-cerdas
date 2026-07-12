@@ -25,6 +25,7 @@ yarn-error.log
 /resources/views/partials/sidebar-demo-trezo.blade.php
 
 # Trezo demo dan asset bawaan template - jangan upload ke public GitHub
+# Jika deploy dari hasil clone, folder public/assets perlu disiapkan terpisah.
 /resources/views/_trezo_demo/
 /resources/views/partials/sidebar-demo-trezo.blade.php
 /routes/web-demo-trezo.php

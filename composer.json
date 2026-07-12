@@ -1,8 +1,8 @@
 {
-    "name": "laravel/laravel",
+    "name": "ruangcerdas/kasir-online-cerdas",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Aplikasi POS dan order online sederhana untuk UMKM Indonesia.",
+    "keywords": ["laravel", "pos", "kasir", "umkm", "order-online"],
     "license": "MIT",
     "require": {
         "php": "^8.2",
