@@ -13,7 +13,7 @@ class AuthController extends Controller
     public function create(): View|RedirectResponse
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return redirect()->to($this->defaultRedirectPath(Auth::user()));
         }
 
         return view('login');
@@ -57,7 +57,7 @@ class AuthController extends Controller
                 ]);
         }
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended($this->defaultRedirectPath($user));
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -70,5 +70,14 @@ class AuthController extends Controller
         return redirect()
             ->route('login')
             ->with('success', 'Anda berhasil keluar dari aplikasi.');
+    }
+
+    private function defaultRedirectPath(?User $user): string
+    {
+        if ($user?->hasRole(User::ROLE_KASIR)) {
+            return route('pos.index');
+        }
+
+        return route('dashboard');
     }
 }

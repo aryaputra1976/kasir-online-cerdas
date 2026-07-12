@@ -162,11 +162,14 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])->name('sales.report');
             Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])->name('sales.report.export');
             Route::get('/laporan/produk-terlaris', [BestSellingProductReportController::class, 'index'])->name('best-products.report');
-            Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])->name('profit-loss.report');
             Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('stock.report');
             Route::get('/laporan/order-online', [OnlineOrderReportController::class, 'index'])->name('reports.online-orders.index');
             Route::get('/laporan/order-online/export', [OnlineOrderReportController::class, 'export'])->name('reports.online-orders.export');
+        });
 
+    Route::middleware('role:' . User::ROLE_OWNER)
+        ->group(function () {
+            Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])->name('profit-loss.report');
             Route::get('/pengaturan/profil-toko', [StoreSettingController::class, 'edit'])->name('settings.store');
             Route::put('/pengaturan/profil-toko', [StoreSettingController::class, 'update'])->name('settings.store.update');
             Route::delete('/pengaturan/profil-toko/logo', [StoreSettingController::class, 'removeLogo'])->name('settings.store.logo.destroy');

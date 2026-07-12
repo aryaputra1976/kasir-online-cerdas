@@ -3,7 +3,7 @@
     $currentUser = auth()->user();
     $userName = $currentUser?->name ?: ($storeSetting?->owner_name ?: 'Admin Toko');
     $userRoleLabel = $currentUser?->role_label ?: 'Pengguna';
-    $canManageSettings = $currentUser?->hasAnyRole([\App\Models\User::ROLE_OWNER, \App\Models\User::ROLE_ADMIN]) ?? false;
+    $isOwner = $currentUser?->hasRole(\App\Models\User::ROLE_OWNER) ?? false;
 
     $newOnlineOrderCount = \App\Models\OnlineOrder::query()
         ->where('status', 'NEW')
@@ -334,7 +334,7 @@
                                     </div>
                                 </div>
 
-                                @if ($canManageSettings)
+                                @if ($isOwner)
                                     <ul class="admin-link ps-0 mb-0 list-unstyled">
                                         <li>
                                             <a

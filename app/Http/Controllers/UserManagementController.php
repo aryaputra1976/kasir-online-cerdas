@@ -100,6 +100,12 @@ class UserManagementController extends Controller
             unset($validated['password']);
         }
 
+        if ($this->wouldLeaveNoActiveOwner($user, $validated)) {
+            return redirect()
+                ->route('settings.users.index')
+                ->with('error', 'Owner aktif terakhir tidak boleh diubah menjadi non-owner atau dinonaktifkan.');
+        }
+
         $user->update($validated);
 
         return redirect()
@@ -113,6 +119,12 @@ class UserManagementController extends Controller
             return redirect()
                 ->route('settings.users.index')
                 ->with('error', 'User terakhir tidak boleh dihapus.');
+        }
+
+        if ($this->isLastActiveOwner($user)) {
+            return redirect()
+                ->route('settings.users.index')
+                ->with('error', 'Owner aktif terakhir tidak boleh dihapus.');
         }
 
         $user->delete();
@@ -152,5 +164,31 @@ class UserManagementController extends Controller
             'password.min' => 'Password minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak sama.',
         ]);
+    }
+
+    private function isLastActiveOwner(User $user): bool
+    {
+        if (! $user->hasRole(User::ROLE_OWNER) || ! $user->is_active) {
+            return false;
+        }
+
+        return User::query()
+            ->where('role', User::ROLE_OWNER)
+            ->where('is_active', true)
+            ->count() <= 1;
+    }
+
+    private function wouldLeaveNoActiveOwner(User $user, array $validated): bool
+    {
+        if (! $this->isLastActiveOwner($user)) {
+            return false;
+        }
+
+        $nextRole = $validated['role'] ?? $user->role;
+        $nextIsActive = array_key_exists('is_active', $validated)
+            ? filter_var($validated['is_active'], FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE)
+            : $user->is_active;
+
+        return $nextRole !== User::ROLE_OWNER || $nextIsActive !== true;
     }
 }

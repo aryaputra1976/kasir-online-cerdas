@@ -27,7 +27,8 @@
 
     $isPengaturan = Request::is('pengaturan/*');
     $currentUser = auth()->user();
-    $canManageData = $currentUser?->hasAnyRole([\App\Models\User::ROLE_OWNER, \App\Models\User::ROLE_ADMIN]) ?? false;
+    $canManageOperationalData = $currentUser?->hasAnyRole([\App\Models\User::ROLE_OWNER, \App\Models\User::ROLE_ADMIN]) ?? false;
+    $isOwner = $currentUser?->hasRole(\App\Models\User::ROLE_OWNER) ?? false;
 @endphp
 
 <div class="sidebar-area" id="sidebar-area">
@@ -56,7 +57,7 @@
                 </a>
             </li>
 
-            @if ($canManageData)
+            @if ($canManageOperationalData)
                 {{-- Master Data --}}
                 <li class="menu-item {{ $isMasterData ? 'open active' : '' }}">
                     <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isMasterData ? 'active' : '' }}">
@@ -114,7 +115,7 @@
                 </ul>
             </li>
 
-            @if ($canManageData)
+            @if ($canManageOperationalData)
                 {{-- Stok --}}
                 <li class="menu-item {{ $isStok ? 'open active' : '' }}">
                     <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isStok ? 'active' : '' }}">
@@ -144,7 +145,7 @@
                 </li>
             @endif
 
-            @if ($canManageData)
+            @if ($canManageOperationalData || $isOwner)
                 {{-- Laporan --}}
                 <li class="menu-item {{ $isLaporan ? 'open active' : '' }}">
                     <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isLaporan ? 'active' : '' }}">
@@ -167,12 +168,14 @@
                             </a>
                         </li>
 
-                        <li class="menu-item">
-                            <a href="{{ url('/laporan/laba-rugi') }}"
-                               class="menu-link {{ Request::is('laporan/laba-rugi*') ? 'active' : '' }}">
-                                Laba Rugi
-                            </a>
-                        </li>
+                        @if ($isOwner)
+                            <li class="menu-item">
+                                <a href="{{ url('/laporan/laba-rugi') }}"
+                                   class="menu-link {{ Request::is('laporan/laba-rugi*') ? 'active' : '' }}">
+                                    Laba Rugi
+                                </a>
+                            </li>
+                        @endif
 
                         <li class="menu-item">
                             <a href="{{ url('/laporan/stok') }}"
@@ -191,7 +194,7 @@
                 </li>
             @endif
 
-            @if ($canManageData)
+            @if ($isOwner)
                 {{-- Pengaturan --}}
                 <li class="menu-item {{ $isPengaturan ? 'open active' : '' }}">
                     <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isPengaturan ? 'active' : '' }}">
