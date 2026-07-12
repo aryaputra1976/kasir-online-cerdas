@@ -210,8 +210,9 @@ class PublicOrderController extends Controller
         }
 
         $totals = $this->calculateTotals($cartItems, (float) $storeSetting->tax_percentage);
+        $customer = $this->syncCustomerFromOnlineOrder($validated);
 
-        $order = DB::transaction(function () use ($validated, $cartItems, $totals) {
+        $order = DB::transaction(function () use ($validated, $cartItems, $totals, $customer) {
             $order = OnlineOrder::create([
                 'customer_id' => $customer->id,
                 'order_no' => $this->generateOrderNo(),

@@ -254,7 +254,7 @@ class PosController extends Controller
                 'customer_id' => $selectedCustomer?->id,
                 'invoice_no' => $this->generateInvoiceNo(),
                 'sale_date' => now(),
-                'customer_name' => $validated['customer_name'] ?? null,
+                'customer_name' => $customerName,
                 'subtotal_amount' => $subtotalAmount,
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $taxAmount,
