@@ -52,10 +52,10 @@ Route::view('/demo-produk', 'demo-produk')
 
 /*
 |--------------------------------------------------------------------------
-| Auth Demo
+| Authentication
 |--------------------------------------------------------------------------
-| Sementara masih memakai halaman login/register bawaan Trezo.
-| Nanti akan diganti auth Laravel asli.
+| Login Laravel untuk akun Owner, Admin, dan Kasir.
+| Registrasi publik dinonaktifkan.
 */
 
 Route::middleware('guest')->group(function () {
@@ -96,12 +96,8 @@ Route::middleware(['auth', 'active'])->group(function () {
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{order}', 'show')->name('show');
-                    Route::patch('/{order}/payment/confirm', 'confirmPayment')->name('payment.confirm');
-                    Route::patch('/{order}/payment/reject', 'rejectPayment')->name('payment.reject');
                     Route::patch('/{order}/process', 'process')->name('process');
                     Route::patch('/{order}/complete', 'complete')->name('complete');
-                    Route::patch('/{order}/cancel', 'cancel')->name('cancel');
-                    Route::patch('/{order}/convert-sale', 'convertToSale')->name('convert-sale');
                 });
 
             Route::prefix('pembayaran')
@@ -110,8 +106,6 @@ Route::middleware(['auth', 'active'])->group(function () {
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{order}', 'show')->name('show');
-                    Route::patch('/{order}/confirm', 'confirm')->name('confirm');
-                    Route::patch('/{order}/reject', 'reject')->name('reject');
                 });
         });
 
@@ -137,10 +131,6 @@ Route::middleware(['auth', 'active'])->group(function () {
                     Route::delete('/{product}', 'destroy')->name('destroy');
                 });
 
-            Route::view('/produk/create', 'create-product')->name('products.create');
-            Route::view('/produk/edit', 'edit-product')->name('products.edit');
-            Route::view('/produk/detail', 'product-details')->name('products.show');
-
             Route::prefix('pelanggan')
                 ->name('customers.')
                 ->controller(CustomerController::class)
@@ -165,6 +155,14 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('stock.report');
             Route::get('/laporan/order-online', [OnlineOrderReportController::class, 'index'])->name('reports.online-orders.index');
             Route::get('/laporan/order-online/export', [OnlineOrderReportController::class, 'export'])->name('reports.online-orders.export');
+
+            Route::patch('/order-online/{order}/payment/confirm', [OnlineOrderController::class, 'confirmPayment'])->name('online-orders.payment.confirm');
+            Route::patch('/order-online/{order}/payment/reject', [OnlineOrderController::class, 'rejectPayment'])->name('online-orders.payment.reject');
+            Route::patch('/order-online/{order}/cancel', [OnlineOrderController::class, 'cancel'])->name('online-orders.cancel');
+            Route::patch('/order-online/{order}/convert-sale', [OnlineOrderController::class, 'convertToSale'])->name('online-orders.convert-sale');
+
+            Route::patch('/pembayaran/{order}/confirm', [PaymentController::class, 'confirm'])->name('payments.confirm');
+            Route::patch('/pembayaran/{order}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
         });
 
     Route::middleware('role:' . User::ROLE_OWNER)

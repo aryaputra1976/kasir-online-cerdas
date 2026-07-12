@@ -100,6 +100,12 @@ class UserManagementController extends Controller
             unset($validated['password']);
         }
 
+        if ($this->wouldDeactivateCurrentUser($request, $user, $validated)) {
+            return redirect()
+                ->route('settings.users.index')
+                ->with('error', 'Akun yang sedang Anda gunakan tidak boleh dinonaktifkan.');
+        }
+
         if ($this->wouldLeaveNoActiveOwner($user, $validated)) {
             return redirect()
                 ->route('settings.users.index')
@@ -113,12 +119,18 @@ class UserManagementController extends Controller
             ->with('success', 'User berhasil diperbarui.');
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse
     {
         if (User::count() <= 1) {
             return redirect()
                 ->route('settings.users.index')
                 ->with('error', 'User terakhir tidak boleh dihapus.');
+        }
+
+        if ($request->user()?->is($user)) {
+            return redirect()
+                ->route('settings.users.index')
+                ->with('error', 'Akun yang sedang Anda gunakan tidak boleh dihapus.');
         }
 
         if ($this->isLastActiveOwner($user)) {
@@ -190,5 +202,18 @@ class UserManagementController extends Controller
             : $user->is_active;
 
         return $nextRole !== User::ROLE_OWNER || $nextIsActive !== true;
+    }
+
+    private function wouldDeactivateCurrentUser(Request $request, User $user, array $validated): bool
+    {
+        if (! $request->user()?->is($user)) {
+            return false;
+        }
+
+        $nextIsActive = array_key_exists('is_active', $validated)
+            ? filter_var($validated['is_active'], FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE)
+            : $user->is_active;
+
+        return $nextIsActive !== true;
     }
 }
