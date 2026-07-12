@@ -1,6 +1,9 @@
 @php
     $storeName = $storeSetting?->store_name ?: 'Kasir Online Cerdas';
-    $ownerName = $storeSetting?->owner_name ?: 'Admin Toko';
+    $currentUser = auth()->user();
+    $userName = $currentUser?->name ?: ($storeSetting?->owner_name ?: 'Admin Toko');
+    $userRoleLabel = $currentUser?->role_label ?: 'Pengguna';
+    $canManageSettings = $currentUser?->hasAnyRole([\App\Models\User::ROLE_OWNER, \App\Models\User::ROLE_ADMIN]) ?? false;
 
     $newOnlineOrderCount = \App\Models\OnlineOrder::query()
         ->where('status', 'NEW')
@@ -305,9 +308,9 @@
                                     >
                                         <div class="d-none d-xxl-block">
                                             <div class="d-flex align-content-center">
-                                                <h3>{{ $ownerName }}</h3>
+                                                <h3>{{ $userName }}</h3>
                                             </div>
-                                            <span class="fs-12 text-body">{{ $storeName }}</span>
+                                            <span class="fs-12 text-body">{{ $userRoleLabel }} • {{ $storeName }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -326,52 +329,57 @@
                                     </div>
 
                                     <div class="flex-grow-1 ms-2">
-                                        <h3 class="fw-medium">{{ $ownerName }}</h3>
-                                        <span class="fs-12">{{ $storeName }}</span>
+                                        <h3 class="fw-medium">{{ $userName }}</h3>
+                                        <span class="fs-12">{{ $userRoleLabel }} • {{ $storeName }}</span>
                                     </div>
                                 </div>
 
+                                @if ($canManageSettings)
+                                    <ul class="admin-link ps-0 mb-0 list-unstyled">
+                                        <li>
+                                            <a
+                                                class="dropdown-item d-flex align-items-center text-body"
+                                                href="{{ route('settings.store') }}"
+                                            >
+                                                <i class="material-symbols-outlined">store</i>
+                                                <span class="ms-2">Profil Toko</span>
+                                            </a>
+                                        </li>
+
+                                        <li>
+                                            <a
+                                                class="dropdown-item d-flex align-items-center text-body"
+                                                href="{{ route('settings.users.index') }}"
+                                            >
+                                                <i class="material-symbols-outlined">group</i>
+                                                <span class="ms-2">User & Role</span>
+                                            </a>
+                                        </li>
+
+                                        <li>
+                                            <a
+                                                class="dropdown-item d-flex align-items-center text-body"
+                                                href="{{ route('settings.receipt-template') }}"
+                                            >
+                                                <i class="material-symbols-outlined">receipt_long</i>
+                                                <span class="ms-2">Template Struk</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                @endif
+
                                 <ul class="admin-link ps-0 mb-0 list-unstyled">
                                     <li>
-                                        <a
-                                            class="dropdown-item d-flex align-items-center text-body"
-                                            href="{{ route('settings.store') }}"
-                                        >
-                                            <i class="material-symbols-outlined">store</i>
-                                            <span class="ms-2">Profil Toko</span>
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a
-                                            class="dropdown-item d-flex align-items-center text-body"
-                                            href="{{ route('settings.users.index') }}"
-                                        >
-                                            <i class="material-symbols-outlined">group</i>
-                                            <span class="ms-2">User & Role</span>
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a
-                                            class="dropdown-item d-flex align-items-center text-body"
-                                            href="{{ route('settings.receipt-template') }}"
-                                        >
-                                            <i class="material-symbols-outlined">receipt_long</i>
-                                            <span class="ms-2">Template Struk</span>
-                                        </a>
-                                    </li>
-                                </ul>
-
-                                <ul class="admin-link ps-0 mb-0 list-unstyled">
-                                    <li>
-                                        <a
-                                            class="dropdown-item d-flex align-items-center text-body"
-                                            href="{{ route('login') }}"
-                                        >
-                                            <i class="material-symbols-outlined">logout</i>
-                                            <span class="ms-2">Keluar</span>
-                                        </a>
+                                        <form method="post" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button
+                                                type="submit"
+                                                class="dropdown-item d-flex align-items-center text-body border-0 bg-transparent w-100"
+                                            >
+                                                <i class="material-symbols-outlined">logout</i>
+                                                <span class="ms-2">Keluar</span>
+                                            </button>
+                                        </form>
                                     </li>
                                 </ul>
                             </div>

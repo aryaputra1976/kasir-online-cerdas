@@ -72,4 +72,16 @@ class User extends Authenticatable
             ? 'bg-success bg-opacity-10 text-success'
             : 'bg-danger bg-opacity-10 text-danger';
     }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    public function hasAnyRole(array|string $roles): bool
+    {
+        $roles = is_array($roles) ? $roles : [$roles];
+
+        return in_array($this->role, $roles, true);
+    }
 }

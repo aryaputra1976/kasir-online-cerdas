@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BestSellingProductReportController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\StoreSettingController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserManagementController;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,209 +58,139 @@ Route::view('/demo-produk', 'demo-produk')
 | Nanti akan diganti auth Laravel asli.
 */
 
-Route::view('/login', 'login')->name('login');
-Route::view('/register', 'register')->name('register');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'create'])->name('login');
+    Route::post('/login', [AuthController::class, 'store']);
 
-/*
-|--------------------------------------------------------------------------
-| Dashboard
-|--------------------------------------------------------------------------
-*/
+    Route::get('/register', function () {
+        return redirect()
+            ->route('login')
+            ->with('info', 'Pendaftaran akun publik tidak aktif. Hubungi owner atau admin.');
+    })->name('register');
+});
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->name('dashboard');
+Route::middleware(['auth', 'active'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 
-/*
-|--------------------------------------------------------------------------
-| Master Data
-|--------------------------------------------------------------------------
-*/
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
 
-Route::prefix('kategori-produk')
-    ->name('categories.')
-    ->controller(CategoryController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
-        Route::put('/{category}', 'update')->name('update');
-        Route::delete('/{category}', 'destroy')->name('destroy');
-    });
+    Route::middleware('role:' . User::ROLE_OWNER . ',' . User::ROLE_ADMIN . ',' . User::ROLE_KASIR)
+        ->group(function () {
+            Route::prefix('pos')
+                ->name('pos.')
+                ->controller(PosController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/cart/add', 'addToCart')->name('cart.add');
+                    Route::patch('/cart/{product}', 'updateCart')->name('cart.update');
+                    Route::delete('/cart/{product}', 'removeCart')->name('cart.remove');
+                    Route::delete('/cart', 'clearCart')->name('cart.clear');
+                    Route::post('/checkout', 'checkout')->name('checkout');
+                    Route::get('/struk/{sale}', 'receipt')->name('receipt');
+                });
 
-Route::prefix('produk')
-    ->name('products.')
-    ->controller(ProductController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
-        Route::put('/{product}', 'update')->name('update');
-        Route::delete('/{product}', 'destroy')->name('destroy');
-    });
+            Route::prefix('order-online')
+                ->name('online-orders.')
+                ->controller(OnlineOrderController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/{order}', 'show')->name('show');
+                    Route::patch('/{order}/payment/confirm', 'confirmPayment')->name('payment.confirm');
+                    Route::patch('/{order}/payment/reject', 'rejectPayment')->name('payment.reject');
+                    Route::patch('/{order}/process', 'process')->name('process');
+                    Route::patch('/{order}/complete', 'complete')->name('complete');
+                    Route::patch('/{order}/cancel', 'cancel')->name('cancel');
+                    Route::patch('/{order}/convert-sale', 'convertToSale')->name('convert-sale');
+                });
 
-Route::view('/produk/create', 'create-product')
-    ->name('products.create');
+            Route::prefix('pembayaran')
+                ->name('payments.')
+                ->controller(PaymentController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/{order}', 'show')->name('show');
+                    Route::patch('/{order}/confirm', 'confirm')->name('confirm');
+                    Route::patch('/{order}/reject', 'reject')->name('reject');
+                });
+        });
 
-Route::view('/produk/edit', 'edit-product')
-    ->name('products.edit');
+    Route::middleware('role:' . User::ROLE_OWNER . ',' . User::ROLE_ADMIN)
+        ->group(function () {
+            Route::prefix('kategori-produk')
+                ->name('categories.')
+                ->controller(CategoryController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/', 'store')->name('store');
+                    Route::put('/{category}', 'update')->name('update');
+                    Route::delete('/{category}', 'destroy')->name('destroy');
+                });
 
-Route::view('/produk/detail', 'product-details')
-    ->name('products.show');
+            Route::prefix('produk')
+                ->name('products.')
+                ->controller(ProductController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/', 'store')->name('store');
+                    Route::put('/{product}', 'update')->name('update');
+                    Route::delete('/{product}', 'destroy')->name('destroy');
+                });
 
-Route::prefix('pelanggan')
-    ->name('customers.')
-    ->controller(CustomerController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/tambah', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{customer}', 'show')->name('show');
-        Route::get('/{customer}/edit', 'edit')->name('edit');
-        Route::put('/{customer}', 'update')->name('update');
-        Route::delete('/{customer}', 'destroy')->name('destroy');
-    });
+            Route::view('/produk/create', 'create-product')->name('products.create');
+            Route::view('/produk/edit', 'edit-product')->name('products.edit');
+            Route::view('/produk/detail', 'product-details')->name('products.show');
 
-/*
-|--------------------------------------------------------------------------
-| Transaksi
-|--------------------------------------------------------------------------
-*/
+            Route::prefix('pelanggan')
+                ->name('customers.')
+                ->controller(CustomerController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/tambah', 'create')->name('create');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/{customer}', 'show')->name('show');
+                    Route::get('/{customer}/edit', 'edit')->name('edit');
+                    Route::put('/{customer}', 'update')->name('update');
+                    Route::delete('/{customer}', 'destroy')->name('destroy');
+                });
 
-Route::prefix('pos')
-    ->name('pos.')
-    ->controller(PosController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/cart/add', 'addToCart')->name('cart.add');
-        Route::patch('/cart/{product}', 'updateCart')->name('cart.update');
-        Route::delete('/cart/{product}', 'removeCart')->name('cart.remove');
-        Route::delete('/cart', 'clearCart')->name('cart.clear');
-        Route::post('/checkout', 'checkout')->name('checkout');
-        Route::get('/struk/{sale}', 'receipt')->name('receipt');
-    });
+            Route::get('/stok-barang', [StockController::class, 'index'])->name('stocks.index');
+            Route::get('/mutasi-stok', [StockMovementController::class, 'index'])->name('stocks.movements');
+            Route::post('/mutasi-stok', [StockMovementController::class, 'store'])->name('stocks.movements.store');
+            Route::get('/stok-menipis', [StockController::class, 'low'])->name('stocks.low');
 
-Route::prefix('order-online')
-    ->name('online-orders.')
-    ->controller(OnlineOrderController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/{order}', 'show')->name('show');
-        Route::patch('/{order}/payment/confirm', 'confirmPayment')
-            ->name('payment.confirm');
-        Route::patch('/{order}/payment/reject', 'rejectPayment')
-            ->name('payment.reject');
-        Route::patch('/{order}/process', 'process')->name('process');
-        Route::patch('/{order}/complete', 'complete')->name('complete');
-        Route::patch('/{order}/cancel', 'cancel')->name('cancel');
-        Route::patch('/{order}/convert-sale', 'convertToSale')
-            ->name('convert-sale');
-    });
+            Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])->name('sales.report');
+            Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])->name('sales.report.export');
+            Route::get('/laporan/produk-terlaris', [BestSellingProductReportController::class, 'index'])->name('best-products.report');
+            Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])->name('profit-loss.report');
+            Route::get('/laporan/stok', [StockReportController::class, 'index'])->name('stock.report');
+            Route::get('/laporan/order-online', [OnlineOrderReportController::class, 'index'])->name('reports.online-orders.index');
+            Route::get('/laporan/order-online/export', [OnlineOrderReportController::class, 'export'])->name('reports.online-orders.export');
 
-Route::prefix('pembayaran')
-    ->name('payments.')
-    ->controller(PaymentController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/{order}', 'show')->name('show');
-        Route::patch('/{order}/confirm', 'confirm')->name('confirm');
-        Route::patch('/{order}/reject', 'reject')->name('reject');
-    });
+            Route::get('/pengaturan/profil-toko', [StoreSettingController::class, 'edit'])->name('settings.store');
+            Route::put('/pengaturan/profil-toko', [StoreSettingController::class, 'update'])->name('settings.store.update');
+            Route::delete('/pengaturan/profil-toko/logo', [StoreSettingController::class, 'removeLogo'])->name('settings.store.logo.destroy');
 
-/*
-|--------------------------------------------------------------------------
-| Stok
-|--------------------------------------------------------------------------
-*/
+            Route::prefix('pengaturan/user-role')
+                ->name('settings.users.')
+                ->controller(UserManagementController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/tambah', 'create')->name('create');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/{user}/edit', 'edit')->name('edit');
+                    Route::put('/{user}', 'update')->name('update');
+                    Route::delete('/{user}', 'destroy')->name('destroy');
+                });
 
-Route::get('/stok-barang', [StockController::class, 'index'])
-    ->name('stocks.index');
-
-Route::get('/mutasi-stok', [StockMovementController::class, 'index'])
-    ->name('stocks.movements');
-
-Route::post('/mutasi-stok', [StockMovementController::class, 'store'])
-    ->name('stocks.movements.store');
-
-Route::get('/stok-menipis', [StockController::class, 'low'])
-    ->name('stocks.low');
-
-/*
-|--------------------------------------------------------------------------
-| Laporan
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/laporan/penjualan', [SalesReportController::class, 'index'])
-    ->name('sales.report');
-
-Route::get('/laporan/penjualan/export', [SalesReportController::class, 'export'])
-    ->name('sales.report.export');
-
-Route::get(
-    '/laporan/produk-terlaris',
-    [BestSellingProductReportController::class, 'index']
-)->name('best-products.report');
-
-Route::get('/laporan/laba-rugi', [ProfitLossReportController::class, 'index'])
-    ->name('profit-loss.report');
-
-Route::get('/laporan/stok', [StockReportController::class, 'index'])
-    ->name('stock.report');
-
-Route::get('/laporan/order-online', [OnlineOrderReportController::class, 'index'])
-    ->name('reports.online-orders.index');
-
-Route::get('/laporan/order-online/export', [OnlineOrderReportController::class, 'export'])
-    ->name('reports.online-orders.export');
-
-/*
-|--------------------------------------------------------------------------
-| Pengaturan
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/pengaturan/profil-toko', [StoreSettingController::class, 'edit'])
-    ->name('settings.store');
-
-Route::put('/pengaturan/profil-toko', [StoreSettingController::class, 'update'])
-    ->name('settings.store.update');
-
-Route::delete('/pengaturan/profil-toko/logo', [StoreSettingController::class, 'removeLogo'])
-    ->name('settings.store.logo.destroy');
-
-Route::prefix('pengaturan/user-role')
-    ->name('settings.users.')
-    ->controller(UserManagementController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/tambah', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{user}/edit', 'edit')->name('edit');
-        Route::put('/{user}', 'update')->name('update');
-        Route::delete('/{user}', 'destroy')->name('destroy');
-    });
-
-Route::get('/pengaturan/tambah-user', [UserManagementController::class, 'create'])
-    ->name('settings.users.create-legacy');
-
-Route::get('/pengaturan/template-struk', [ReceiptTemplateController::class, 'edit'])
-    ->name('settings.receipt-template');
-
-Route::put('/pengaturan/template-struk', [ReceiptTemplateController::class, 'update'])
-    ->name('settings.receipt-template.update');
-
-Route::get(
-    '/pengaturan/metode-pembayaran',
-    [PaymentMethodSettingController::class, 'edit']
-)->name('settings.payment-methods');
-
-Route::put(
-    '/pengaturan/metode-pembayaran',
-    [PaymentMethodSettingController::class, 'update']
-)->name('settings.payment-methods.update');
-
-Route::delete(
-    '/pengaturan/metode-pembayaran/qris',
-    [PaymentMethodSettingController::class, 'removeQris']
-)->name('settings.payment-methods.qris.destroy');
+            Route::get('/pengaturan/tambah-user', [UserManagementController::class, 'create'])->name('settings.users.create-legacy');
+            Route::get('/pengaturan/template-struk', [ReceiptTemplateController::class, 'edit'])->name('settings.receipt-template');
+            Route::put('/pengaturan/template-struk', [ReceiptTemplateController::class, 'update'])->name('settings.receipt-template.update');
+            Route::get('/pengaturan/metode-pembayaran', [PaymentMethodSettingController::class, 'edit'])->name('settings.payment-methods');
+            Route::put('/pengaturan/metode-pembayaran', [PaymentMethodSettingController::class, 'update'])->name('settings.payment-methods.update');
+            Route::delete('/pengaturan/metode-pembayaran/qris', [PaymentMethodSettingController::class, 'removeQris'])->name('settings.payment-methods.qris.destroy');
+        });
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -317,17 +249,19 @@ Route::post(
 |
 */
 
-Route::get('/demo/{page}', function (string $page) {
-    $normalizedPage = str_replace(['/', '\\'], '.', $page);
-    $demoView = '_trezo_demo.' . $normalizedPage;
+if (app()->environment('local')) {
+    Route::get('/demo/{page}', function (string $page) {
+        $normalizedPage = str_replace(['/', '\\'], '.', $page);
+        $demoView = '_trezo_demo.' . $normalizedPage;
 
-    if (view()->exists($demoView)) {
-        return view($demoView);
-    }
+        if (view()->exists($demoView)) {
+            return view($demoView);
+        }
 
-    abort_unless(view()->exists($normalizedPage), 404);
+        abort_unless(view()->exists($normalizedPage), 404);
 
-    return view($normalizedPage);
-})
-    ->where('page', '[A-Za-z0-9\-_\/]+')
-    ->name('demo.show');
+        return view($normalizedPage);
+    })
+        ->where('page', '[A-Za-z0-9\-_\/]+')
+        ->name('demo.show');
+}

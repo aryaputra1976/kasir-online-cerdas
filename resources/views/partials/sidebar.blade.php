@@ -2,7 +2,7 @@
     $storeName = $storeSetting?->store_name ?: 'Kasir Online Cerdas';
     $storeLogo = $storeSetting?->logo_path
         ? asset('storage/' . $storeSetting->logo_path)
-        : '/assets/images/logo-icon.png';
+        : asset('assets/images/logo-icon.png');
 
     $isDashboard = Request::is('dashboard');
 
@@ -26,6 +26,8 @@
         || Request::is('laporan/*');
 
     $isPengaturan = Request::is('pengaturan/*');
+    $currentUser = auth()->user();
+    $canManageData = $currentUser?->hasAnyRole([\App\Models\User::ROLE_OWNER, \App\Models\User::ROLE_ADMIN]) ?? false;
 @endphp
 
 <div class="sidebar-area" id="sidebar-area">
@@ -54,33 +56,35 @@
                 </a>
             </li>
 
-            {{-- Master Data --}}
-            <li class="menu-item {{ $isMasterData ? 'open active' : '' }}">
-                <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isMasterData ? 'active' : '' }}">
-                    <span class="material-symbols-outlined menu-icon">inventory_2</span>
-                    <span class="title">Master Data</span>
-                </a>
+            @if ($canManageData)
+                {{-- Master Data --}}
+                <li class="menu-item {{ $isMasterData ? 'open active' : '' }}">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isMasterData ? 'active' : '' }}">
+                        <span class="material-symbols-outlined menu-icon">inventory_2</span>
+                        <span class="title">Master Data</span>
+                    </a>
 
-                <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{ route('categories.index') }}" class="menu-link {{ Request::is('kategori-produk') ? 'active' : '' }}">
-                            Kategori Produk
-                        </a>
-                    </li>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="{{ route('categories.index') }}" class="menu-link {{ Request::is('kategori-produk') ? 'active' : '' }}">
+                                Kategori Produk
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('products.index') }}" class="menu-link {{ Request::is('produk') || Request::is('produk/*') ? 'active' : '' }}">
-                            Produk
-                        </a>
-                    </li>
+                        <li class="menu-item">
+                            <a href="{{ route('products.index') }}" class="menu-link {{ Request::is('produk') || Request::is('produk/*') ? 'active' : '' }}">
+                                Produk
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('customers.index') }}" class="menu-link {{ Request::is('pelanggan') || Request::is('pelanggan/*') ? 'active' : '' }}">
-                            Pelanggan
-                        </a>
-                    </li>
-                </ul>
-            </li>
+                        <li class="menu-item">
+                            <a href="{{ route('customers.index') }}" class="menu-link {{ Request::is('pelanggan') || Request::is('pelanggan/*') ? 'active' : '' }}">
+                                Pelanggan
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
 
             {{-- Transaksi --}}
             <li class="menu-item {{ $isTransaksi ? 'open active' : '' }}">
@@ -110,112 +114,118 @@
                 </ul>
             </li>
 
-            {{-- Stok --}}
-            <li class="menu-item {{ $isStok ? 'open active' : '' }}">
-                <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isStok ? 'active' : '' }}">
-                    <span class="material-symbols-outlined menu-icon">warehouse</span>
-                    <span class="title">Stok</span>
-                </a>
+            @if ($canManageData)
+                {{-- Stok --}}
+                <li class="menu-item {{ $isStok ? 'open active' : '' }}">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isStok ? 'active' : '' }}">
+                        <span class="material-symbols-outlined menu-icon">warehouse</span>
+                        <span class="title">Stok</span>
+                    </a>
 
-                <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{ route('stocks.index') }}" class="menu-link {{ Request::is('stok-barang') ? 'active' : '' }}">
-                            Stok Barang
-                        </a>
-                    </li>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="{{ route('stocks.index') }}" class="menu-link {{ Request::is('stok-barang') ? 'active' : '' }}">
+                                Stok Barang
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('stocks.movements') }}" class="menu-link {{ Request::is('mutasi-stok') ? 'active' : '' }}">
-                            Mutasi Stok
-                        </a>
-                    </li>
+                        <li class="menu-item">
+                            <a href="{{ route('stocks.movements') }}" class="menu-link {{ Request::is('mutasi-stok') ? 'active' : '' }}">
+                                Mutasi Stok
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('stocks.low') }}" class="menu-link {{ Request::is('stok-menipis') ? 'active' : '' }}">
-                            Stok Menipis
-                        </a>
-                    </li>
-                </ul>
-            </li>
+                        <li class="menu-item">
+                            <a href="{{ route('stocks.low') }}" class="menu-link {{ Request::is('stok-menipis') ? 'active' : '' }}">
+                                Stok Menipis
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
 
-            {{-- Laporan --}}
-            <li class="menu-item {{ $isLaporan ? 'open active' : '' }}">
-                <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isLaporan ? 'active' : '' }}">
-                    <span class="material-symbols-outlined menu-icon">assessment</span>
-                    <span class="title">Laporan</span>
-                </a>
+            @if ($canManageData)
+                {{-- Laporan --}}
+                <li class="menu-item {{ $isLaporan ? 'open active' : '' }}">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isLaporan ? 'active' : '' }}">
+                        <span class="material-symbols-outlined menu-icon">assessment</span>
+                        <span class="title">Laporan</span>
+                    </a>
 
-                <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{ url('/laporan/penjualan') }}"
-                           class="menu-link {{ Request::is('laporan/penjualan*') ? 'active' : '' }}">
-                            Penjualan
-                        </a>
-                    </li>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="{{ url('/laporan/penjualan') }}"
+                               class="menu-link {{ Request::is('laporan/penjualan*') ? 'active' : '' }}">
+                                Penjualan
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ url('/laporan/produk-terlaris') }}"
-                           class="menu-link {{ Request::is('laporan/produk-terlaris*') ? 'active' : '' }}">
-                            Produk Terlaris
-                        </a>
-                    </li>
+                        <li class="menu-item">
+                            <a href="{{ url('/laporan/produk-terlaris') }}"
+                               class="menu-link {{ Request::is('laporan/produk-terlaris*') ? 'active' : '' }}">
+                                Produk Terlaris
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ url('/laporan/laba-rugi') }}"
-                           class="menu-link {{ Request::is('laporan/laba-rugi*') ? 'active' : '' }}">
-                            Laba Rugi
-                        </a>
-                    </li>
+                        <li class="menu-item">
+                            <a href="{{ url('/laporan/laba-rugi') }}"
+                               class="menu-link {{ Request::is('laporan/laba-rugi*') ? 'active' : '' }}">
+                                Laba Rugi
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ url('/laporan/stok') }}"
-                           class="menu-link {{ Request::is('laporan/stok*') ? 'active' : '' }}">
-                            Stok
-                        </a>
-                    </li>
+                        <li class="menu-item">
+                            <a href="{{ url('/laporan/stok') }}"
+                               class="menu-link {{ Request::is('laporan/stok*') ? 'active' : '' }}">
+                                Stok
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ url('/laporan/order-online') }}"
-                           class="menu-link {{ Request::is('laporan/order-online*') ? 'active' : '' }}">
-                            Order Online
-                        </a>
-                    </li>
-                </ul>
-            </li>
+                        <li class="menu-item">
+                            <a href="{{ url('/laporan/order-online') }}"
+                               class="menu-link {{ Request::is('laporan/order-online*') ? 'active' : '' }}">
+                                Order Online
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
 
-            {{-- Pengaturan --}}
-            <li class="menu-item {{ $isPengaturan ? 'open active' : '' }}">
-                <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isPengaturan ? 'active' : '' }}">
-                    <span class="material-symbols-outlined menu-icon">settings</span>
-                    <span class="title">Pengaturan</span>
-                </a>
+            @if ($canManageData)
+                {{-- Pengaturan --}}
+                <li class="menu-item {{ $isPengaturan ? 'open active' : '' }}">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle {{ $isPengaturan ? 'active' : '' }}">
+                        <span class="material-symbols-outlined menu-icon">settings</span>
+                        <span class="title">Pengaturan</span>
+                    </a>
 
-                <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{ route('settings.store') }}" class="menu-link {{ Request::is('pengaturan/profil-toko') ? 'active' : '' }}">
-                            Profil Toko
-                        </a>
-                    </li>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="{{ route('settings.store') }}" class="menu-link {{ Request::is('pengaturan/profil-toko') ? 'active' : '' }}">
+                                Profil Toko
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('settings.payment-methods') }}" class="menu-link {{ Request::is('pengaturan/metode-pembayaran') ? 'active' : '' }}">
-                            Metode Pembayaran
-                        </a>
-                    </li>
+                        <li class="menu-item">
+                            <a href="{{ route('settings.payment-methods') }}" class="menu-link {{ Request::is('pengaturan/metode-pembayaran') ? 'active' : '' }}">
+                                Metode Pembayaran
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('settings.users.index') }}" class="menu-link {{ Request::is('pengaturan/user-role') ? 'active' : '' }}">
-                            User &amp; Role
-                        </a>
-                    </li>
+                        <li class="menu-item">
+                            <a href="{{ route('settings.users.index') }}" class="menu-link {{ Request::is('pengaturan/user-role') ? 'active' : '' }}">
+                                User &amp; Role
+                            </a>
+                        </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('settings.receipt-template') }}" class="menu-link {{ Request::is('pengaturan/template-struk') ? 'active' : '' }}">
-                            Template Struk
-                        </a>
-                    </li>
-                </ul>
-            </li>
+                        <li class="menu-item">
+                            <a href="{{ route('settings.receipt-template') }}" class="menu-link {{ Request::is('pengaturan/template-struk') ? 'active' : '' }}">
+                                Template Struk
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
         </ul>
     </aside>
 </div>
