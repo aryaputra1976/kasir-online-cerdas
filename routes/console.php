@@ -43,6 +43,32 @@ Artisan::command('app:check-assets', function () {
 })->purpose('Memeriksa kelengkapan minimum asset publik Trezo untuk deploy');
 
 Artisan::command('app:audit-data-integrity', function () {
+    $saleSubtotalMismatchCount = DB::table('sales')
+        ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+        ->select('sales.id')
+        ->groupBy('sales.id', 'sales.subtotal_amount')
+        ->havingRaw(
+            'ABS(
+                COALESCE(SUM(sale_items.subtotal_amount), 0)
+                - sales.subtotal_amount
+            ) > 0.01'
+        )
+        ->get()
+        ->count();
+
+    $saleTotalMismatchCount = DB::table('sales')
+        ->whereRaw(
+            'ABS(
+                total_amount
+                - (
+                    subtotal_amount
+                    - discount_amount
+                    + tax_amount
+                )
+            ) > 0.01'
+        )
+        ->count();
+
     $checks = [
         'invoice duplikat' => DB::table('sales')
             ->select('invoice_no')
@@ -102,17 +128,8 @@ Artisan::command('app:audit-data-integrity', function () {
             ->groupBy('sale_id')
             ->havingRaw('COUNT(*) > 1')
             ->count(),
-        'total sale tidak cocok item' => DB::query()
-            ->fromSub(
-                DB::table('sales')
-                    ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
-                    ->select('sales.id', 'sales.total_amount')
-                    ->selectRaw('COALESCE(SUM(sale_items.subtotal_amount), 0) as item_total')
-                    ->groupBy('sales.id', 'sales.total_amount'),
-                'sale_totals'
-            )
-            ->whereRaw('ABS(total_amount - item_total) > 0.01')
-            ->count(),
+        'subtotal sale tidak cocok total item' => $saleSubtotalMismatchCount,
+        'total akhir sale tidak cocok rumus' => $saleTotalMismatchCount,
         'status sale invalid' => DB::table('sales')
             ->whereNotIn('status', ['COMPLETED'])
             ->count(),

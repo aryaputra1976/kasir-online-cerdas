@@ -180,6 +180,34 @@ it('detects integrity anomalies without changing data', function () {
         ->and(Product::find($product->id)->stock)->toBe(-2);
 });
 
+it('does not flag a taxed sale when subtotal matches items and total matches formula', function () {
+    $sale = integritySale([
+        'subtotal_amount' => 15000,
+        'discount_amount' => 0,
+        'tax_amount' => 1500,
+        'total_amount' => 16500,
+        'paid_amount' => 16500,
+    ]);
+
+    SaleItem::create([
+        'sale_id' => $sale->id,
+        'product_name' => 'Produk Pajak Normal',
+        'quantity' => 1,
+        'unit_price' => 15000,
+        'purchase_price' => 10000,
+        'subtotal_amount' => 15000,
+    ]);
+
+    $exitCode = Artisan::call('app:audit-data-integrity');
+    $output = Artisan::output();
+
+    expect($exitCode)->toBe(0)
+        ->and($output)->toContain('subtotal sale tidak cocok total item')
+        ->and($output)->toContain('total akhir sale tidak cocok rumus')
+        ->and($output)->toContain('| subtotal sale tidak cocok total item   | 0')
+        ->and($output)->toContain('| total akhir sale tidak cocok rumus     | 0');
+});
+
 it('documents that db check constraint assertions depend on driver support', function () {
     if (DB::getDriverName() === 'sqlite') {
         $this->markTestSkipped('SQLite migration path skips ALTER TABLE ADD CHECK constraints; MySQL/MariaDB/pgsql/sqlsrv enforce them.');
