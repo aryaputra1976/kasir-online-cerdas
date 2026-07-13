@@ -113,6 +113,9 @@ class ProcessOnlineOrderService
 
             StockMovement::create([
                 'product_id' => $product->id,
+                'created_by' => auth()->id(),
+                'source_type' => StockMovement::SOURCE_ONLINE_ORDER,
+                'source_id' => $order->id,
                 'movement_type' => StockMovement::TYPE_OUT,
                 'quantity_change' => $quantity * -1,
                 'stock_before' => $stockBefore,

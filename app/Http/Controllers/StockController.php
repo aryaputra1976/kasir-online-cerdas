@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class StockController extends Controller
@@ -25,9 +26,20 @@ class StockController extends Controller
 
     private function renderStockPage(Request $request, string $pageTitle = 'Stok Barang'): View
     {
-        $search = $request->string('q')->toString();
-        $categoryId = $request->integer('category_id');
-        $stockFilter = $request->string('stock_filter')->toString();
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:150'],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
+            'stock_filter' => ['nullable', Rule::in([
+                Product::STOCK_STATUS_SAFE,
+                Product::STOCK_STATUS_LOW,
+                Product::STOCK_STATUS_EMPTY,
+                Product::STOCK_STATUS_INACTIVE,
+            ])],
+        ]);
+
+        $search = trim((string) ($validated['q'] ?? ''));
+        $categoryId = $validated['category_id'] ?? null;
+        $stockFilter = $validated['stock_filter'] ?? null;
 
         $products = Product::query()
             ->with('category')
@@ -42,16 +54,7 @@ class StockController extends Controller
             ->when($categoryId, function ($query) use ($categoryId) {
                 $query->where('category_id', $categoryId);
             })
-            ->when($stockFilter === 'safe', function ($query) {
-                $query->whereColumn('stock', '>', 'minimum_stock');
-            })
-            ->when($stockFilter === 'low', function ($query) {
-                $query->whereColumn('stock', '<=', 'minimum_stock')
-                    ->where('stock', '>', 0);
-            })
-            ->when($stockFilter === 'empty', function ($query) {
-                $query->where('stock', '<=', 0);
-            })
+            ->withStockStatus($stockFilter)
             ->orderBy('stock')
             ->orderBy('name')
             ->paginate(10)
@@ -65,13 +68,9 @@ class StockController extends Controller
 
         $totalProducts = Product::count();
 
-        $safeStockProducts = Product::whereColumn('stock', '>', 'minimum_stock')->count();
-
-        $lowStockProducts = Product::whereColumn('stock', '<=', 'minimum_stock')
-            ->where('stock', '>', 0)
-            ->count();
-
-        $emptyStockProducts = Product::where('stock', '<=', 0)->count();
+        $safeStockProducts = Product::query()->activeSafeStock()->count();
+        $lowStockProducts = Product::query()->activeLowStock()->count();
+        $emptyStockProducts = Product::query()->activeEmptyStock()->count();
 
         return view('stocks', compact(
             'products',

@@ -20,11 +20,11 @@
         ->count();
 
     $lowStockNotificationCount = \App\Models\Product::query()
-        ->whereColumn('stock', '<=', 'minimum_stock')
+        ->activeLowStock()
         ->count();
 
     $emptyStockNotificationCount = \App\Models\Product::query()
-        ->where('stock', '<=', 0)
+        ->activeEmptyStock()
         ->count();
 
     $operationalNotificationTotal =

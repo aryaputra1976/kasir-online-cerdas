@@ -40,7 +40,7 @@ class ProductController extends Controller
                 $query->where('is_active', false);
             })
             ->when($stockFilter === 'low', function ($query) {
-                $query->whereColumn('stock', '<=', 'minimum_stock');
+                $query->activeLowStock();
             })
             ->latest()
             ->paginate(10)
@@ -54,7 +54,7 @@ class ProductController extends Controller
 
         $totalProducts = Product::count();
         $activeProducts = Product::where('is_active', true)->count();
-        $lowStockProducts = Product::whereColumn('stock', '<=', 'minimum_stock')->count();
+        $lowStockProducts = Product::query()->activeLowStock()->count();
 
         return view('products-list', compact(
             'products',

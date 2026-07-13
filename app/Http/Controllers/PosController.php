@@ -318,6 +318,9 @@ class PosController extends Controller
 
                 StockMovement::create([
                     'product_id' => $product->id,
+                    'created_by' => $sale->created_by,
+                    'source_type' => StockMovement::SOURCE_POS,
+                    'source_id' => $sale->id,
                     'movement_type' => StockMovement::TYPE_OUT,
                     'quantity_change' => $quantity * -1,
                     'stock_before' => $stockBefore,

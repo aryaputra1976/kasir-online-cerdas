@@ -73,7 +73,7 @@ class DashboardController extends Controller
             ->count();
 
         $lowStockCount = Product::query()
-            ->whereColumn('stock', '<=', 'minimum_stock')
+            ->activeLowStock()
             ->count();
 
         $totalProducts = Product::count();
@@ -81,11 +81,11 @@ class DashboardController extends Controller
         $activeProducts = Product::where('is_active', true)->count();
 
         $safeStockProducts = Product::query()
-            ->whereColumn('stock', '>', 'minimum_stock')
+            ->activeSafeStock()
             ->count();
 
         $emptyStockProducts = Product::query()
-            ->where('stock', '<=', 0)
+            ->activeEmptyStock()
             ->count();
 
         $latestSales = Sale::query()
@@ -103,7 +103,7 @@ class DashboardController extends Controller
 
         $lowStockProducts = Product::query()
             ->with('category')
-            ->whereColumn('stock', '<=', 'minimum_stock')
+            ->activeLowStock()
             ->orderBy('stock')
             ->orderBy('name')
             ->limit(5)

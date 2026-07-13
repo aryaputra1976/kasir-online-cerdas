@@ -14,8 +14,15 @@ class StockMovement extends Model
     public const TYPE_OUT = 'OUT';
     public const TYPE_ADJUSTMENT = 'ADJUSTMENT';
 
+    public const SOURCE_MANUAL = 'MANUAL';
+    public const SOURCE_POS = 'POS';
+    public const SOURCE_ONLINE_ORDER = 'ONLINE_ORDER';
+
     protected $fillable = [
         'product_id',
+        'created_by',
+        'source_type',
+        'source_id',
         'movement_type',
         'quantity_change',
         'stock_before',
@@ -27,6 +34,8 @@ class StockMovement extends Model
 
     protected $casts = [
         'product_id' => 'integer',
+        'created_by' => 'integer',
+        'source_id' => 'integer',
         'quantity_change' => 'integer',
         'stock_before' => 'integer',
         'stock_after' => 'integer',
@@ -36,6 +45,11 @@ class StockMovement extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function getMovementTypeLabelAttribute(): string

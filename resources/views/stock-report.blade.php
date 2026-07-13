@@ -111,9 +111,9 @@
                     'color' => 'bg-warning bg-opacity-10 text-warning',
                 ],
                 [
-                    'title' => 'Potensi Laba Kotor',
+                    'title' => 'Estimasi Margin Kotor Persediaan',
                     'value' => $rupiah($potentialGrossProfit),
-                    'note' => 'Estimasi nilai jual - modal',
+                    'note' => 'Nilai jual saat ini dikurangi nilai modal saat ini; bukan laba terealisasi.',
                     'icon' => 'trending_up',
                     'color' => $potentialGrossProfit >= 0
                         ? 'bg-success bg-opacity-10 text-success'
@@ -151,6 +151,25 @@
                                 </li>
                             </ol>
                         </nav>
+                    </div>
+
+                    <div class="alert alert-light border mb-4" role="alert">
+                        <div class="fw-semibold mb-1">Rekonsiliasi stok</div>
+                        <div class="fs-13 text-body">
+                            Ditemukan {{ number_format($stockAnomalyCount, 0, ',', '.') }} produk dengan anomali stok
+                            dan {{ number_format($productsWithStockWithoutMovements, 0, ',', '.') }} produk memiliki stok tanpa histori mutasi.
+                            Anomali hanya ditampilkan untuk audit dan tidak diperbaiki otomatis.
+                        </div>
+
+                        @if ($stockAnomalyProducts->isNotEmpty())
+                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                @foreach ($stockAnomalyProducts as $anomalyProduct)
+                                    <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        {{ $anomalyProduct->name }} (stok {{ number_format($anomalyProduct->stock, 0, ',', '.') }})
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
 
                     <div class="row g-4 mb-4">
@@ -357,8 +376,9 @@
                                             ? min(100, max(8, round(($currentStock / $minimumStock) * 100)))
                                             : 0;
 
-                                        $costValue = (float) $product->stock * (float) $product->purchase_price;
-                                        $sellingValue = (float) $product->stock * (float) $product->selling_price;
+                                        $valuationStock = max(0, (int) $product->stock);
+                                        $costValue = $valuationStock * (float) $product->purchase_price;
+                                        $sellingValue = $valuationStock * (float) $product->selling_price;
                                         $grossProfitValue = $sellingValue - $costValue;
                                     @endphp
 
@@ -393,6 +413,12 @@
                                                             <span class="badge {{ $statusClass }} p-2 fs-12 fw-normal">
                                                                 {{ $statusLabel }}
                                                             </span>
+
+                                                            @if ($product->stock < 0)
+                                                                <span class="badge bg-danger text-white p-2 fs-12 fw-normal">
+                                                                    Anomali stok negatif
+                                                                </span>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>

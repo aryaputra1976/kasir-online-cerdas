@@ -134,6 +134,7 @@
                                     <div class="d-flex justify-content-between align-items-center gap-3">
                                         <div>
                                             <span class="d-block text-body mb-2">Total Mutasi</span>
+                                            <span class="d-block fs-12 text-body">Sesuai filter</span>
                                             <h3 class="fs-24 fw-semibold mb-0">
                                                 {{ number_format($totalMovements, 0, ',', '.') }}
                                             </h3>
@@ -153,6 +154,7 @@
                                     <div class="d-flex justify-content-between align-items-center gap-3">
                                         <div>
                                             <span class="d-block text-body mb-2">Stok Masuk</span>
+                                            <span class="d-block fs-12 text-body">Sesuai filter</span>
                                             <h3 class="fs-24 fw-semibold mb-0">
                                                 {{ number_format($stockInMovements, 0, ',', '.') }}
                                             </h3>
@@ -172,6 +174,7 @@
                                     <div class="d-flex justify-content-between align-items-center gap-3">
                                         <div>
                                             <span class="d-block text-body mb-2">Stok Keluar</span>
+                                            <span class="d-block fs-12 text-body">Sesuai filter</span>
                                             <h3 class="fs-24 fw-semibold mb-0">
                                                 {{ number_format($stockOutMovements, 0, ',', '.') }}
                                             </h3>
@@ -191,6 +194,7 @@
                                     <div class="d-flex justify-content-between align-items-center gap-3">
                                         <div>
                                             <span class="d-block text-body mb-2">Penyesuaian</span>
+                                            <span class="d-block fs-12 text-body">Sesuai filter</span>
                                             <h3 class="fs-24 fw-semibold mb-0">
                                                 {{ number_format($adjustmentMovements, 0, ',', '.') }}
                                             </h3>
@@ -464,6 +468,7 @@
                                 </select>
                                 <small class="text-body">
                                     Untuk penyesuaian stok, isi jumlah dengan stok akhir yang benar.
+                                    Backdate dapat memengaruhi pembacaan histori mutasi.
                                 </small>
                             </div>
 

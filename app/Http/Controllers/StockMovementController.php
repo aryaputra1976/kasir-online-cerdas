@@ -16,13 +16,25 @@ class StockMovementController extends Controller
 {
     public function index(Request $request): View
     {
-        $search = $request->string('q')->toString();
-        $categoryId = $request->integer('category_id');
-        $movementType = $request->string('movement_type')->toString();
-        $dateFrom = $request->string('date_from')->toString();
-        $dateTo = $request->string('date_to')->toString();
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:150'],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
+            'movement_type' => ['nullable', Rule::in([
+                StockMovement::TYPE_IN,
+                StockMovement::TYPE_OUT,
+                StockMovement::TYPE_ADJUSTMENT,
+            ])],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
 
-        $movements = StockMovement::query()
+        $search = trim((string) ($validated['q'] ?? ''));
+        $categoryId = $validated['category_id'] ?? null;
+        $movementType = $validated['movement_type'] ?? null;
+        $dateFrom = $validated['date_from'] ?? null;
+        $dateTo = $validated['date_to'] ?? null;
+
+        $baseQuery = StockMovement::query()
             ->with(['product.category'])
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($subQuery) use ($search) {
@@ -50,7 +62,9 @@ class StockMovementController extends Controller
             })
             ->when($dateTo, function ($query) use ($dateTo) {
                 $query->whereDate('movement_date', '<=', $dateTo);
-            })
+            });
+
+        $movements = (clone $baseQuery)
             ->latest('movement_date')
             ->latest()
             ->paginate(10)
@@ -67,10 +81,10 @@ class StockMovementController extends Controller
             ->orderBy('name')
             ->get();
 
-        $totalMovements = StockMovement::count();
-        $stockInMovements = StockMovement::where('movement_type', StockMovement::TYPE_IN)->count();
-        $stockOutMovements = StockMovement::where('movement_type', StockMovement::TYPE_OUT)->count();
-        $adjustmentMovements = StockMovement::where('movement_type', StockMovement::TYPE_ADJUSTMENT)->count();
+        $totalMovements = (clone $baseQuery)->count();
+        $stockInMovements = (clone $baseQuery)->where('movement_type', StockMovement::TYPE_IN)->count();
+        $stockOutMovements = (clone $baseQuery)->where('movement_type', StockMovement::TYPE_OUT)->count();
+        $adjustmentMovements = (clone $baseQuery)->where('movement_type', StockMovement::TYPE_ADJUSTMENT)->count();
 
         return view('stock-movements', compact(
             'movements',
@@ -101,9 +115,13 @@ class StockMovementController extends Controller
                 ]),
             ],
             'quantity' => ['required', 'integer', 'min:0'],
-            'movement_date' => ['required', 'date'],
+            'movement_date' => ['required', 'date', 'before_or_equal:today'],
             'reference_no' => ['nullable', 'string', 'max:100'],
-            'note' => ['nullable', 'string'],
+            'note' => [
+                Rule::requiredIf($request->input('movement_type') === StockMovement::TYPE_ADJUSTMENT),
+                'nullable',
+                'string',
+            ],
         ], [
             'product_id.required' => 'Produk wajib dipilih.',
             'product_id.exists' => 'Produk tidak ditemukan.',
@@ -111,6 +129,8 @@ class StockMovementController extends Controller
             'quantity.required' => 'Jumlah mutasi wajib diisi.',
             'quantity.integer' => 'Jumlah mutasi harus berupa angka.',
             'movement_date.required' => 'Tanggal mutasi wajib diisi.',
+            'movement_date.before_or_equal' => 'Tanggal mutasi tidak boleh setelah hari ini.',
+            'note.required' => 'Catatan wajib diisi untuk penyesuaian stok.',
         ]);
 
         $movementType = $validated['movement_type'];
@@ -159,6 +179,8 @@ class StockMovementController extends Controller
                 'movement_date' => $validated['movement_date'],
                 'reference_no' => $validated['reference_no'] ?? null,
                 'note' => $validated['note'] ?? null,
+                'created_by' => auth()->id(),
+                'source_type' => StockMovement::SOURCE_MANUAL,
             ]);
 
             $product->update([

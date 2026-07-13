@@ -255,10 +255,14 @@
                                 @forelse ($products as $product)
                                     @php
                                         $stockPercent = $product->minimum_stock > 0
-                                            ? min(100, round(($product->stock / $product->minimum_stock) * 100))
+                                            ? min(100, round((max(0, $product->stock) / $product->minimum_stock) * 100))
                                             : 100;
 
-                                        if ($product->stock <= 0) {
+                                        if (! $product->is_active) {
+                                            $stockBadgeClass = 'bg-secondary bg-opacity-10 text-secondary';
+                                            $stockLabel = 'Nonaktif';
+                                            $progressClass = 'bg-secondary';
+                                        } elseif ($product->stock <= 0) {
                                             $stockBadgeClass = 'bg-danger bg-opacity-10 text-danger';
                                             $stockLabel = 'Stok Kosong';
                                             $progressClass = 'bg-danger';
