@@ -27,7 +27,7 @@ class PaymentProofController extends Controller
     {
         abort_unless($order->payment_proof_path, Response::HTTP_NOT_FOUND);
 
-        foreach (['local', 'public'] as $disk) {
+        foreach (['payment_proofs', 'local', 'public'] as $disk) {
             if (Storage::disk($disk)->exists($order->payment_proof_path)) {
                 $path = Storage::disk($disk)->path($order->payment_proof_path);
                 $mimeType = Storage::disk($disk)->mimeType($order->payment_proof_path) ?: 'application/octet-stream';
@@ -36,6 +36,9 @@ class PaymentProofController extends Controller
                     'Content-Type' => $mimeType,
                     'Pragma' => 'no-cache',
                     'X-Content-Type-Options' => 'nosniff',
+                    'Content-Disposition' => 'inline; filename="bukti-pembayaran"',
+                    'Referrer-Policy' => 'no-referrer',
+                    'Cross-Origin-Resource-Policy' => 'same-site',
                 ]);
 
                 $response->headers->set(

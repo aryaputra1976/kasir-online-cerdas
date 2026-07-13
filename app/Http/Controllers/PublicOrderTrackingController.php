@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\StoreSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -48,12 +49,13 @@ class PublicOrderTrackingController extends Controller
 
         $validated = $request->validate([
             'payment_method' => ['required', Rule::in(array_keys($paymentMethods))],
-            'payment_proof' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'payment_proof' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:2048', Rule::dimensions()->maxWidth(6000)->maxHeight(6000)],
             'payment_note' => ['nullable', 'string', 'max:1000'],
         ], [
             'payment_method.required' => 'Metode pembayaran wajib dipilih.',
             'payment_proof.image' => 'Bukti pembayaran harus berupa gambar.',
             'payment_proof.max' => 'Ukuran bukti pembayaran maksimal 2 MB.',
+            'payment_proof.dimensions' => 'Dimensi bukti pembayaran maksimal 6000x6000 piksel.',
         ]);
 
         $paymentMethod = $validated['payment_method'];
@@ -66,6 +68,18 @@ class PublicOrderTrackingController extends Controller
                 ]);
         }
 
+        if ($request->hasFile('payment_proof')) {
+            $imageSize = @getimagesize($request->file('payment_proof')->getRealPath());
+
+            if (! $imageSize || $imageSize[0] > 6000 || $imageSize[1] > 6000) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'payment_proof' => 'Dimensi bukti pembayaran maksimal 6000x6000 piksel.',
+                    ]);
+            }
+        }
+
         $data = [
             'payment_method' => $paymentMethod,
             'payment_note' => $validated['payment_note'] ?? null,
@@ -74,23 +88,45 @@ class PublicOrderTrackingController extends Controller
             'payment_rejected_at' => null,
         ];
 
-        if ($paymentMethod === Sale::PAYMENT_CASH) {
-            $this->deletePaymentProof($order->payment_proof_path);
+        $oldProofPath = $order->payment_proof_path;
+        $newProofPath = null;
 
+        if ($request->hasFile('payment_proof')) {
+            $newProofPath = $request->file('payment_proof')->store('', 'payment_proofs');
+
+            if (! $newProofPath) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'payment_proof' => 'Bukti pembayaran gagal disimpan. Silakan coba lagi.',
+                    ]);
+            }
+        }
+
+        if ($paymentMethod === Sale::PAYMENT_CASH) {
             $data['payment_status'] = OnlineOrder::PAYMENT_UNPAID;
             $data['payment_proof_path'] = null;
         } else {
             $data['payment_status'] = OnlineOrder::PAYMENT_WAITING_CONFIRMATION;
         }
 
-        if ($request->hasFile('payment_proof')) {
-            $this->deletePaymentProof($order->payment_proof_path);
-
-            $data['payment_proof_path'] = $request->file('payment_proof')
-                ->store('payment-proofs');
+        if ($newProofPath) {
+            $data['payment_proof_path'] = $newProofPath;
         }
 
-        $order->update($data);
+        try {
+            DB::transaction(fn () => $order->update($data));
+        } catch (\Throwable $exception) {
+            if ($newProofPath) {
+                $this->deletePaymentProof($newProofPath);
+            }
+
+            throw $exception;
+        }
+
+        if (($paymentMethod === Sale::PAYMENT_CASH || $newProofPath) && $oldProofPath) {
+            $this->deletePaymentProof($oldProofPath);
+        }
 
         $message = $paymentMethod === Sale::PAYMENT_CASH
             ? 'Metode pembayaran Tunai / COD berhasil dipilih. Pembayaran akan dikonfirmasi saat pesanan diterima.'
@@ -134,7 +170,8 @@ class PublicOrderTrackingController extends Controller
             return;
         }
 
-        foreach (['local', 'public'] as $disk) {
+        // Legacy local/public lookup is retained only so existing private files can be cleaned up.
+        foreach (['payment_proofs', 'local', 'public'] as $disk) {
             if (Storage::disk($disk)->exists($path)) {
                 Storage::disk($disk)->delete($path);
             }

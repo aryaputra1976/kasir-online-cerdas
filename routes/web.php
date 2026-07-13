@@ -226,21 +226,27 @@ Route::get('/checkout', [PublicOrderController::class, 'checkout'])
     ->name('public.checkout');
 
 Route::post('/checkout', [PublicOrderController::class, 'store'])
+    ->middleware('throttle:public-checkout')
     ->name('public.checkout.store');
 
 Route::post('/menu/cart/{product}', [PublicOrderController::class, 'addToCart'])
+    ->middleware('throttle:public-cart')
     ->name('public.cart.add');
 
 Route::patch('/menu/cart/{product}', [PublicOrderController::class, 'updateCart'])
+    ->middleware('throttle:public-cart')
     ->name('public.cart.update');
 
 Route::delete('/menu/cart/{product}', [PublicOrderController::class, 'removeCart'])
+    ->middleware('throttle:public-cart')
     ->name('public.cart.remove');
 
 Route::delete('/menu/cart', [PublicOrderController::class, 'clearCart'])
+    ->middleware('throttle:public-cart')
     ->name('public.cart.clear');
 
 Route::get('/tracking/{token}', [PublicOrderTrackingController::class, 'show'])
+    ->middleware('throttle:public-tracking')
     ->name('public.tracking');
 
 Route::post(
@@ -251,7 +257,7 @@ Route::post(
 Route::get(
     '/tracking/{token}/payment-proof-file',
     [PaymentProofController::class, 'showForTracking']
-)->name('public.payment-proof.show');
+)->middleware('throttle:public-tracking')->name('public.payment-proof.show');
 
 /*
 |--------------------------------------------------------------------------

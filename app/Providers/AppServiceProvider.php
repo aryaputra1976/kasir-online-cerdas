@@ -35,9 +35,27 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('public-payment-proof', function (Request $request) {
-            return Limit::perMinute(5)->by(
-                (string) $request->route('token') . '|' . $request->ip()
-            );
+            $key = (string) $request->route('token') . '|' . $request->ip();
+
+            return [
+                Limit::perMinute(3)->by('minute|' . $key),
+                Limit::perHour(10)->by('hour|' . $key),
+            ];
+        });
+
+        RateLimiter::for('public-checkout', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by('minute|' . $request->ip()),
+                Limit::perHour(30)->by('hour|' . $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('public-cart', function (Request $request) {
+            return Limit::perMinute(30)->by($request->session()->getId() . '|' . $request->ip());
+        });
+
+        RateLimiter::for('public-tracking', function (Request $request) {
+            return Limit::perMinute(30)->by((string) $request->route('token') . '|' . $request->ip());
         });
 
         try {

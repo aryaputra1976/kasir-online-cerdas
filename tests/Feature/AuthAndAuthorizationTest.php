@@ -1259,7 +1259,7 @@ it('prevents public payment updates after the online order is locked', function 
 ]);
 
 it('stores uploaded public payment proofs on the private disk', function () {
-    Storage::fake('local');
+    Storage::fake('payment_proofs');
     Storage::fake('public');
 
     StoreSetting::current()->update([
@@ -1286,7 +1286,7 @@ it('stores uploaded public payment proofs on the private disk', function () {
     expect($order->payment_status)->toBe(OnlineOrder::PAYMENT_WAITING_CONFIRMATION)
         ->and($order->payment_proof_path)->not->toBeNull();
 
-    Storage::disk('local')->assertExists($order->payment_proof_path);
+    Storage::disk('payment_proofs')->assertExists($order->payment_proof_path);
     Storage::disk('public')->assertMissing($order->payment_proof_path);
 });
 
@@ -1298,10 +1298,10 @@ it('throttles public payment proof uploads by tracking token and ip', function (
     ]);
 
     $limiterKey = $order->tracking_token . '|127.0.0.1';
-    RateLimiter::clear($limiterKey);
-    RateLimiter::clear(md5('public-payment-proof' . $limiterKey));
+    RateLimiter::clear('minute|' . $limiterKey);
+    RateLimiter::clear('hour|' . $limiterKey);
 
-    for ($attempt = 0; $attempt < 5; $attempt++) {
+    for ($attempt = 0; $attempt < 3; $attempt++) {
         $this->from("/tracking/{$order->tracking_token}")
             ->post("/tracking/{$order->tracking_token}/payment-proof", [
                 'payment_method' => Sale::PAYMENT_CASH,
@@ -1318,8 +1318,8 @@ it('throttles public payment proof uploads by tracking token and ip', function (
         ])
         ->assertStatus(429);
 
-    RateLimiter::clear($limiterKey);
-    RateLimiter::clear(md5('public-payment-proof' . $limiterKey));
+    RateLimiter::clear('minute|' . $limiterKey);
+    RateLimiter::clear('hour|' . $limiterKey);
 });
 
 it('streams payment proofs privately for owner admin and valid tracking tokens only', function () {

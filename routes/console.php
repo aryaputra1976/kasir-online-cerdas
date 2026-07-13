@@ -4,6 +4,8 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -150,3 +152,66 @@ Artisan::command('app:audit-data-integrity', function () {
         ? self::FAILURE
         : self::SUCCESS;
 })->purpose('Audit read-only integritas data transaksi, stok, invoice, dan order');
+
+Artisan::command('app:deployment-check', function () {
+    $checks = [];
+
+    $add = function (string $name, bool $ok, string $severity, string $message) use (&$checks): void {
+        $checks[] = [$name, $ok ? 'OK' : strtoupper($severity), $message, $severity];
+    };
+
+    $add('APP_ENV production', app()->environment('production'), 'critical', 'APP_ENV harus production pada server production.');
+    $add('APP_DEBUG false', config('app.debug') === false, 'critical', 'APP_DEBUG harus false.');
+    $add('APP_KEY tersedia', filled(config('app.key')), 'critical', 'APP_KEY wajib tersedia.');
+    $add('APP_URL HTTPS', str_starts_with((string) config('app.url'), 'https://'), 'critical', 'APP_URL production wajib HTTPS.');
+    $add('Timezone Asia/Makassar', config('app.timezone') === 'Asia/Makassar', 'warning', 'Timezone aplikasi sebaiknya Asia/Makassar.');
+    $add('Session encrypted', config('session.encrypt') === true, 'critical', 'SESSION_ENCRYPT harus true.');
+    $add('Session secure cookie', config('session.secure') === true, 'critical', 'SESSION_SECURE_COOKIE harus true saat HTTPS aktif.');
+    $add('Session http only', config('session.http_only') === true, 'critical', 'SESSION_HTTP_ONLY harus true.');
+    $add('Session same_site lax', config('session.same_site') === 'lax', 'warning', 'SESSION_SAME_SITE disarankan lax.');
+
+    try {
+        DB::connection()->getPdo();
+        $add('Database tersambung', true, 'critical', 'Database dapat diakses.');
+    } catch (Throwable $exception) {
+        $add('Database tersambung', false, 'critical', 'Database tidak dapat diakses.');
+    }
+
+    foreach ([
+        'sessions' => config('session.driver') === 'database',
+        'cache' => config('cache.default') === 'database',
+        'jobs' => config('queue.default') === 'database',
+    ] as $table => $required) {
+        if ($required) {
+            $add("Tabel {$table} tersedia", Schema::hasTable($table), 'critical', "Tabel {$table} wajib ada.");
+        }
+    }
+
+    $storageWritable = is_writable(storage_path()) && is_writable(storage_path('logs'));
+    $add('Storage writable', $storageWritable, 'critical', 'Folder storage dan logs harus writable.');
+
+    try {
+        Storage::disk('payment_proofs')->put('.deployment-check', 'ok');
+        Storage::disk('payment_proofs')->delete('.deployment-check');
+        $add('Disk payment_proofs private writable', true, 'critical', 'Disk bukti pembayaran bisa ditulis.');
+    } catch (Throwable $exception) {
+        $add('Disk payment_proofs private writable', false, 'critical', 'Disk bukti pembayaran tidak bisa ditulis.');
+    }
+
+    $assetPaths = [
+        public_path('assets/css'),
+        public_path('assets/js'),
+        public_path('assets/images'),
+    ];
+    $add('Asset Trezo tersedia', collect($assetPaths)->every(fn (string $path) => File::exists($path)), 'warning', 'Folder public/assets perlu tersedia saat deploy.');
+    $add('Queue configuration', filled(config('queue.default')), 'warning', 'QUEUE_CONNECTION harus jelas.');
+    $add('Mailer bukan log', config('mail.default') !== 'log', 'warning', 'MAIL_MAILER=log tidak mengirim email production.');
+
+    $criticalFailures = collect($checks)->filter(fn (array $check) => $check[1] === 'CRITICAL')->count();
+
+    $this->table(['Pemeriksaan', 'Status', 'Catatan'], collect($checks)
+        ->map(fn (array $check) => [$check[0], $check[1], $check[2]])
+        ->all());
+
+    return $criticalFailures > 0 ? self::FAILURE : self::SUCCESS;
+})->purpose('Audit read-only kesiapan konfigurasi deployment production');
