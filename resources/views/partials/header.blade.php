@@ -4,92 +4,13 @@
     $userName = $currentUser?->name ?: ($storeSetting?->owner_name ?: 'Admin Toko');
     $userRoleLabel = $currentUser?->role_label ?: 'Pengguna';
     $isOwner = $currentUser?->hasRole(\App\Models\User::ROLE_OWNER) ?? false;
-
-    $newOnlineOrderCount = \App\Models\OnlineOrder::query()
-        ->where('status', 'NEW')
-        ->count();
-
-    $waitingPaymentConfirmationCount = \App\Models\OnlineOrder::query()
-        ->where('payment_status', 'WAITING_CONFIRMATION')
-        ->count();
-
-    $completedNotConvertedCount = \App\Models\OnlineOrder::query()
-        ->where('status', 'COMPLETED')
-        ->where('payment_status', 'PAID')
-        ->whereNull('sale_id')
-        ->count();
-
-    $lowStockNotificationCount = \App\Models\Product::query()
-        ->activeLowStock()
-        ->count();
-
-    $emptyStockNotificationCount = \App\Models\Product::query()
-        ->activeEmptyStock()
-        ->count();
-
-    $operationalNotificationTotal =
-        $newOnlineOrderCount
-        + $waitingPaymentConfirmationCount
-        + $completedNotConvertedCount
-        + $lowStockNotificationCount
-        + $emptyStockNotificationCount;
-
-    $notificationBadgeText = $operationalNotificationTotal > 99
-        ? '99+'
-        : (string) $operationalNotificationTotal;
-
-    $operationalNotifications = collect([
-        [
-            'show' => $newOnlineOrderCount > 0,
-            'title' => 'Order online baru',
-            'description' => 'Ada ' . number_format($newOnlineOrderCount, 0, ',', '.') . ' order online baru yang perlu diproses.',
-            'url' => route('online-orders.index'),
-            'icon' => 'shopping_cart',
-            'iconClass' => 'text-warning',
-            'status' => 'Perlu diproses',
-            'unseen' => true,
-        ],
-        [
-            'show' => $waitingPaymentConfirmationCount > 0,
-            'title' => 'Pembayaran menunggu konfirmasi',
-            'description' => 'Ada ' . number_format($waitingPaymentConfirmationCount, 0, ',', '.') . ' pembayaran online yang perlu divalidasi.',
-            'url' => route('payments.index'),
-            'icon' => 'fact_check',
-            'iconClass' => 'text-primary',
-            'status' => 'Perlu validasi',
-            'unseen' => true,
-        ],
-        [
-            'show' => $completedNotConvertedCount > 0,
-            'title' => 'Order belum masuk penjualan',
-            'description' => 'Ada ' . number_format($completedNotConvertedCount, 0, ',', '.') . ' order selesai yang belum masuk transaksi penjualan.',
-            'url' => route('reports.online-orders.index'),
-            'icon' => 'sync_problem',
-            'iconClass' => 'text-warning',
-            'status' => 'Perlu dicek',
-            'unseen' => true,
-        ],
-        [
-            'show' => $lowStockNotificationCount > 0,
-            'title' => 'Stok menipis',
-            'description' => 'Ada ' . number_format($lowStockNotificationCount, 0, ',', '.') . ' produk dengan stok kurang atau sama dengan minimum.',
-            'url' => route('stocks.low'),
-            'icon' => 'inventory_2',
-            'iconClass' => 'text-danger',
-            'status' => 'Perlu restock',
-            'unseen' => false,
-        ],
-        [
-            'show' => $emptyStockNotificationCount > 0,
-            'title' => 'Stok kosong',
-            'description' => 'Ada ' . number_format($emptyStockNotificationCount, 0, ',', '.') . ' produk dengan stok kosong.',
-            'url' => route('stocks.low'),
-            'icon' => 'production_quantity_limits',
-            'iconClass' => 'text-danger',
-            'status' => 'Stok kosong',
-            'unseen' => false,
-        ],
-    ])->filter(fn ($item) => $item['show'])->values();
+    $operationalNotificationData = $operationalNotificationData ?? [
+        'action_required_count' => 0,
+        'unread_count' => 0,
+        'badge_text' => '0',
+        'notifications' => collect(),
+    ];
+    $operationalNotifications = collect($operationalNotificationData['notifications'] ?? []);
 @endphp
 
 <header
@@ -202,12 +123,12 @@
                             >
                                 <span class="material-symbols-outlined">notifications</span>
 
-                                @if ($operationalNotificationTotal > 0)
+                                @if (($operationalNotificationData['unread_count'] ?? 0) > 0)
                                     <span
                                         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white"
                                         style="font-size: 10px;"
                                     >
-                                        {{ $notificationBadgeText }}
+                                        {{ $operationalNotificationData['badge_text'] }}
                                     </span>
                                 @endif
                             </button>
@@ -221,22 +142,27 @@
                                     <span class="fw-semibold fs-15 text-secondary">
                                         Notifikasi Operasional
                                         <span class="fw-normal text-body fs-14">
-                                            ({{ number_format($operationalNotificationTotal, 0, ',', '.') }})
+                                            ({{ number_format($operationalNotificationData['action_required_count'] ?? 0, 0, ',', '.') }})
                                         </span>
                                     </span>
 
-                                    <span class="fs-13 text-body">
-                                        Real-time
-                                    </span>
+                                    <form method="post" action="{{ route('operational-notifications.mark-all') }}">
+                                        @csrf
+                                        <button type="submit" class="border-0 bg-transparent p-0 fs-13 text-primary">
+                                            Tandai semua sudah dibaca
+                                        </button>
+                                    </form>
                                 </div>
 
                                 <div class="max-h-217" data-simplebar>
                                     @forelse ($operationalNotifications as $notification)
-                                        <div class="notification-menu {{ $notification['unseen'] ? 'unseen' : '' }}">
-                                            <a
-                                                href="{{ $notification['url'] }}"
-                                                class="dropdown-item"
-                                            >
+                                        <div class="notification-menu {{ $notification['unread'] ? 'unseen' : '' }}">
+                                            <form method="post" action="{{ route('operational-notifications.open', $notification['key']) }}">
+                                                @csrf
+                                                <button
+                                                    type="submit"
+                                                    class="dropdown-item border-0 bg-transparent text-start w-100"
+                                                >
                                                 <div class="d-flex align-items-center">
                                                     <div class="flex-shrink-0">
                                                         <i class="material-symbols-outlined {{ $notification['iconClass'] }}">
@@ -258,7 +184,8 @@
                                                         </span>
                                                     </div>
                                                 </div>
-                                            </a>
+                                                </button>
+                                            </form>
                                         </div>
                                     @empty
                                         <div class="text-center py-4 px-3">

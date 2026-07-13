@@ -7,6 +7,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OnlineOrderController;
 use App\Http\Controllers\OnlineOrderReportController;
+use App\Http\Controllers\OperationalNotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\PaymentMethodSettingController;
@@ -76,6 +77,12 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+
+    Route::post('/notifikasi-operasional/{key}/buka', [OperationalNotificationController::class, 'open'])
+        ->name('operational-notifications.open');
+
+    Route::post('/notifikasi-operasional/tandai-semua-dibaca', [OperationalNotificationController::class, 'markAll'])
+        ->name('operational-notifications.mark-all');
 
     Route::middleware('role:' . User::ROLE_OWNER . ',' . User::ROLE_ADMIN . ',' . User::ROLE_KASIR)
         ->group(function () {

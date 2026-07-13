@@ -16,6 +16,13 @@ class Sale extends Model
     public const PAYMENT_TRANSFER = 'TRANSFER';
     public const PAYMENT_EDC = 'EDC';
 
+    public const PAYMENT_METHODS = [
+        self::PAYMENT_CASH,
+        self::PAYMENT_QRIS,
+        self::PAYMENT_TRANSFER,
+        self::PAYMENT_EDC,
+    ];
+
     public const STATUS_COMPLETED = 'COMPLETED';
 
     protected $fillable = [
@@ -63,13 +70,7 @@ class Sale extends Model
 
     public function getPaymentMethodLabelAttribute(): string
     {
-        return match ($this->payment_method) {
-            self::PAYMENT_CASH => 'Tunai',
-            self::PAYMENT_QRIS => 'QRIS',
-            self::PAYMENT_TRANSFER => 'Transfer',
-            self::PAYMENT_EDC => 'EDC / Kartu',
-            default => $this->payment_method,
-        };
+        return self::paymentMethodLabel($this->payment_method);
     }
 
     public function getStatusLabelAttribute(): string
@@ -77,6 +78,32 @@ class Sale extends Model
         return match ($this->status) {
             self::STATUS_COMPLETED => 'Selesai',
             default => $this->status,
+        };
+    }
+
+    public static function paymentMethodLabels(): array
+    {
+        return [
+            self::PAYMENT_CASH => 'Tunai / Cash',
+            self::PAYMENT_QRIS => 'QRIS',
+            self::PAYMENT_TRANSFER => 'Transfer Bank',
+            self::PAYMENT_EDC => 'EDC / Kartu',
+        ];
+    }
+
+    public static function paymentMethodLabel(?string $method): string
+    {
+        return self::paymentMethodLabels()[$method] ?? ($method ?: 'Lainnya');
+    }
+
+    public static function paymentProgressClass(?string $method): string
+    {
+        return match ($method) {
+            self::PAYMENT_CASH => 'bg-success',
+            self::PAYMENT_QRIS => 'bg-primary',
+            self::PAYMENT_TRANSFER => 'bg-info',
+            self::PAYMENT_EDC => 'bg-warning',
+            default => 'bg-secondary',
         };
     }
 }

@@ -111,7 +111,7 @@ $summaryCards = [
     [
         'title' => 'Omzet Hari Ini',
         'value' => $rupiah($todayOmzet),
-        'note' => 'Berdasarkan transaksi POS hari ini',
+        'note' => 'Berdasarkan transaksi penjualan selesai hari ini',
         'icon' => 'payments',
         'color' => 'bg-success bg-opacity-10 text-success',
         'badge' => $todayTransactions . ' transaksi',
@@ -120,7 +120,7 @@ $summaryCards = [
     [
         'title' => 'Omzet Bulan Ini',
         'value' => $rupiah($monthOmzet),
-        'note' => 'Akumulasi transaksi POS bulan berjalan',
+        'note' => 'Akumulasi transaksi penjualan selesai bulan berjalan',
         'icon' => 'calendar_month',
         'color' => 'bg-primary bg-opacity-10 text-primary',
         'badge' => now()->translatedFormat('F Y'),
@@ -132,17 +132,26 @@ $summaryCards = [
         'note' => number_format($todayItemsSold, 0, ',', '.') . ' item terjual hari ini',
         'icon' => 'point_of_sale',
         'color' => 'bg-info bg-opacity-10 text-info',
-        'badge' => 'POS',
+        'badge' => 'Penjualan',
         'badgeClass' => 'bg-info bg-opacity-10 text-info',
     ],
     [
         'title' => 'Order Online Hari Ini',
         'value' => number_format($todayOnlineOrders, 0, ',', '.'),
-        'note' => 'Omzet online hari ini: ' . $rupiah($todayOnlineOmzet),
+        'note' => 'Nilai order: ' . $rupiah($todayOnlineOrderValue),
         'icon' => 'shopping_cart',
         'color' => 'bg-warning bg-opacity-10 text-warning',
         'badge' => 'Online',
         'badgeClass' => 'bg-warning bg-opacity-10 text-warning',
+    ],
+    [
+        'title' => 'Revenue Online Selesai',
+        'value' => $rupiah($todayCompletedOnlineRevenue),
+        'note' => 'Order online selesai dan dibayar hari ini',
+        'icon' => 'verified',
+        'color' => 'bg-success bg-opacity-10 text-success',
+        'badge' => 'Online',
+        'badgeClass' => 'bg-success bg-opacity-10 text-success',
     ],
     [
         'title' => 'Order Online Baru',
@@ -156,6 +165,15 @@ $summaryCards = [
             : 'bg-success bg-opacity-10 text-success',
     ],
     [
+        'title' => 'Dikonfirmasi',
+        'value' => number_format($confirmedOnlineOrders, 0, ',', '.'),
+        'note' => 'Order COD yang sudah dikonfirmasi pelanggan',
+        'icon' => 'task_alt',
+        'color' => 'bg-info bg-opacity-10 text-info',
+        'badge' => 'COD',
+        'badgeClass' => 'bg-info bg-opacity-10 text-info',
+    ],
+    [
         'title' => 'Menunggu Konfirmasi',
         'value' => number_format($waitingPaymentConfirmations, 0, ',', '.'),
         'note' => 'Pembayaran online menunggu validasi',
@@ -165,9 +183,9 @@ $summaryCards = [
         'badgeClass' => 'bg-primary bg-opacity-10 text-primary',
     ],
     [
-        'title' => 'Belum Masuk Penjualan',
+        'title' => 'Anomali Belum Masuk Penjualan',
         'value' => number_format($onlineOrdersNotConvertedToSale, 0, ',', '.'),
-        'note' => 'Order selesai yang belum menjadi transaksi POS',
+        'note' => 'Order selesai dan dibayar yang belum menjadi penjualan',
         'icon' => 'sync_problem',
         'color' => 'bg-warning bg-opacity-10 text-warning',
         'badge' => $onlineOrdersNotConvertedToSale > 0 ? 'Cek order' : 'Aman',
@@ -187,57 +205,6 @@ $summaryCards = [
             : 'bg-success bg-opacity-10 text-success',
     ],
 ];
-
-$orderStatusLabel = function (?string $status) {
-    return match (strtoupper((string) $status)) {
-        'NEW' => 'Baru',
-        'PROCESSING' => 'Diproses',
-        'COMPLETED' => 'Selesai',
-        'CANCELLED' => 'Dibatalkan',
-        default => $status ? ucwords(str_replace(['_', '-'], ' ', strtolower($status))) : '-',
-    };
-};
-
-$orderStatusClass = function (?string $status) {
-    return match (strtoupper((string) $status)) {
-        'NEW' => 'bg-primary bg-opacity-10 text-primary',
-        'PROCESSING' => 'bg-warning bg-opacity-10 text-warning',
-        'COMPLETED' => 'bg-success bg-opacity-10 text-success',
-        'CANCELLED' => 'bg-danger bg-opacity-10 text-danger',
-        default => 'bg-light text-body border',
-    };
-};
-
-$paymentStatusLabel = function (?string $status) {
-    return match (strtoupper((string) $status)) {
-        'UNPAID' => 'Belum Dibayar',
-        'WAITING_CONFIRMATION' => 'Menunggu Konfirmasi',
-        'PAID' => 'Dibayar',
-        'REJECTED' => 'Ditolak',
-        default => $status ? ucwords(str_replace(['_', '-'], ' ', strtolower($status))) : '-',
-    };
-};
-
-$paymentStatusClass = function (?string $status) {
-    return match (strtoupper((string) $status)) {
-        'PAID' => 'bg-success bg-opacity-10 text-success',
-        'WAITING_CONFIRMATION' => 'bg-warning bg-opacity-10 text-warning',
-        'REJECTED' => 'bg-danger bg-opacity-10 text-danger',
-        'UNPAID' => 'bg-secondary bg-opacity-10 text-secondary',
-        default => 'bg-light text-body border',
-    };
-};
-
-$paymentMethodLabel = function (?string $method) {
-    return match (strtoupper((string) $method)) {
-        'CASH' => 'Tunai / Cash',
-        'COD' => 'Tunai / COD',
-        'QRIS' => 'QRIS',
-        'TRANSFER', 'BANK_TRANSFER', 'TRANSFER_BANK' => 'Transfer Bank',
-        'EDC', 'CARD', 'DEBIT', 'CREDIT_CARD' => 'EDC / Kartu',
-        default => $method ? ucwords(str_replace(['_', '-'], ' ', strtolower($method))) : 'Lainnya',
-    };
-};
         @endphp
 
         <div class="container-fluid">
@@ -360,7 +327,7 @@ $paymentMethodLabel = function (?string $method) {
                                         <div class="text-center py-5 border rounded-3">
                                             <i class="material-symbols-outlined text-body fs-40 mb-2">payments</i>
                                             <h6 class="fw-semibold mb-1">Belum ada pembayaran hari ini</h6>
-                                            <p class="text-body mb-0 fs-13">Transaksi POS hari ini akan muncul di sini.</p>
+                                            <p class="text-body mb-0 fs-13">Transaksi penjualan selesai hari ini akan muncul di sini.</p>
                                         </div>
                                     @endforelse
                                 </div>
@@ -405,7 +372,7 @@ $paymentMethodLabel = function (?string $method) {
                                                 </span>
 
                                                 <span class="badge bg-info bg-opacity-10 text-info p-2 fs-12 fw-normal">
-                                                    {{ $paymentMethodLabel($order->payment_method) }}
+                                                    {{ $order->payment_method_label }}
                                                 </span>
                                             </div>
                                         </div>
@@ -424,15 +391,15 @@ $paymentMethodLabel = function (?string $method) {
 
                                 <div class="col-lg-3">
                                     <div class="d-flex flex-wrap justify-content-lg-end gap-1">
-                                        <span class="badge {{ $paymentStatusClass($order->payment_status) }} p-2 fs-12 fw-normal">
-                                            {{ $paymentStatusLabel($order->payment_status) }}
+                                        <span class="badge {{ $order->payment_status_class }} p-2 fs-12 fw-normal">
+                                            {{ $order->payment_status_label }}
                                         </span>
 
-                                        <span class="badge {{ $orderStatusClass($order->status) }} p-2 fs-12 fw-normal">
-                                            {{ $orderStatusLabel($order->status) }}
+                                        <span class="badge {{ $order->status_class }} p-2 fs-12 fw-normal">
+                                            {{ $order->status_label }}
                                         </span>
 
-                                        <a href="{{ url('/order-online/' . $order->id) }}" class="btn btn-outline-primary btn-sm mt-2">
+                                        <a href="{{ route('online-orders.show', $order) }}" class="btn btn-outline-primary btn-sm mt-2">
                                             Detail
                                         </a>
                                     </div>
@@ -474,12 +441,13 @@ $paymentMethodLabel = function (?string $method) {
                             <div>
                                 <span class="fw-medium">{{ $payment['label'] }}</span>
                                 <span class="d-block fs-12 text-body">
-                                    {{ $payment['total_order'] }} order
+                                    {{ $payment['total_order'] }} order,
+                                    {{ $payment['completed_count'] }} selesai
                                 </span>
                             </div>
 
                             <div class="text-end">
-                                <span class="fs-13 fw-semibold">{{ $rupiah($payment['amount']) }}</span>
+                                <span class="fs-13 fw-semibold">{{ $rupiah($payment['paid_value']) }}</span>
                                 <span class="d-block fs-12 text-body">{{ $payment['percent'] }}%</span>
                             </div>
                         </div>
@@ -507,7 +475,7 @@ $paymentMethodLabel = function (?string $method) {
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
                                         <div>
                                             <h3 class="mb-1">Transaksi Terbaru</h3>
-                                            <p class="text-body mb-0 fs-13">Data transaksi terakhir dari POS</p>
+                                            <p class="text-body mb-0 fs-13">Data transaksi penjualan selesai terbaru</p>
                                         </div>
 
                                         <a href="{{ route('sales.report') }}" class="btn btn-outline-primary btn-sm">
@@ -633,7 +601,7 @@ $paymentMethodLabel = function (?string $method) {
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
                                         <div>
                                             <h3 class="mb-1">Produk Terlaris</h3>
-                                            <p class="text-body mb-0 fs-13">Berdasarkan item terjual dari transaksi POS</p>
+                                            <p class="text-body mb-0 fs-13">Berdasarkan item terjual dari penjualan selesai</p>
                                         </div>
 
                                         <a href="{{ route('best-products.report') }}" class="btn btn-outline-primary btn-sm">
@@ -652,13 +620,15 @@ $paymentMethodLabel = function (?string $method) {
                                                             </div>
 
                                                             <div>
-                                                                <h6 class="fw-semibold fs-14 mb-1">{{ $product->product_name }}</h6>
+                                                                <h6 class="fw-semibold fs-14 mb-1">
+                                                                    {{ $product->current_product_name ?: $product->snapshot_product_name }}
+                                                                </h6>
                                                                 <span class="fs-12 text-body">
-                                                                    {{ $product->product?->category?->name ?? 'Tanpa Kategori' }}
+                                                                    {{ $product->category_name ?? 'Tanpa Kategori' }}
                                                                 </span>
                                                                 <div class="mt-2">
                                                                     <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
-                                                                        SKU: {{ $product->sku ?: '-' }}
+                                                                        SKU: {{ $product->current_product_sku ?: $product->snapshot_sku ?: '-' }}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -683,7 +653,7 @@ $paymentMethodLabel = function (?string $method) {
                                             <div class="text-center py-5 border rounded-3">
                                                 <i class="material-symbols-outlined text-body fs-40 mb-2">shopping_bag</i>
                                                 <h6 class="fw-semibold mb-1">Belum ada produk terjual</h6>
-                                                <p class="text-body mb-0 fs-13">Produk terlaris akan muncul setelah ada transaksi POS.</p>
+                                                <p class="text-body mb-0 fs-13">Produk terlaris akan muncul setelah ada penjualan selesai.</p>
                                             </div>
                                         @endforelse
                                     </div>

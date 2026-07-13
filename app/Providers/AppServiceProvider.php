@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\StoreSetting;
+use App\Services\OperationalNotificationService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -48,5 +49,12 @@ class AppServiceProvider extends ServiceProvider
         }
 
         View::share('storeSetting', $storeSetting);
+
+        View::composer('partials.header', function ($view) {
+            $view->with(
+                'operationalNotificationData',
+                app(OperationalNotificationService::class)->dataFor(auth()->user())
+            );
+        });
     }
 }
