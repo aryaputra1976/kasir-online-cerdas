@@ -113,60 +113,27 @@ class OnlineOrder extends Model
 
     public function getPaymentStatusLabelAttribute(): string
     {
-        return match ($this->payment_status) {
-            self::PAYMENT_UNPAID => 'Belum Dibayar',
-            self::PAYMENT_WAITING_CONFIRMATION => 'Menunggu Konfirmasi',
-            self::PAYMENT_PAID => 'Dibayar',
-            self::PAYMENT_REJECTED => 'Ditolak',
-            default => $this->payment_status,
-        };
+        return self::paymentStatusLabel($this->payment_status);
     }
 
     public function getPaymentStatusClassAttribute(): string
     {
-        return match ($this->payment_status) {
-            self::PAYMENT_UNPAID => 'bg-secondary bg-opacity-10 text-secondary',
-            self::PAYMENT_WAITING_CONFIRMATION => 'bg-warning bg-opacity-10 text-warning',
-            self::PAYMENT_PAID => 'bg-success bg-opacity-10 text-success',
-            self::PAYMENT_REJECTED => 'bg-danger bg-opacity-10 text-danger',
-            default => 'bg-light text-body border',
-        };
+        return self::paymentStatusClass($this->payment_status);
     }
 
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            self::STATUS_NEW => 'Order Baru',
-            self::STATUS_CONFIRMED => 'Dikonfirmasi',
-            self::STATUS_PROCESSING => 'Diproses',
-            self::STATUS_COMPLETED => 'Selesai',
-            self::STATUS_CANCELLED => 'Dibatalkan',
-            default => $this->status,
-        };
+        return self::statusLabel($this->status);
     }
 
     public function getStatusClassAttribute(): string
     {
-        return match ($this->status) {
-            self::STATUS_NEW => 'bg-primary bg-opacity-10 text-primary',
-            self::STATUS_CONFIRMED => 'bg-info bg-opacity-10 text-info',
-            self::STATUS_PROCESSING => 'bg-warning bg-opacity-10 text-warning',
-            self::STATUS_COMPLETED => 'bg-success bg-opacity-10 text-success',
-            self::STATUS_CANCELLED => 'bg-danger bg-opacity-10 text-danger',
-            default => 'bg-light text-body border',
-        };
+        return self::statusClass($this->status);
     }
 
     public function getPaymentMethodLabelAttribute(): string
     {
-        return match ($this->payment_method) {
-            Sale::PAYMENT_CASH => 'Tunai / COD',
-            Sale::PAYMENT_QRIS => 'QRIS',
-            Sale::PAYMENT_TRANSFER => 'Transfer',
-            Sale::PAYMENT_EDC => 'EDC / Kartu',
-            null => 'Belum dipilih',
-            default => $this->payment_method,
-        };
+        return self::paymentMethodLabel($this->payment_method);
     }
 
     public function getStockStatusLabelAttribute(): string
@@ -185,16 +152,125 @@ class OnlineOrder extends Model
 
     public function getSaleConversionStatusLabelAttribute(): string
     {
-        return $this->sale_id
-            ? 'Sudah Masuk Penjualan'
-            : 'Belum Masuk Penjualan';
+        if ($this->status === self::STATUS_COMPLETED
+            && $this->payment_status === self::PAYMENT_PAID
+            && is_null($this->sale_id)) {
+            return 'Anomali Belum Masuk Penjualan';
+        }
+
+        return $this->sale_id ? 'Sudah Masuk Penjualan' : 'Belum Masuk Penjualan';
     }
 
     public function getSaleConversionStatusClassAttribute(): string
     {
+        if ($this->status === self::STATUS_COMPLETED
+            && $this->payment_status === self::PAYMENT_PAID
+            && is_null($this->sale_id)) {
+            return 'bg-danger bg-opacity-10 text-danger';
+        }
+
         return $this->sale_id
             ? 'bg-success bg-opacity-10 text-success'
             : 'bg-secondary bg-opacity-10 text-secondary';
+    }
+
+    public static function statusLabels(): array
+    {
+        return [
+            self::STATUS_NEW => 'Order Baru',
+            self::STATUS_CONFIRMED => 'Dikonfirmasi',
+            self::STATUS_PROCESSING => 'Diproses',
+            self::STATUS_COMPLETED => 'Selesai',
+            self::STATUS_CANCELLED => 'Dibatalkan',
+        ];
+    }
+
+    public static function paymentStatusLabels(): array
+    {
+        return [
+            self::PAYMENT_UNPAID => 'Belum Dibayar',
+            self::PAYMENT_WAITING_CONFIRMATION => 'Menunggu Konfirmasi',
+            self::PAYMENT_PAID => 'Dibayar',
+            self::PAYMENT_REJECTED => 'Ditolak',
+        ];
+    }
+
+    public static function paymentMethodLabels(): array
+    {
+        return [
+            Sale::PAYMENT_CASH => 'Tunai / COD',
+            Sale::PAYMENT_QRIS => 'QRIS',
+            Sale::PAYMENT_TRANSFER => 'Transfer',
+            Sale::PAYMENT_EDC => 'EDC / Kartu',
+        ];
+    }
+
+    public static function statusLabel(?string $status): string
+    {
+        return self::statusLabels()[$status] ?? ($status ?: '-');
+    }
+
+    public static function paymentStatusLabel(?string $status): string
+    {
+        return self::paymentStatusLabels()[$status] ?? ($status ?: '-');
+    }
+
+    public static function paymentMethodLabel(?string $method): string
+    {
+        return self::paymentMethodLabels()[$method] ?? ($method ?: 'Belum dipilih');
+    }
+
+    public static function statusClass(?string $status): string
+    {
+        return match ($status) {
+            self::STATUS_NEW => 'bg-primary bg-opacity-10 text-primary',
+            self::STATUS_CONFIRMED => 'bg-info bg-opacity-10 text-info',
+            self::STATUS_PROCESSING => 'bg-warning bg-opacity-10 text-warning',
+            self::STATUS_COMPLETED => 'bg-success bg-opacity-10 text-success',
+            self::STATUS_CANCELLED => 'bg-danger bg-opacity-10 text-danger',
+            default => 'bg-light text-body border',
+        };
+    }
+
+    public static function paymentStatusClass(?string $status): string
+    {
+        return match ($status) {
+            self::PAYMENT_UNPAID => 'bg-secondary bg-opacity-10 text-secondary',
+            self::PAYMENT_WAITING_CONFIRMATION => 'bg-warning bg-opacity-10 text-warning',
+            self::PAYMENT_PAID => 'bg-success bg-opacity-10 text-success',
+            self::PAYMENT_REJECTED => 'bg-danger bg-opacity-10 text-danger',
+            default => 'bg-light text-body border',
+        };
+    }
+
+    public function consistencyIndicators(): array
+    {
+        $indicators = [];
+
+        if ($this->status === self::STATUS_COMPLETED && $this->payment_status !== self::PAYMENT_PAID) {
+            $indicators[] = 'Selesai tetapi belum PAID';
+        }
+
+        if ($this->status === self::STATUS_COMPLETED
+            && $this->payment_status === self::PAYMENT_PAID
+            && is_null($this->sale_id)) {
+            $indicators[] = 'Anomali Belum Masuk Penjualan';
+        }
+
+        if (! is_null($this->sale_id) && $this->status !== self::STATUS_COMPLETED) {
+            $indicators[] = 'Sudah ada Sale tetapi belum selesai';
+        }
+
+        if (in_array($this->status, [self::STATUS_PROCESSING, self::STATUS_COMPLETED], true)
+            && is_null($this->stock_deducted_at)) {
+            $indicators[] = 'Diproses/Selesai tanpa pengurangan stok';
+        }
+
+        if ($this->status === self::STATUS_CANCELLED && ! is_null($this->stock_deducted_at)) {
+            $indicators[] = 'Dibatalkan tetapi stok sudah dikurangi';
+        }
+
+        return $indicators;
     }
 
     public function canConfirmPayment(): bool
