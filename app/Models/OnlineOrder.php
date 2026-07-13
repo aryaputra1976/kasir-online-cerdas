@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class OnlineOrder extends Model
 {
     public const STATUS_NEW = 'NEW';
+    public const STATUS_CONFIRMED = 'CONFIRMED';
     public const STATUS_PROCESSING = 'PROCESSING';
     public const STATUS_COMPLETED = 'COMPLETED';
     public const STATUS_CANCELLED = 'CANCELLED';
@@ -40,6 +41,8 @@ class OnlineOrder extends Model
         'payment_confirmed_at',
         'payment_rejected_at',
         'status',
+        'cod_confirmed_at',
+        'cod_confirmed_by',
         'stock_deducted_at',
         'processed_at',
         'completed_at',
@@ -58,6 +61,7 @@ class OnlineOrder extends Model
         'paid_at' => 'datetime',
         'payment_confirmed_at' => 'datetime',
         'payment_rejected_at' => 'datetime',
+        'cod_confirmed_at' => 'datetime',
         'stock_deducted_at' => 'datetime',
         'processed_at' => 'datetime',
         'completed_at' => 'datetime',
@@ -78,6 +82,11 @@ class OnlineOrder extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function codConfirmedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cod_confirmed_by');
     }
 
     public function getPaymentStatusLabelAttribute(): string
@@ -106,6 +115,7 @@ class OnlineOrder extends Model
     {
         return match ($this->status) {
             self::STATUS_NEW => 'Order Baru',
+            self::STATUS_CONFIRMED => 'Dikonfirmasi',
             self::STATUS_PROCESSING => 'Diproses',
             self::STATUS_COMPLETED => 'Selesai',
             self::STATUS_CANCELLED => 'Dibatalkan',
@@ -117,6 +127,7 @@ class OnlineOrder extends Model
     {
         return match ($this->status) {
             self::STATUS_NEW => 'bg-primary bg-opacity-10 text-primary',
+            self::STATUS_CONFIRMED => 'bg-info bg-opacity-10 text-info',
             self::STATUS_PROCESSING => 'bg-warning bg-opacity-10 text-warning',
             self::STATUS_COMPLETED => 'bg-success bg-opacity-10 text-success',
             self::STATUS_CANCELLED => 'bg-danger bg-opacity-10 text-danger',
@@ -179,14 +190,23 @@ class OnlineOrder extends Model
         return ! is_null($this->stock_deducted_at);
     }
 
+    public function canConfirmCod(): bool
+    {
+        return $this->payment_method === Sale::PAYMENT_CASH
+            && $this->status === self::STATUS_NEW
+            && $this->payment_status !== self::PAYMENT_PAID
+            && ! $this->hasStockDeducted()
+            && is_null($this->cod_confirmed_at);
+    }
+
     public function canProcess(): bool
     {
-        if ($this->status !== self::STATUS_NEW) {
-            return false;
+        if ($this->payment_method === Sale::PAYMENT_CASH) {
+            return $this->status === self::STATUS_CONFIRMED;
         }
 
-        if ($this->payment_method === Sale::PAYMENT_CASH) {
-            return true;
+        if ($this->status !== self::STATUS_NEW) {
+            return false;
         }
 
         return $this->payment_status === self::PAYMENT_PAID;
@@ -199,7 +219,7 @@ class OnlineOrder extends Model
 
     public function canCancel(): bool
     {
-        return $this->status === self::STATUS_NEW
+        return in_array($this->status, [self::STATUS_NEW, self::STATUS_CONFIRMED], true)
             && ! $this->hasStockDeducted();
     }
 

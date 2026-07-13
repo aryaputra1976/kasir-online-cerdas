@@ -184,6 +184,7 @@
                                             <select name="status" class="form-select form-control">
                                                 <option value="">Semua Status Order</option>
                                                 <option value="NEW" @selected($status === 'NEW')>Order Baru</option>
+                                                <option value="CONFIRMED" @selected($status === 'CONFIRMED')>Dikonfirmasi</option>
                                                 <option value="PROCESSING" @selected($status === 'PROCESSING')>Diproses</option>
                                                 <option value="COMPLETED" @selected($status === 'COMPLETED')>Selesai</option>
                                                 <option value="CANCELLED" @selected($status === 'CANCELLED')>Dibatalkan</option>

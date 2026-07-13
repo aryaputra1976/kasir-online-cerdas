@@ -349,9 +349,11 @@
                                 </div>
 
                                 <div class="d-flex gap-2 flex-wrap">
-                                    <a href="{{ route('profit-loss.report') }}" class="btn btn-outline-primary">
-                                        Laba Rugi
-                                    </a>
+                                    @if (auth()->user()?->hasRole(\App\Models\User::ROLE_OWNER))
+                                        <a href="{{ route('profit-loss.report') }}" class="btn btn-outline-primary">
+                                            Laba Rugi
+                                        </a>
+                                    @endif
 
                                     <a href="{{ route('pos.index') }}" class="btn btn-primary text-white">
                                         Kasir POS

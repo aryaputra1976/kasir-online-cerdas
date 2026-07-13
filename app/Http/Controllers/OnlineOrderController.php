@@ -106,6 +106,21 @@ class OnlineOrderController extends Controller
         return back()->with('success', "Pembayaran {$order->order_no} ditolak.");
     }
 
+    public function confirmCod(OnlineOrder $order): RedirectResponse
+    {
+        if (! $order->canConfirmCod()) {
+            return back()->with('error', 'Pesanan COD ini tidak bisa dikonfirmasi.');
+        }
+
+        $order->update([
+            'status' => OnlineOrder::STATUS_CONFIRMED,
+            'cod_confirmed_at' => now(),
+            'cod_confirmed_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Pesanan COD berhasil dikonfirmasi. Order sekarang dapat diproses.');
+    }
+
     public function process(OnlineOrder $order): RedirectResponse
     {
         if (! $order->canProcess()) {
@@ -131,10 +146,19 @@ class OnlineOrderController extends Controller
         return back()->with('success', "Order {$order->order_no} mulai diproses dan stok produk otomatis dikurangi.");
     }
 
-    public function complete(OnlineOrder $order): RedirectResponse
+    public function complete(Request $request, OnlineOrder $order): RedirectResponse
     {
         if (! $order->canComplete()) {
             return back()->with('error', 'Order ini tidak bisa diselesaikan.');
+        }
+
+        if ($order->payment_method === Sale::PAYMENT_CASH) {
+            $request->validate([
+                'cod_payment_received' => ['required', 'accepted'],
+            ], [
+                'cod_payment_received.required' => 'Konfirmasi penerimaan pembayaran COD wajib dicentang.',
+                'cod_payment_received.accepted' => 'Konfirmasi penerimaan pembayaran COD wajib dicentang.',
+            ]);
         }
 
         if (

@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\OnlineOrder;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -23,6 +26,41 @@ function createOnlineOrderForAuthorizationTest(array $attributes = []): OnlineOr
         'payment_status' => OnlineOrder::PAYMENT_WAITING_CONFIRMATION,
         'status' => OnlineOrder::STATUS_NEW,
     ], $attributes));
+}
+
+function createCodOnlineOrderForAuthorizationTest(array $orderAttributes = []): array
+{
+    $product = Product::create([
+        'name' => 'Produk COD Test ' . str()->upper(str()->random(6)),
+        'slug' => 'produk-cod-test-' . str()->lower(str()->random(8)),
+        'sku' => 'COD-' . str()->upper(str()->random(8)),
+        'purchase_price' => 5000,
+        'selling_price' => 10000,
+        'stock' => 10,
+        'minimum_stock' => 1,
+        'unit' => 'pcs',
+        'is_active' => true,
+    ]);
+
+    $order = createOnlineOrderForAuthorizationTest(array_merge([
+        'payment_method' => Sale::PAYMENT_CASH,
+        'payment_status' => OnlineOrder::PAYMENT_UNPAID,
+        'status' => OnlineOrder::STATUS_NEW,
+        'subtotal_amount' => 20000,
+        'total_amount' => 20000,
+    ], $orderAttributes));
+
+    $order->items()->create([
+        'product_id' => $product->id,
+        'product_name' => $product->name,
+        'sku' => $product->sku,
+        'unit' => $product->unit,
+        'quantity' => 2,
+        'unit_price' => 10000,
+        'subtotal_amount' => 20000,
+    ]);
+
+    return [$order->refresh(), $product->refresh()];
 }
 
 it('redirects guests away from the dashboard', function () {
@@ -282,6 +320,22 @@ it('prevents kasir users from confirming payments', function () {
         ->assertSessionHas('error');
 });
 
+it('prevents kasir users from rejecting payments', function () {
+    $user = User::factory()->create([
+        'role' => User::ROLE_KASIR,
+        'is_active' => true,
+    ]);
+
+    $order = createOnlineOrderForAuthorizationTest();
+
+    $this->actingAs($user)
+        ->patch("/pembayaran/{$order->id}/reject", [
+            'admin_payment_note' => 'Bukti tidak sesuai.',
+        ])
+        ->assertRedirect('/dashboard')
+        ->assertSessionHas('error');
+});
+
 it('prevents kasir users from cancelling online orders', function () {
     $user = User::factory()->create([
         'role' => User::ROLE_KASIR,
@@ -294,4 +348,196 @@ it('prevents kasir users from cancelling online orders', function () {
         ->patch("/order-online/{$order->id}/cancel")
         ->assertRedirect('/dashboard')
         ->assertSessionHas('error');
+});
+
+it('prevents kasir users from manually converting online orders to sales', function () {
+    $user = User::factory()->create([
+        'role' => User::ROLE_KASIR,
+        'is_active' => true,
+    ]);
+
+    $order = createOnlineOrderForAuthorizationTest([
+        'payment_status' => OnlineOrder::PAYMENT_PAID,
+        'status' => OnlineOrder::STATUS_COMPLETED,
+    ]);
+
+    $this->actingAs($user)
+        ->patch("/order-online/{$order->id}/convert-sale")
+        ->assertRedirect('/dashboard')
+        ->assertSessionHas('error');
+});
+
+it('keeps new cod orders from being processed before customer confirmation', function () {
+    $user = User::factory()->create([
+        'role' => User::ROLE_KASIR,
+        'is_active' => true,
+    ]);
+
+    [$order, $product] = createCodOnlineOrderForAuthorizationTest();
+
+    expect($order->canProcess())->toBeFalse();
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/process")
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHas('error');
+
+    expect($order->fresh()->status)->toBe(OnlineOrder::STATUS_NEW)
+        ->and($order->fresh()->stock_deducted_at)->toBeNull()
+        ->and($product->fresh()->stock)->toBe(10)
+        ->and(StockMovement::count())->toBe(0);
+});
+
+it('allows kasir users to confirm cod orders without deducting stock', function () {
+    $user = User::factory()->create([
+        'role' => User::ROLE_KASIR,
+        'is_active' => true,
+    ]);
+
+    [$order, $product] = createCodOnlineOrderForAuthorizationTest();
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/confirm-cod")
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHas('success');
+
+    $order->refresh();
+
+    expect($order->status)->toBe(OnlineOrder::STATUS_CONFIRMED)
+        ->and($order->cod_confirmed_at)->not->toBeNull()
+        ->and($order->cod_confirmed_by)->toBe($user->id)
+        ->and($order->stock_deducted_at)->toBeNull()
+        ->and($product->fresh()->stock)->toBe(10);
+});
+
+it('allows owner and admin users to confirm cod orders', function (string $role) {
+    $user = User::factory()->create([
+        'role' => $role,
+        'is_active' => true,
+    ]);
+
+    [$order] = createCodOnlineOrderForAuthorizationTest();
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/confirm-cod")
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHas('success');
+
+    expect($order->fresh()->status)->toBe(OnlineOrder::STATUS_CONFIRMED);
+})->with([
+    User::ROLE_OWNER,
+    User::ROLE_ADMIN,
+]);
+
+it('processes confirmed cod orders and deducts stock only once', function () {
+    $user = User::factory()->create([
+        'role' => User::ROLE_KASIR,
+        'is_active' => true,
+    ]);
+
+    [$order, $product] = createCodOnlineOrderForAuthorizationTest([
+        'status' => OnlineOrder::STATUS_CONFIRMED,
+        'cod_confirmed_at' => now(),
+        'cod_confirmed_by' => $user->id,
+    ]);
+
+    expect($order->canProcess())->toBeTrue();
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/process")
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHas('success');
+
+    $order->refresh();
+
+    expect($order->status)->toBe(OnlineOrder::STATUS_PROCESSING)
+        ->and($order->stock_deducted_at)->not->toBeNull()
+        ->and($product->fresh()->stock)->toBe(8)
+        ->and(StockMovement::count())->toBe(1);
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/process")
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHas('error');
+
+    expect($product->fresh()->stock)->toBe(8)
+        ->and(StockMovement::count())->toBe(1);
+});
+
+it('requires payment received confirmation before completing cod orders', function () {
+    $user = User::factory()->create([
+        'role' => User::ROLE_KASIR,
+        'is_active' => true,
+    ]);
+
+    [$order, $product] = createCodOnlineOrderForAuthorizationTest([
+        'status' => OnlineOrder::STATUS_PROCESSING,
+        'cod_confirmed_at' => now(),
+        'cod_confirmed_by' => $user->id,
+        'stock_deducted_at' => now(),
+    ]);
+
+    $product->update(['stock' => 8]);
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/complete")
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHasErrors('cod_payment_received');
+
+    expect($order->fresh()->status)->toBe(OnlineOrder::STATUS_PROCESSING)
+        ->and($order->fresh()->payment_status)->toBe(OnlineOrder::PAYMENT_UNPAID)
+        ->and(Sale::count())->toBe(0)
+        ->and($product->fresh()->stock)->toBe(8);
+});
+
+it('completes cod orders after payment is received and creates a sale without deducting stock twice', function () {
+    $user = User::factory()->create([
+        'role' => User::ROLE_KASIR,
+        'is_active' => true,
+    ]);
+
+    [$order, $product] = createCodOnlineOrderForAuthorizationTest([
+        'status' => OnlineOrder::STATUS_PROCESSING,
+        'cod_confirmed_at' => now(),
+        'cod_confirmed_by' => $user->id,
+        'stock_deducted_at' => now(),
+    ]);
+
+    $product->update(['stock' => 8]);
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/complete", [
+            'cod_payment_received' => '1',
+        ])
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHas('success');
+
+    $order->refresh();
+
+    expect($order->status)->toBe(OnlineOrder::STATUS_COMPLETED)
+        ->and($order->payment_status)->toBe(OnlineOrder::PAYMENT_PAID)
+        ->and($order->paid_at)->not->toBeNull()
+        ->and($order->payment_confirmed_at)->not->toBeNull()
+        ->and($order->sale_id)->not->toBeNull()
+        ->and(Sale::count())->toBe(1)
+        ->and($product->fresh()->stock)->toBe(8)
+        ->and(StockMovement::count())->toBe(0);
+
+    $this->actingAs($user)
+        ->from("/order-online/{$order->id}")
+        ->patch("/order-online/{$order->id}/complete", [
+            'cod_payment_received' => '1',
+        ])
+        ->assertRedirect("/order-online/{$order->id}")
+        ->assertSessionHas('error');
+
+    expect(Sale::count())->toBe(1)
+        ->and($product->fresh()->stock)->toBe(8);
 });

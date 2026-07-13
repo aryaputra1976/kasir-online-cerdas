@@ -96,6 +96,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/{order}', 'show')->name('show');
+                    Route::patch('/{order}/confirm-cod', 'confirmCod')->name('confirm-cod');
                     Route::patch('/{order}/process', 'process')->name('process');
                     Route::patch('/{order}/complete', 'complete')->name('complete');
                 });

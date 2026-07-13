@@ -289,6 +289,15 @@
                             <strong>{{ $order->status_label }}</strong>
                         </div>
 
+                        @if ($order->status === \App\Models\OnlineOrder::STATUS_CONFIRMED)
+                            <div class="alert-success" style="margin-top: 16px;">
+                                <strong>Pesanan Dikonfirmasi</strong>
+                                <div style="margin-top: 6px;">
+                                    Pesanan Anda telah dikonfirmasi dan akan segera diproses.
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="row">
                             <span>Metode Pembayaran</span>
                             <strong>{{ $order->payment_method_label }}</strong>
