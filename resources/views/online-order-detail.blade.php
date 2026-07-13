@@ -791,23 +791,6 @@
                                 </div>
                             </div>
 
-                            @if ($isCashOrder)
-                                <div class="form-check border rounded-3 p-3 ps-5 mb-4 bg-light">
-                                    <input
-                                        class="form-check-input"
-                                        type="checkbox"
-                                        name="cod_payment_received"
-                                        id="codPaymentReceived"
-                                        value="1"
-                                        form="completeOrderForm"
-                                        required
-                                    >
-                                    <label class="form-check-label fw-semibold" for="codPaymentReceived">
-                                        Saya memastikan pembayaran Tunai / COD sudah diterima.
-                                    </label>
-                                </div>
-                            @endif
-
                             <div class="d-flex flex-column flex-sm-row gap-2">
                                 <button
                                     type="button"
@@ -903,6 +886,27 @@
                                     <strong>{{ $rupiah($order->total_amount) }}</strong>
                                 </div>
                             </div>
+
+                            @if ($isCashOrder)
+                                <div class="form-check border rounded-3 p-3 ps-5 mb-4 bg-light">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="cod_payment_received"
+                                        id="codPaymentReceived"
+                                        value="1"
+                                        form="completeOrderForm"
+                                        required
+                                    >
+                                    <label class="form-check-label fw-semibold" for="codPaymentReceived">
+                                        Saya memastikan pembayaran Tunai / COD sudah diterima.
+                                    </label>
+
+                                    <div class="text-body fs-13 mt-1">
+                                        Pastikan uang tunai telah diterima sebelum menyelesaikan order.
+                                    </div>
+                                </div>
+                            @endif
 
                             <div class="d-flex flex-column flex-sm-row gap-2">
                                 <button
