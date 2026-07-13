@@ -94,6 +94,7 @@
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
             $percent = fn ($value) => number_format((float) $value, 2, ',', '.') . '%';
+            $paymentLabel = fn ($method) => $paymentMethods[$method] ?? ($method ?: 'Tidak diketahui');
 
             $summaryCards = [
                 [
@@ -200,9 +201,9 @@
                                             <label class="form-label fs-13 fw-medium">Metode Pembayaran</label>
                                             <select name="payment_method" class="form-select form-control">
                                                 <option value="">Semua Metode</option>
-                                                @foreach ($paymentMethods as $method)
+                                                @foreach ($paymentMethods as $method => $methodLabel)
                                                     <option value="{{ $method }}" @selected($paymentMethod === $method)>
-                                                        {{ $method }}
+                                                        {{ $methodLabel }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -395,7 +396,7 @@
                                                             </h6>
 
                                                             <p class="text-body fs-13 mb-0">
-                                                                {{ \Carbon\Carbon::parse($sale->created_at)->format('d/m/Y H:i') }}
+                                                                {{ \Carbon\Carbon::parse($sale->sale_date)->format('d/m/Y H:i') }}
                                                             </p>
 
                                                             <div class="koc-meta">
@@ -404,7 +405,7 @@
                                                                 </span>
 
                                                                 <span class="badge bg-info bg-opacity-10 text-info p-2 fs-12 fw-normal">
-                                                                    {{ $sale->payment_method ?: 'Tidak diketahui' }}
+                                                                    {{ $paymentLabel($sale->payment_method) }}
                                                                 </span>
                                                             </div>
                                                         </div>

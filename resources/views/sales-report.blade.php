@@ -89,6 +89,7 @@
 
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+            $paymentLabel = fn ($method) => $paymentMethods[$method] ?? ($method ?: 'Tidak diketahui');
 
             $summaryCards = [
                 [
@@ -168,7 +169,7 @@
                                     class="btn btn-success text-white"
                                 >
                                     <i class="ri-file-excel-2-line me-1"></i>
-                                    Export Excel
+                                    Export CSV
                                 </a>
                             </div>
 
@@ -200,20 +201,7 @@
     <select name="payment_method" class="form-select form-control">
         <option value="">Semua Metode</option>
 
-        @foreach ($paymentMethods as $method)
-            @php
-                $methodLabel = match (strtoupper($method)) {
-                    'CASH' => 'Tunai / Cash',
-                    'QRIS' => 'QRIS',
-                    'TRANSFER' => 'Transfer Bank',
-                    'BANK_TRANSFER' => 'Transfer Bank',
-                    'EDC' => 'EDC / Kartu',
-                    'CARD' => 'EDC / Kartu',
-                    'COD' => 'Tunai / COD',
-                    default => ucwords(str_replace(['_', '-'], ' ', strtolower($method))),
-                };
-            @endphp
-
+        @foreach ($paymentMethods as $method => $methodLabel)
             <option value="{{ $method }}" @selected($paymentMethod === $method)>
                 {{ $methodLabel }}
             </option>
@@ -344,7 +332,7 @@
                                 <div>
                                     <h3 class="mb-1">Daftar Transaksi Penjualan</h3>
                                     <p class="text-body mb-0 fs-13">
-                                        Menampilkan transaksi POS beserta detail item yang terjual.
+                                        Menampilkan transaksi POS dan order online yang telah masuk ke penjualan.
                                     </p>
                                 </div>
 
@@ -380,7 +368,7 @@
                                                     </h6>
 
                                                     <p class="text-body fs-13 mb-0">
-                                                        {{ \Carbon\Carbon::parse($sale->created_at)->format('d/m/Y H:i') }}
+                                                        {{ \Carbon\Carbon::parse($sale->sale_date)->format('d/m/Y H:i') }}
                                                     </p>
 
                                                     <div class="koc-meta">
@@ -389,7 +377,7 @@
                                                         </span>
 
                                                         <span class="badge bg-info bg-opacity-10 text-info p-2 fs-12 fw-normal">
-                                                            {{ $sale->payment_method ?: 'Tidak diketahui' }}
+                                                            {{ $paymentLabel($sale->payment_method) }}
                                                         </span>
 
                                                         <span class="badge bg-success bg-opacity-10 text-success p-2 fs-12 fw-normal">
@@ -442,7 +430,7 @@
                                                 <div class="col-12">
                                                     <div class="koc-item-row">
                                                         <div class="row g-3 align-items-center">
-                                                            <div class="col-lg-5 col-md-12">
+                                                            <div class="col-lg-4 col-md-12">
                                                                 <h6 class="fw-semibold fs-14 mb-1">
                                                                     {{ $item->product_name }}
                                                                 </h6>
@@ -461,9 +449,14 @@
                                                                 <strong class="koc-price">{{ $rupiah($item->item_price) }}</strong>
                                                             </div>
 
-                                                            <div class="col-lg-3 col-md-4">
+                                                            <div class="col-lg-2 col-md-4">
                                                                 <span class="koc-mini-label">Subtotal</span>
                                                                 <strong class="koc-price">{{ $rupiah($item->subtotal_amount) }}</strong>
+                                                            </div>
+
+                                                            <div class="col-lg-2 col-md-4">
+                                                                <span class="koc-mini-label">Laba Kotor</span>
+                                                                <strong class="koc-price">{{ $rupiah($item->laba_kotor_item) }}</strong>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\OnlineOrder;
+use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -65,7 +66,14 @@ class OnlineOrderSaleService
                 ),
             ]);
 
+            $products = Product::query()
+                ->whereIn('id', $lockedOrder->items->pluck('product_id')->filter()->unique())
+                ->get()
+                ->keyBy('id');
+
             foreach ($lockedOrder->items as $item) {
+                $product = $products->get($item->product_id);
+
                 $sale->items()->create([
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
@@ -73,6 +81,7 @@ class OnlineOrderSaleService
                     'unit' => $item->unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
+                    'purchase_price' => $product?->purchase_price,
                     'subtotal_amount' => $item->subtotal_amount,
                 ]);
             }

@@ -309,6 +309,7 @@ class PosController extends Controller
                     'unit' => $product->unit,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
+                    'purchase_price' => $product->purchase_price,
                     'subtotal_amount' => $itemSubtotal,
                 ]);
 

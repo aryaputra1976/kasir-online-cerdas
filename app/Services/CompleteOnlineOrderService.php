@@ -197,7 +197,14 @@ class CompleteOnlineOrderService
             ),
         ]);
 
+        $products = Product::query()
+            ->whereIn('id', $order->items->pluck('product_id')->filter()->unique())
+            ->get()
+            ->keyBy('id');
+
         foreach ($order->items as $item) {
+            $product = $products->get($item->product_id);
+
             $sale->items()->create([
                 'product_id' => $item->product_id,
                 'product_name' => $item->product_name,
@@ -205,6 +212,7 @@ class CompleteOnlineOrderService
                 'unit' => $item->unit,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
+                'purchase_price' => $product?->purchase_price,
                 'subtotal_amount' => $item->subtotal_amount,
             ]);
         }

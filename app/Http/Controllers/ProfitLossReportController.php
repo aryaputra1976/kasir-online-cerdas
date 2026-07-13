@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class ProfitLossReportController extends Controller
 {
@@ -18,77 +18,32 @@ class ProfitLossReportController extends Controller
         $startDateTime = Carbon::parse($startDate)->startOfDay();
         $endDateTime = Carbon::parse($endDate)->endOfDay();
 
-        $invoiceColumn = $this->firstExistingColumn('sales', [
-            'invoice_number',
-            'invoice_no',
-            'invoice',
-            'code',
-        ]);
-
-        $customerColumn = $this->firstExistingColumn('sales', [
-            'customer_name',
-            'customer',
-            'buyer_name',
-            'name',
-        ]);
-
-        $paymentMethodColumn = $this->firstExistingColumn('sales', [
-            'payment_method',
-            'payment_type',
-            'payment',
-        ]);
-
-        $totalAmountColumn = $this->firstExistingColumn('sales', [
-            'total_amount',
-            'grand_total',
-            'total',
-        ]);
-
-        $discountColumn = $this->firstExistingColumn('sales', [
-            'discount_amount',
-            'discount',
-        ]);
-
-        $taxColumn = $this->firstExistingColumn('sales', [
-            'tax_amount',
-            'tax',
-        ]);
-
         $salesBaseQuery = DB::table('sales')
-            ->whereBetween('sales.created_at', [$startDateTime, $endDateTime]);
+            ->where('sales.status', Sale::STATUS_COMPLETED)
+            ->whereBetween('sales.sale_date', [$startDateTime, $endDateTime]);
 
-        if (!empty($paymentMethod) && $paymentMethodColumn) {
-            $salesBaseQuery->where("sales.{$paymentMethodColumn}", $paymentMethod);
+        if (! empty($paymentMethod)) {
+            $salesBaseQuery->where('sales.payment_method', $paymentMethod);
         }
 
         $itemBaseQuery = DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
-            ->leftJoin('products', 'products.id', '=', 'sale_items.product_id')
-            ->whereBetween('sales.created_at', [$startDateTime, $endDateTime]);
+            ->where('sales.status', Sale::STATUS_COMPLETED)
+            ->whereBetween('sales.sale_date', [$startDateTime, $endDateTime]);
 
-        if (!empty($paymentMethod) && $paymentMethodColumn) {
-            $itemBaseQuery->where("sales.{$paymentMethodColumn}", $paymentMethod);
+        if (! empty($paymentMethod)) {
+            $itemBaseQuery->where('sales.payment_method', $paymentMethod);
         }
 
-        $totalOmzet = $totalAmountColumn
-            ? (clone $salesBaseQuery)->sum("sales.{$totalAmountColumn}")
-            : 0;
-
-        $totalDiskon = $discountColumn
-            ? (clone $salesBaseQuery)->sum("sales.{$discountColumn}")
-            : 0;
-
-        $totalPajak = $taxColumn
-            ? (clone $salesBaseQuery)->sum("sales.{$taxColumn}")
-            : 0;
-
+        $totalOmzet = (clone $salesBaseQuery)->sum('sales.total_amount');
+        $totalDiskon = (clone $salesBaseQuery)->sum('sales.discount_amount');
+        $totalPajak = (clone $salesBaseQuery)->sum('sales.tax_amount');
         $jumlahTransaksi = (clone $salesBaseQuery)->count();
 
-        $totalPenjualanProduk = (clone $itemBaseQuery)
-            ->sum('sale_items.subtotal_amount');
+        $totalPenjualanProduk = (clone $itemBaseQuery)->sum('sale_items.subtotal_amount');
 
         $totalModal = (clone $itemBaseQuery)
-            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(products.purchase_price, 0)), 0) as total_modal')
+            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.purchase_price, 0)), 0) as total_modal')
             ->value('total_modal');
 
         $itemTerjual = (clone $itemBaseQuery)
@@ -100,66 +55,31 @@ class ProfitLossReportController extends Controller
         $marginLaba = $totalOmzet > 0 ? ($labaBersih / $totalOmzet) * 100 : 0;
         $rataRataTransaksi = $jumlahTransaksi > 0 ? $totalOmzet / $jumlahTransaksi : 0;
 
-        $transactionSelects = [
-            'sales.id',
-            'sales.created_at',
-        ];
-
-        $transactionGroupBy = [
-            'sales.id',
-            'sales.created_at',
-        ];
-
-        if ($invoiceColumn) {
-            $transactionSelects[] = DB::raw("`sales`.`{$invoiceColumn}` as invoice_number");
-            $transactionGroupBy[] = "sales.{$invoiceColumn}";
-        } else {
-            $transactionSelects[] = DB::raw("CONCAT('POS-', `sales`.`id`) as invoice_number");
-        }
-
-        if ($customerColumn) {
-            $transactionSelects[] = DB::raw("`sales`.`{$customerColumn}` as customer_name");
-            $transactionGroupBy[] = "sales.{$customerColumn}";
-        } else {
-            $transactionSelects[] = DB::raw("'Umum' as customer_name");
-        }
-
-        if ($paymentMethodColumn) {
-            $transactionSelects[] = DB::raw("`sales`.`{$paymentMethodColumn}` as payment_method");
-            $transactionGroupBy[] = "sales.{$paymentMethodColumn}";
-        } else {
-            $transactionSelects[] = DB::raw("'Tidak diketahui' as payment_method");
-        }
-
-        if ($totalAmountColumn) {
-            $transactionSelects[] = DB::raw("`sales`.`{$totalAmountColumn}` as total_amount");
-            $transactionGroupBy[] = "sales.{$totalAmountColumn}";
-        } else {
-            $transactionSelects[] = DB::raw("0 as total_amount");
-        }
-
-        if ($discountColumn) {
-            $transactionSelects[] = DB::raw("`sales`.`{$discountColumn}` as discount_amount");
-            $transactionGroupBy[] = "sales.{$discountColumn}";
-        } else {
-            $transactionSelects[] = DB::raw("0 as discount_amount");
-        }
-
-        if ($taxColumn) {
-            $transactionSelects[] = DB::raw("`sales`.`{$taxColumn}` as tax_amount");
-            $transactionGroupBy[] = "sales.{$taxColumn}";
-        } else {
-            $transactionSelects[] = DB::raw("0 as tax_amount");
-        }
-
         $transactionSummaries = (clone $salesBaseQuery)
             ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
-            ->leftJoin('products', 'products.id', '=', 'sale_items.product_id')
-            ->select($transactionSelects)
+            ->select([
+                'sales.id',
+                'sales.invoice_no as invoice_number',
+                'sales.sale_date',
+                'sales.customer_name',
+                'sales.payment_method',
+                'sales.total_amount',
+                'sales.discount_amount',
+                'sales.tax_amount',
+            ])
             ->selectRaw('COALESCE(SUM(sale_items.subtotal_amount), 0) as total_penjualan_produk')
-            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(products.purchase_price, 0)), 0) as total_modal')
-            ->groupBy($transactionGroupBy)
-            ->orderByDesc('sales.created_at')
+            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.purchase_price, 0)), 0) as total_modal')
+            ->groupBy([
+                'sales.id',
+                'sales.invoice_no',
+                'sales.sale_date',
+                'sales.customer_name',
+                'sales.payment_method',
+                'sales.total_amount',
+                'sales.discount_amount',
+                'sales.tax_amount',
+            ])
+            ->orderByDesc('sales.sale_date')
             ->get()
             ->map(function ($sale) {
                 $sale->laba_kotor = $sale->total_penjualan_produk - $sale->total_modal;
@@ -170,13 +90,13 @@ class ProfitLossReportController extends Controller
 
         $productProfitSummaries = (clone $itemBaseQuery)
             ->select(
-                'products.id',
-                DB::raw("COALESCE(products.name, 'Produk tidak ditemukan') as product_name")
+                'sale_items.product_id',
+                DB::raw("COALESCE(sale_items.product_name, 'Produk tidak ditemukan') as product_name")
             )
             ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
             ->selectRaw('COALESCE(SUM(sale_items.subtotal_amount), 0) as total_omzet_produk')
-            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(products.purchase_price, 0)), 0) as total_modal_produk')
-            ->groupBy('products.id', 'products.name')
+            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.purchase_price, 0)), 0) as total_modal_produk')
+            ->groupBy('sale_items.product_id', 'sale_items.product_name')
             ->orderByDesc('total_omzet_produk')
             ->get()
             ->map(function ($product) {
@@ -188,20 +108,11 @@ class ProfitLossReportController extends Controller
                 return $product;
             });
 
-        $paymentMethods = $paymentMethodColumn
-            ? DB::table('sales')
-                ->whereNotNull($paymentMethodColumn)
-                ->where($paymentMethodColumn, '!=', '')
-                ->distinct()
-                ->orderBy($paymentMethodColumn)
-                ->pluck($paymentMethodColumn)
-            : collect();
-
         return view('profit-loss-report', [
             'startDate' => $startDate,
             'endDate' => $endDate,
             'paymentMethod' => $paymentMethod,
-            'paymentMethods' => $paymentMethods,
+            'paymentMethods' => $this->paymentMethodOptions(),
 
             'totalOmzet' => $totalOmzet,
             'totalPenjualanProduk' => $totalPenjualanProduk,
@@ -220,14 +131,13 @@ class ProfitLossReportController extends Controller
         ]);
     }
 
-    private function firstExistingColumn(string $table, array $columns): ?string
+    private function paymentMethodOptions(): array
     {
-        foreach ($columns as $column) {
-            if (Schema::hasColumn($table, $column)) {
-                return $column;
-            }
-        }
-
-        return null;
+        return [
+            Sale::PAYMENT_CASH => 'Tunai',
+            Sale::PAYMENT_QRIS => 'QRIS',
+            Sale::PAYMENT_TRANSFER => 'Transfer Bank',
+            Sale::PAYMENT_EDC => 'EDC / Kartu',
+        ];
     }
 }

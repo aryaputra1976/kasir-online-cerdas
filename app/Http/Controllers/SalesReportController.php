@@ -2,53 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 
 class SalesReportController extends Controller
 {
     public function index(Request $request)
     {
-        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', now()->toDateString());
-        $paymentMethod = $request->input('payment_method');
-        $search = trim((string) $request->input('q', ''));
+        $filters = $this->validatedFilters($request);
+        [$startDateTime, $endDateTime] = $this->dateRange($filters);
 
-        $startDateTime = Carbon::parse($startDate)->startOfDay();
-        $endDateTime = Carbon::parse($endDate)->endOfDay();
+        $salesBaseQuery = $this->buildSalesBaseQuery($startDateTime, $endDateTime, $filters);
+        $itemBaseQuery = $this->buildItemBaseQuery($startDateTime, $endDateTime, $filters);
 
-        $columns = $this->detectColumns();
-
-        $salesBaseQuery = $this->buildSalesBaseQuery(
-            $startDateTime,
-            $endDateTime,
-            $paymentMethod,
-            $search,
-            $columns
-        );
-
-        $itemBaseQuery = $this->buildItemBaseQuery(
-            $startDateTime,
-            $endDateTime,
-            $paymentMethod,
-            $search,
-            $columns
-        );
-
-        $totalOmzet = $columns['total_amount']
-            ? (clone $salesBaseQuery)->sum("sales.{$columns['total_amount']}")
-            : 0;
-
-        $totalDiskon = $columns['discount_amount']
-            ? (clone $salesBaseQuery)->sum("sales.{$columns['discount_amount']}")
-            : 0;
-
-        $totalPajak = $columns['tax_amount']
-            ? (clone $salesBaseQuery)->sum("sales.{$columns['tax_amount']}")
-            : 0;
-
+        $totalOmzet = (clone $salesBaseQuery)->sum('sales.total_amount');
+        $totalDiskon = (clone $salesBaseQuery)->sum('sales.discount_amount');
+        $totalPajak = (clone $salesBaseQuery)->sum('sales.tax_amount');
         $jumlahTransaksi = (clone $salesBaseQuery)->count();
 
         $itemTerjual = (clone $itemBaseQuery)
@@ -59,120 +32,85 @@ class SalesReportController extends Controller
             ->selectRaw('COALESCE(SUM(sale_items.subtotal_amount), 0) as subtotal_produk')
             ->value('subtotal_produk');
 
+        $totalModal = (clone $itemBaseQuery)
+            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.purchase_price, 0)), 0) as total_modal')
+            ->value('total_modal');
+
+        $labaKotor = $subtotalProduk - $totalModal;
+
         $rataRataTransaksi = $jumlahTransaksi > 0
             ? $totalOmzet / $jumlahTransaksi
             : 0;
 
-        $transactionSelects = [
-            'sales.id',
-            'sales.created_at',
-        ];
-
-        $transactionGroupBy = [
-            'sales.id',
-            'sales.created_at',
-        ];
-
-        if ($columns['invoice']) {
-            $transactionSelects[] = DB::raw("`sales`.`{$columns['invoice']}` as invoice_number");
-            $transactionGroupBy[] = "sales.{$columns['invoice']}";
-        } else {
-            $transactionSelects[] = DB::raw("CONCAT('POS-', `sales`.`id`) as invoice_number");
-        }
-
-        if ($columns['customer']) {
-            $transactionSelects[] = DB::raw("`sales`.`{$columns['customer']}` as customer_name");
-            $transactionGroupBy[] = "sales.{$columns['customer']}";
-        } else {
-            $transactionSelects[] = DB::raw("'Umum' as customer_name");
-        }
-
-        if ($columns['payment_method']) {
-            $transactionSelects[] = DB::raw("`sales`.`{$columns['payment_method']}` as payment_method");
-            $transactionGroupBy[] = "sales.{$columns['payment_method']}";
-        } else {
-            $transactionSelects[] = DB::raw("'Tidak diketahui' as payment_method");
-        }
-
-        if ($columns['status']) {
-            $transactionSelects[] = DB::raw("`sales`.`{$columns['status']}` as status");
-            $transactionGroupBy[] = "sales.{$columns['status']}";
-        } else {
-            $transactionSelects[] = DB::raw("'Selesai' as status");
-        }
-
-        if ($columns['total_amount']) {
-            $transactionSelects[] = DB::raw("`sales`.`{$columns['total_amount']}` as total_amount");
-            $transactionGroupBy[] = "sales.{$columns['total_amount']}";
-        } else {
-            $transactionSelects[] = DB::raw("0 as total_amount");
-        }
-
-        if ($columns['discount_amount']) {
-            $transactionSelects[] = DB::raw("`sales`.`{$columns['discount_amount']}` as discount_amount");
-            $transactionGroupBy[] = "sales.{$columns['discount_amount']}";
-        } else {
-            $transactionSelects[] = DB::raw("0 as discount_amount");
-        }
-
-        if ($columns['tax_amount']) {
-            $transactionSelects[] = DB::raw("`sales`.`{$columns['tax_amount']}` as tax_amount");
-            $transactionGroupBy[] = "sales.{$columns['tax_amount']}";
-        } else {
-            $transactionSelects[] = DB::raw("0 as tax_amount");
-        }
-
         $sales = (clone $salesBaseQuery)
             ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
-            ->select($transactionSelects)
+            ->select([
+                'sales.id',
+                'sales.invoice_no as invoice_number',
+                'sales.sale_date',
+                'sales.customer_name',
+                'sales.payment_method',
+                'sales.status',
+                'sales.subtotal_amount',
+                'sales.discount_amount',
+                'sales.tax_amount',
+                'sales.total_amount',
+            ])
             ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
             ->selectRaw('COALESCE(COUNT(sale_items.id), 0) as item_count')
             ->selectRaw('COALESCE(SUM(sale_items.subtotal_amount), 0) as subtotal_produk')
-            ->groupBy($transactionGroupBy)
-            ->orderByDesc('sales.created_at')
+            ->selectRaw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.purchase_price, 0)), 0) as total_modal')
+            ->groupBy([
+                'sales.id',
+                'sales.invoice_no',
+                'sales.sale_date',
+                'sales.customer_name',
+                'sales.payment_method',
+                'sales.status',
+                'sales.subtotal_amount',
+                'sales.discount_amount',
+                'sales.tax_amount',
+                'sales.total_amount',
+            ])
+            ->orderByDesc('sales.sale_date')
+            ->orderByDesc('sales.id')
             ->paginate(10)
             ->withQueryString();
 
-        $saleIds = $sales->getCollection()->pluck('id')->values();
+        $sales->getCollection()->transform(function ($sale) {
+            $sale->laba_kotor = $sale->subtotal_produk - $sale->total_modal;
 
+            return $sale;
+        });
+
+        $saleIds = $sales->getCollection()->pluck('id')->values();
         $itemsBySale = collect();
 
         if ($saleIds->isNotEmpty()) {
-            $itemPriceExpression = $this->itemPriceExpression($columns['item_price']);
-            $productNameExpression = $this->productNameExpression($columns['sale_item_product_name']);
-            $productSkuExpression = $this->productSkuExpression($columns['product_sku']);
-
             $itemsBySale = DB::table('sale_items')
-                ->leftJoin('products', 'products.id', '=', 'sale_items.product_id')
                 ->whereIn('sale_items.sale_id', $saleIds)
-                ->select(
+                ->select([
                     'sale_items.sale_id',
+                    'sale_items.product_name',
+                    'sale_items.sku as product_sku',
                     'sale_items.quantity',
-                    'sale_items.subtotal_amount'
-                )
-                ->selectRaw("{$itemPriceExpression} as item_price")
-                ->selectRaw("{$productNameExpression} as product_name")
-                ->selectRaw("{$productSkuExpression} as product_sku")
+                    'sale_items.unit_price as item_price',
+                    'sale_items.subtotal_amount',
+                    'sale_items.purchase_price',
+                ])
+                ->selectRaw('(sale_items.quantity * COALESCE(sale_items.purchase_price, 0)) as modal_item')
+                ->selectRaw('(sale_items.subtotal_amount - (sale_items.quantity * COALESCE(sale_items.purchase_price, 0))) as laba_kotor_item')
                 ->orderBy('sale_items.id')
                 ->get()
                 ->groupBy('sale_id');
         }
 
-        $paymentMethods = $columns['payment_method']
-            ? DB::table('sales')
-                ->whereNotNull($columns['payment_method'])
-                ->where($columns['payment_method'], '!=', '')
-                ->distinct()
-                ->orderBy($columns['payment_method'])
-                ->pluck($columns['payment_method'])
-            : collect();
-
         return view('sales-report', [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'paymentMethod' => $paymentMethod,
-            'search' => $search,
-            'paymentMethods' => $paymentMethods,
+            'startDate' => $filters['start_date'],
+            'endDate' => $filters['end_date'],
+            'paymentMethod' => $filters['payment_method'] ?? null,
+            'search' => $filters['q'] ?? '',
+            'paymentMethods' => $this->paymentMethodOptions(),
 
             'totalOmzet' => $totalOmzet,
             'totalDiskon' => $totalDiskon,
@@ -180,6 +118,8 @@ class SalesReportController extends Controller
             'jumlahTransaksi' => $jumlahTransaksi,
             'itemTerjual' => $itemTerjual,
             'subtotalProduk' => $subtotalProduk,
+            'totalModal' => $totalModal,
+            'labaKotor' => $labaKotor,
             'rataRataTransaksi' => $rataRataTransaksi,
 
             'sales' => $sales,
@@ -189,357 +129,222 @@ class SalesReportController extends Controller
 
     public function export(Request $request)
     {
-        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', now()->toDateString());
-        $paymentMethod = $request->input('payment_method');
-        $search = trim((string) $request->input('q', ''));
+        $filters = $this->validatedFilters($request);
+        [$startDateTime, $endDateTime] = $this->dateRange($filters);
 
-        $startDateTime = Carbon::parse($startDate)->startOfDay();
-        $endDateTime = Carbon::parse($endDate)->endOfDay();
-
-        $columns = $this->detectColumns();
-
-        $itemPriceExpression = $this->itemPriceExpression($columns['item_price']);
-        $productNameExpression = $this->productNameExpression($columns['sale_item_product_name']);
-        $productSkuExpression = $this->productSkuExpression($columns['product_sku']);
-
-        $query = $this->buildItemBaseQuery(
-            $startDateTime,
-            $endDateTime,
-            $paymentMethod,
-            $search,
-            $columns
-        )
-            ->select(
+        $query = $this->buildItemBaseQuery($startDateTime, $endDateTime, $filters)
+            ->select([
                 'sales.id as sale_id',
-                'sales.created_at',
+                'sales.invoice_no as invoice_number',
+                'sales.sale_date',
+                'sales.customer_name',
+                'sales.payment_method',
+                'sales.status',
+                'sales.subtotal_amount as transaction_subtotal_amount',
+                'sales.discount_amount',
+                'sales.tax_amount',
+                'sales.total_amount',
+                'sale_items.product_name',
+                'sale_items.sku as product_sku',
                 'sale_items.quantity',
-                'sale_items.subtotal_amount'
-            )
-            ->selectRaw("{$itemPriceExpression} as item_price")
-            ->selectRaw("{$productNameExpression} as product_name")
-            ->selectRaw("{$productSkuExpression} as product_sku")
-            ->selectRaw('COALESCE(products.purchase_price, 0) as purchase_price');
-
-        if ($columns['invoice']) {
-            $query->selectRaw("`sales`.`{$columns['invoice']}` as invoice_number");
-        } else {
-            $query->selectRaw("CONCAT('POS-', `sales`.`id`) as invoice_number");
-        }
-
-        if ($columns['customer']) {
-            $query->selectRaw("`sales`.`{$columns['customer']}` as customer_name");
-        } else {
-            $query->selectRaw("'Umum' as customer_name");
-        }
-
-        if ($columns['payment_method']) {
-            $query->selectRaw("`sales`.`{$columns['payment_method']}` as payment_method");
-        } else {
-            $query->selectRaw("'Tidak diketahui' as payment_method");
-        }
-
-        if ($columns['status']) {
-            $query->selectRaw("`sales`.`{$columns['status']}` as status");
-        } else {
-            $query->selectRaw("'Selesai' as status");
-        }
-
-        if ($columns['total_amount']) {
-            $query->selectRaw("`sales`.`{$columns['total_amount']}` as total_amount");
-        } else {
-            $query->selectRaw("0 as total_amount");
-        }
-
-        if ($columns['discount_amount']) {
-            $query->selectRaw("`sales`.`{$columns['discount_amount']}` as discount_amount");
-        } else {
-            $query->selectRaw("0 as discount_amount");
-        }
-
-        if ($columns['tax_amount']) {
-            $query->selectRaw("`sales`.`{$columns['tax_amount']}` as tax_amount");
-        } else {
-            $query->selectRaw("0 as tax_amount");
-        }
-
-        $query->orderByDesc('sales.created_at')
-            ->orderBy('sales.id')
+                'sale_items.unit_price as item_price',
+                'sale_items.subtotal_amount as item_subtotal_amount',
+                'sale_items.purchase_price',
+            ])
+            ->selectRaw('(sale_items.quantity * COALESCE(sale_items.purchase_price, 0)) as modal_item')
+            ->selectRaw('(sale_items.subtotal_amount - (sale_items.quantity * COALESCE(sale_items.purchase_price, 0))) as laba_kotor_item')
+            ->orderByDesc('sales.sale_date')
+            ->orderByDesc('sales.id')
             ->orderBy('sale_items.id');
 
-        $filename = 'laporan-penjualan-detail-' . now()->format('Ymd-His') . '.xls';
+        $filename = 'laporan-penjualan-detail-' . now()->format('Ymd-His') . '.csv';
 
         return response()->streamDownload(function () use ($query) {
-            $escape = function ($value) {
-                return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-            };
+            $output = fopen('php://output', 'w');
+            fwrite($output, "\xEF\xBB\xBF");
 
-            echo '<!DOCTYPE html>';
-            echo '<html>';
-            echo '<head>';
-            echo '<meta charset="UTF-8">';
-            echo '<style>';
-            echo 'table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; }';
-            echo 'th { background-color: #eef2ff; font-weight: bold; text-align: left; }';
-            echo 'th, td { border: 1px solid #cbd5e1; padding: 6px; }';
-            echo '.text { mso-number-format: "\@"; }';
-            echo '.number { mso-number-format: "#,##0"; }';
-            echo '.money { mso-number-format: "#,##0"; }';
-            echo '</style>';
-            echo '</head>';
-            echo '<body>';
+            fputcsv($output, [
+                'Invoice',
+                'Tanggal',
+                'Customer',
+                'Metode Pembayaran',
+                'Status',
+                'Produk',
+                'SKU',
+                'Qty',
+                'Harga Item',
+                'Subtotal Item',
+                'Modal Item',
+                'Laba Kotor Item',
+                'Subtotal Transaksi',
+                'Diskon Transaksi',
+                'Pajak Transaksi',
+                'Total Transaksi',
+            ]);
 
-            echo '<h3>Laporan Penjualan Detail</h3>';
-
-            echo '<table>';
-            echo '<thead>';
-            echo '<tr>';
-            echo '<th>Invoice</th>';
-            echo '<th>Tanggal</th>';
-            echo '<th>Customer</th>';
-            echo '<th>Metode Pembayaran</th>';
-            echo '<th>Status</th>';
-            echo '<th>Produk</th>';
-            echo '<th>SKU</th>';
-            echo '<th>Qty</th>';
-            echo '<th>Harga Item</th>';
-            echo '<th>Subtotal Item</th>';
-            echo '<th>Modal Item</th>';
-            echo '<th>Laba Kotor Item</th>';
-            echo '<th>Diskon Transaksi</th>';
-            echo '<th>Pajak Transaksi</th>';
-            echo '<th>Total Transaksi</th>';
-            echo '</tr>';
-            echo '</thead>';
-            echo '<tbody>';
+            $lastSaleId = null;
 
             foreach ($query->cursor() as $row) {
-                $qty = (float) $row->quantity;
-                $hargaItem = (float) $row->item_price;
-                $subtotalItem = (float) $row->subtotal_amount;
-                $modalItem = $qty * (float) $row->purchase_price;
-                $labaKotorItem = $subtotalItem - $modalItem;
+                $isFirstInvoiceRow = (int) $row->sale_id !== (int) $lastSaleId;
+                $lastSaleId = $row->sale_id;
 
-                echo '<tr>';
-                echo '<td class="text">' . $escape($row->invoice_number) . '</td>';
-                echo '<td class="text">' . $escape(Carbon::parse($row->created_at)->format('d/m/Y H:i')) . '</td>';
-                echo '<td class="text">' . $escape($row->customer_name ?: 'Umum') . '</td>';
-                echo '<td class="text">' . $escape($row->payment_method ?: 'Tidak diketahui') . '</td>';
-                echo '<td class="text">' . $escape($row->status ?: 'Selesai') . '</td>';
-                echo '<td class="text">' . $escape($row->product_name ?: 'Produk tidak ditemukan') . '</td>';
-                echo '<td class="text">' . $escape($row->product_sku ?: '-') . '</td>';
-                echo '<td class="number">' . $qty . '</td>';
-                echo '<td class="money">' . $hargaItem . '</td>';
-                echo '<td class="money">' . $subtotalItem . '</td>';
-                echo '<td class="money">' . $modalItem . '</td>';
-                echo '<td class="money">' . $labaKotorItem . '</td>';
-                echo '<td class="money">' . (float) $row->discount_amount . '</td>';
-                echo '<td class="money">' . (float) $row->tax_amount . '</td>';
-                echo '<td class="money">' . (float) $row->total_amount . '</td>';
-                echo '</tr>';
+                fputcsv($output, [
+                    $isFirstInvoiceRow ? $this->csvText($row->invoice_number) : '',
+                    $isFirstInvoiceRow ? Carbon::parse($row->sale_date)->format('d/m/Y H:i') : '',
+                    $isFirstInvoiceRow ? $this->csvText($row->customer_name ?: 'Umum') : '',
+                    $isFirstInvoiceRow ? $this->paymentMethodLabel($row->payment_method) : '',
+                    $isFirstInvoiceRow ? $this->csvText($row->status) : '',
+                    $this->csvText($row->product_name ?: 'Produk tidak ditemukan'),
+                    $this->csvText($row->product_sku ?: '-'),
+                    (int) $row->quantity,
+                    (float) $row->item_price,
+                    (float) $row->item_subtotal_amount,
+                    (float) $row->modal_item,
+                    (float) $row->laba_kotor_item,
+                    $isFirstInvoiceRow ? (float) $row->transaction_subtotal_amount : '',
+                    $isFirstInvoiceRow ? (float) $row->discount_amount : '',
+                    $isFirstInvoiceRow ? (float) $row->tax_amount : '',
+                    $isFirstInvoiceRow ? (float) $row->total_amount : '',
+                ]);
             }
 
-            echo '</tbody>';
-            echo '</table>';
-            echo '</body>';
-            echo '</html>';
+            fclose($output);
         }, $filename, [
-            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 
-    private function buildSalesBaseQuery(
-        Carbon $startDateTime,
-        Carbon $endDateTime,
-        ?string $paymentMethod,
-        string $search,
-        array $columns
-    ) {
-        $query = DB::table('sales')
-            ->whereBetween('sales.created_at', [$startDateTime, $endDateTime]);
+    private function validatedFilters(Request $request): array
+    {
+        $input = array_merge([
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->toDateString(),
+            'payment_method' => null,
+            'q' => null,
+        ], $request->only(['start_date', 'end_date', 'payment_method', 'q']));
 
-        if (!empty($paymentMethod) && $columns['payment_method']) {
-            $query->where("sales.{$columns['payment_method']}", $paymentMethod);
+        if (is_string($input['q'])) {
+            $input['q'] = trim($input['q']);
         }
 
-        if ($search !== '') {
-            $query->where(function ($query) use ($search, $columns) {
-                if ($columns['invoice']) {
-                    $query->orWhere("sales.{$columns['invoice']}", 'like', "%{$search}%");
-                }
-
-                if ($columns['customer']) {
-                    $query->orWhere("sales.{$columns['customer']}", 'like', "%{$search}%");
-                }
-
-                $query->orWhereExists(function ($subQuery) use ($search, $columns) {
-                    $subQuery->select(DB::raw(1))
-                        ->from('sale_items as si')
-                        ->leftJoin('products as p', 'p.id', '=', 'si.product_id')
-                        ->whereColumn('si.sale_id', 'sales.id')
-                        ->where(function ($productQuery) use ($search, $columns) {
-                            $productQuery->where('p.name', 'like', "%{$search}%");
-
-                            if ($columns['product_sku']) {
-                                $productQuery->orWhere("p.{$columns['product_sku']}", 'like', "%{$search}%");
-                            }
-
-                            if ($columns['product_barcode']) {
-                                $productQuery->orWhere("p.{$columns['product_barcode']}", 'like', "%{$search}%");
-                            }
-                        });
-                });
-            });
-        }
-
-        return $query;
+        return Validator::make($input, [
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'payment_method' => ['nullable', 'string', 'in:' . implode(',', array_keys($this->paymentMethodOptions()))],
+            'q' => ['nullable', 'string', 'max:150'],
+        ])->validate();
     }
 
-    private function buildItemBaseQuery(
-        Carbon $startDateTime,
-        Carbon $endDateTime,
-        ?string $paymentMethod,
-        string $search,
-        array $columns
-    ) {
-        $query = DB::table('sale_items')
-            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
-            ->leftJoin('products', 'products.id', '=', 'sale_items.product_id')
-            ->whereBetween('sales.created_at', [$startDateTime, $endDateTime]);
-
-        if (!empty($paymentMethod) && $columns['payment_method']) {
-            $query->where("sales.{$columns['payment_method']}", $paymentMethod);
-        }
-
-        if ($search !== '') {
-            $query->where(function ($query) use ($search, $columns) {
-                if ($columns['invoice']) {
-                    $query->orWhere("sales.{$columns['invoice']}", 'like', "%{$search}%");
-                }
-
-                if ($columns['customer']) {
-                    $query->orWhere("sales.{$columns['customer']}", 'like', "%{$search}%");
-                }
-
-                $query->orWhere('products.name', 'like', "%{$search}%");
-
-                if ($columns['product_sku']) {
-                    $query->orWhere("products.{$columns['product_sku']}", 'like', "%{$search}%");
-                }
-
-                if ($columns['product_barcode']) {
-                    $query->orWhere("products.{$columns['product_barcode']}", 'like', "%{$search}%");
-                }
-            });
-        }
-
-        return $query;
-    }
-
-    private function detectColumns(): array
+    private function dateRange(array $filters): array
     {
         return [
-            'invoice' => $this->firstExistingColumn('sales', [
-                'invoice_number',
-                'invoice_no',
-                'invoice',
-                'code',
-            ]),
-
-            'customer' => $this->firstExistingColumn('sales', [
-                'customer_name',
-                'customer',
-                'buyer_name',
-                'name',
-            ]),
-
-            'payment_method' => $this->firstExistingColumn('sales', [
-                'payment_method',
-                'payment_type',
-                'payment',
-            ]),
-
-            'status' => $this->firstExistingColumn('sales', [
-                'status',
-                'sale_status',
-            ]),
-
-            'total_amount' => $this->firstExistingColumn('sales', [
-                'total_amount',
-                'grand_total',
-                'total',
-            ]),
-
-            'discount_amount' => $this->firstExistingColumn('sales', [
-                'discount_amount',
-                'discount',
-            ]),
-
-            'tax_amount' => $this->firstExistingColumn('sales', [
-                'tax_amount',
-                'tax',
-            ]),
-
-            'item_price' => $this->firstExistingColumn('sale_items', [
-                'price',
-                'unit_price',
-                'selling_price',
-                'product_price',
-            ]),
-
-            'sale_item_product_name' => $this->firstExistingColumn('sale_items', [
-                'product_name',
-                'name',
-            ]),
-
-            'product_sku' => $this->firstExistingColumn('products', [
-                'sku',
-                'product_code',
-                'code',
-            ]),
-
-            'product_barcode' => $this->firstExistingColumn('products', [
-                'barcode',
-                'bar_code',
-            ]),
+            Carbon::parse($filters['start_date'])->startOfDay(),
+            Carbon::parse($filters['end_date'])->endOfDay(),
         ];
     }
 
-    private function firstExistingColumn(string $table, array $columns): ?string
+    private function buildSalesBaseQuery(Carbon $startDateTime, Carbon $endDateTime, array $filters): Builder
     {
-        foreach ($columns as $column) {
-            if (Schema::hasColumn($table, $column)) {
-                return $column;
-            }
-        }
+        $query = DB::table('sales')
+            ->where('sales.status', Sale::STATUS_COMPLETED)
+            ->whereBetween('sales.sale_date', [$startDateTime, $endDateTime]);
 
-        return null;
+        $this->applyPaymentMethodFilter($query, $filters);
+        $this->applySalesSearchFilter($query, (string) ($filters['q'] ?? ''));
+
+        return $query;
     }
 
-    private function itemPriceExpression(?string $itemPriceColumn): string
+    private function buildItemBaseQuery(Carbon $startDateTime, Carbon $endDateTime, array $filters): Builder
     {
-        if ($itemPriceColumn) {
-            return "COALESCE(sale_items.`{$itemPriceColumn}`, COALESCE(sale_items.subtotal_amount / NULLIF(sale_items.quantity, 0), 0))";
-        }
+        $query = DB::table('sale_items')
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->leftJoin('products', 'products.id', '=', 'sale_items.product_id')
+            ->where('sales.status', Sale::STATUS_COMPLETED)
+            ->whereBetween('sales.sale_date', [$startDateTime, $endDateTime]);
 
-        return "COALESCE(sale_items.subtotal_amount / NULLIF(sale_items.quantity, 0), 0)";
+        $this->applyPaymentMethodFilter($query, $filters);
+        $this->applyItemSearchFilter($query, (string) ($filters['q'] ?? ''));
+
+        return $query;
     }
 
-    private function productNameExpression(?string $saleItemProductNameColumn): string
+    private function applyPaymentMethodFilter(Builder $query, array $filters): void
     {
-        if ($saleItemProductNameColumn) {
-            return "COALESCE(products.name, sale_items.`{$saleItemProductNameColumn}`, 'Produk tidak ditemukan')";
+        if (! empty($filters['payment_method'])) {
+            $query->where('sales.payment_method', $filters['payment_method']);
         }
-
-        return "COALESCE(products.name, 'Produk tidak ditemukan')";
     }
 
-    private function productSkuExpression(?string $productSkuColumn): string
+    private function applySalesSearchFilter(Builder $query, string $search): void
     {
-        if ($productSkuColumn) {
-            return "COALESCE(products.`{$productSkuColumn}`, '-')";
+        if ($search === '') {
+            return;
         }
 
-        return "'-'";
+        $query->where(function (Builder $query) use ($search) {
+            $query
+                ->where('sales.invoice_no', 'like', "%{$search}%")
+                ->orWhere('sales.customer_name', 'like', "%{$search}%")
+                ->orWhereExists(function (Builder $subQuery) use ($search) {
+                    $subQuery
+                        ->select(DB::raw(1))
+                        ->from('sale_items')
+                        ->leftJoin('products', 'products.id', '=', 'sale_items.product_id')
+                        ->whereColumn('sale_items.sale_id', 'sales.id')
+                        ->where(function (Builder $itemQuery) use ($search) {
+                            $itemQuery
+                                ->where('sale_items.product_name', 'like', "%{$search}%")
+                                ->orWhere('sale_items.sku', 'like', "%{$search}%")
+                                ->orWhere('products.name', 'like', "%{$search}%")
+                                ->orWhere('products.sku', 'like', "%{$search}%")
+                                ->orWhere('products.barcode', 'like', "%{$search}%");
+                        });
+                });
+        });
+    }
+
+    private function applyItemSearchFilter(Builder $query, string $search): void
+    {
+        if ($search === '') {
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($search) {
+            $query
+                ->where('sales.invoice_no', 'like', "%{$search}%")
+                ->orWhere('sales.customer_name', 'like', "%{$search}%")
+                ->orWhere('sale_items.product_name', 'like', "%{$search}%")
+                ->orWhere('sale_items.sku', 'like', "%{$search}%")
+                ->orWhere('products.name', 'like', "%{$search}%")
+                ->orWhere('products.sku', 'like', "%{$search}%")
+                ->orWhere('products.barcode', 'like', "%{$search}%");
+        });
+    }
+
+    private function paymentMethodOptions(): array
+    {
+        return [
+            Sale::PAYMENT_CASH => 'Tunai',
+            Sale::PAYMENT_QRIS => 'QRIS',
+            Sale::PAYMENT_TRANSFER => 'Transfer Bank',
+            Sale::PAYMENT_EDC => 'EDC / Kartu',
+        ];
+    }
+
+    private function paymentMethodLabel(?string $paymentMethod): string
+    {
+        return $this->paymentMethodOptions()[$paymentMethod] ?? ($paymentMethod ?: 'Tidak diketahui');
+    }
+
+    private function csvText(mixed $value): string
+    {
+        $value = (string) $value;
+
+        if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', '*'], true)) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 }
