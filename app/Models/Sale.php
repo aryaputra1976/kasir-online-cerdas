@@ -20,6 +20,7 @@ class Sale extends Model
 
     protected $fillable = [
         'customer_id',
+        'created_by',
         'invoice_no',
         'sale_date',
         'customer_name',
@@ -42,11 +43,17 @@ class Sale extends Model
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'change_amount' => 'decimal:2',
+        'created_by' => 'integer',
     ];
 
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function items(): HasMany

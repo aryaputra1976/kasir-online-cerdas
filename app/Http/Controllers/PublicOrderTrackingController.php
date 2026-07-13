@@ -36,6 +36,13 @@ class PublicOrderTrackingController extends Controller
             ->where('tracking_token', $token)
             ->firstOrFail();
 
+        if (! $order->canUpdatePublicPayment()) {
+            return back()
+                ->withErrors([
+                    'payment_method' => 'Pembayaran order ini sudah tidak bisa diubah dari halaman tracking.',
+                ]);
+        }
+
         $storeSetting = StoreSetting::current();
         $paymentMethods = $this->availableOnlinePaymentMethods($storeSetting);
 
@@ -68,9 +75,7 @@ class PublicOrderTrackingController extends Controller
         ];
 
         if ($paymentMethod === Sale::PAYMENT_CASH) {
-            if ($order->payment_proof_path && Storage::disk('public')->exists($order->payment_proof_path)) {
-                Storage::disk('public')->delete($order->payment_proof_path);
-            }
+            $this->deletePaymentProof($order->payment_proof_path);
 
             $data['payment_status'] = OnlineOrder::PAYMENT_UNPAID;
             $data['payment_proof_path'] = null;
@@ -79,12 +84,10 @@ class PublicOrderTrackingController extends Controller
         }
 
         if ($request->hasFile('payment_proof')) {
-            if ($order->payment_proof_path && Storage::disk('public')->exists($order->payment_proof_path)) {
-                Storage::disk('public')->delete($order->payment_proof_path);
-            }
+            $this->deletePaymentProof($order->payment_proof_path);
 
             $data['payment_proof_path'] = $request->file('payment_proof')
-                ->store('payment-proofs', 'public');
+                ->store('payment-proofs');
         }
 
         $order->update($data);
@@ -123,5 +126,18 @@ class PublicOrderTrackingController extends Controller
         }
 
         return $methods;
+    }
+
+    private function deletePaymentProof(?string $path): void
+    {
+        if (! $path) {
+            return;
+        }
+
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
+            }
+        }
     }
 }

@@ -9,6 +9,11 @@ use Illuminate\Validation\ValidationException;
 
 class OnlineOrderSaleService
 {
+    public function __construct(
+        private readonly InvoiceNumberService $invoiceNumberService
+    ) {
+    }
+
     public function convertCompletedOrder(OnlineOrder $order): Sale
     {
         return DB::transaction(function () use ($order) {
@@ -42,7 +47,8 @@ class OnlineOrderSaleService
 
             $sale = Sale::create([
                 'customer_id' => $lockedOrder->customer_id,
-                'invoice_no' => $this->generateOnlineSaleInvoiceNo(),
+                'created_by' => auth()->id(),
+                'invoice_no' => $this->invoiceNumberService->next('ONL'),
                 'sale_date' => $lockedOrder->completed_at ?: now(),
                 'customer_name' => $lockedOrder->customer_name ?: 'Customer Online',
                 'subtotal_amount' => $lockedOrder->subtotal_amount,
@@ -78,21 +84,5 @@ class OnlineOrderSaleService
 
             return $sale;
         });
-    }
-
-    private function generateOnlineSaleInvoiceNo(): string
-    {
-        $prefix = 'ONL-' . now()->format('Ymd') . '-';
-
-        $lastNumber = Sale::query()
-            ->where('invoice_no', 'like', $prefix . '%')
-            ->count() + 1;
-
-        do {
-            $invoiceNo = $prefix . str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
-            $lastNumber++;
-        } while (Sale::where('invoice_no', $invoiceNo)->exists());
-
-        return $invoiceNo;
     }
 }

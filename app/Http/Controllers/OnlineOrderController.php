@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\OnlineOrder;
 use App\Models\Sale;
+use App\Services\CompleteOnlineOrderService;
 use App\Services\OnlineOrderSaleService;
 use App\Services\OnlineOrderStockService;
+use App\Services\ProcessOnlineOrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,7 +16,9 @@ class OnlineOrderController extends Controller
 {
     public function __construct(
         private readonly OnlineOrderStockService $onlineOrderStockService,
-        private readonly OnlineOrderSaleService $onlineOrderSaleService
+        private readonly OnlineOrderSaleService $onlineOrderSaleService,
+        private readonly CompleteOnlineOrderService $completeOnlineOrderService,
+        private readonly ProcessOnlineOrderService $processOnlineOrderService
     ) {
     }
 
@@ -76,12 +80,12 @@ class OnlineOrderController extends Controller
         ]);
 
         $confirmedOrder = $this->onlineOrderStockService
-            ->confirmPaymentAndDeductStock(
+            ->confirmPayment(
                 $order,
                 $validated['admin_payment_note'] ?? null
             );
 
-        return back()->with('success', "Pembayaran {$confirmedOrder->order_no} berhasil dikonfirmasi dan stok produk otomatis dikurangi.");
+        return back()->with('success', "Pembayaran {$confirmedOrder->order_no} berhasil dikonfirmasi. Stok akan dikurangi saat order diproses.");
     }
 
     public function rejectPayment(Request $request, OnlineOrder $order): RedirectResponse
@@ -127,23 +131,9 @@ class OnlineOrderController extends Controller
             return back()->with('error', 'Order belum bisa diproses. Pastikan pembayaran sudah dikonfirmasi.');
         }
 
-        if (
-            $order->payment_method !== Sale::PAYMENT_CASH
-            && $order->payment_status !== OnlineOrder::PAYMENT_PAID
-        ) {
-            return back()->with('error', 'Order non-COD hanya bisa diproses setelah pembayaran dibayar.');
-        }
+        $processedOrder = $this->processOnlineOrderService->process($order);
 
-        $this->onlineOrderStockService->deductStock($order);
-
-        $order->refresh();
-
-        $order->update([
-            'status' => OnlineOrder::STATUS_PROCESSING,
-            'processed_at' => now(),
-        ]);
-
-        return back()->with('success', "Order {$order->order_no} mulai diproses dan stok produk otomatis dikurangi.");
+        return back()->with('success', "Order {$processedOrder->order_no} mulai diproses dan stok produk otomatis dikurangi.");
     }
 
     public function complete(Request $request, OnlineOrder $order): RedirectResponse
@@ -161,35 +151,10 @@ class OnlineOrderController extends Controller
             ]);
         }
 
-        if (
-            $order->payment_method !== Sale::PAYMENT_CASH
-            && $order->payment_status !== OnlineOrder::PAYMENT_PAID
-        ) {
-            return back()->with('error', 'Order non-COD hanya bisa diselesaikan setelah pembayaran dibayar.');
-        }
-
-        $this->onlineOrderStockService->deductStock($order);
-
-        $order->refresh();
-
-        $updateData = [
-            'status' => OnlineOrder::STATUS_COMPLETED,
-            'processed_at' => $order->processed_at ?: now(),
-            'completed_at' => now(),
-        ];
-
-        if ($order->payment_method === Sale::PAYMENT_CASH) {
-            $updateData['payment_status'] = OnlineOrder::PAYMENT_PAID;
-            $updateData['paid_at'] = $order->paid_at ?: now();
-            $updateData['payment_confirmed_at'] = $order->payment_confirmed_at ?: now();
-            $updateData['payment_rejected_at'] = null;
-            $updateData['admin_payment_note'] = $order->admin_payment_note ?: 'Pembayaran Tunai / COD diterima saat order selesai.';
-        }
-
-        $order->update($updateData);
-        $order->refresh();
-
-        $sale = $this->onlineOrderSaleService->convertCompletedOrder($order);
+        $sale = $this->completeOnlineOrderService->complete(
+            $order,
+            $request->boolean('cod_payment_received')
+        );
 
         return back()->with('success', "Order {$order->order_no} selesai dan masuk ke laporan penjualan sebagai {$sale->invoice_no}.");
     }

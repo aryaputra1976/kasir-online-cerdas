@@ -235,6 +235,7 @@
             $isWaitingConfirmation = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_WAITING_CONFIRMATION;
             $isPaid = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_PAID;
             $isRejected = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_REJECTED;
+            $canUpdatePublicPayment = $order->canUpdatePublicPayment();
 
             $paymentBadgeClass = match ($order->payment_status) {
                 \App\Models\OnlineOrder::PAYMENT_PAID => 'badge-success',
@@ -440,18 +441,28 @@
                                     <span class="muted">Bukti pembayaran:</span>
 
                                     <a
-                                        href="{{ asset('storage/' . $order->payment_proof_path) }}"
+                                        href="{{ route('public.payment-proof.show', $order->tracking_token) }}"
                                         target="_blank"
                                         style="display: block; margin-top: 8px;"
                                     >
                                         <img
-                                            src="{{ asset('storage/' . $order->payment_proof_path) }}"
+                                            src="{{ route('public.payment-proof.show', $order->tracking_token) }}"
                                             alt="Bukti pembayaran"
                                             class="proof-img"
                                         >
                                     </a>
                                 </div>
                             @endif
+                        </div>
+
+                    @elseif (! $canUpdatePublicPayment)
+                        <div class="payment-box">
+                            <strong>Pembayaran Tidak Dapat Diubah</strong>
+
+                            <p class="muted">
+                                Order sudah masuk proses toko, selesai, dibatalkan, atau pembayaran sudah dikonfirmasi.
+                                Hubungi toko jika ada perubahan pembayaran.
+                            </p>
                         </div>
 
                     @else

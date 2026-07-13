@@ -4,39 +4,14 @@ namespace App\Services;
 
 use App\Models\OnlineOrder;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-class OnlineOrderStockService
+class ProcessOnlineOrderService
 {
-    public function confirmPayment(OnlineOrder $order, ?string $adminPaymentNote = null): OnlineOrder
-    {
-        return DB::transaction(function () use ($order, $adminPaymentNote) {
-            $lockedOrder = OnlineOrder::query()
-                ->whereKey($order->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if (! $lockedOrder->canConfirmPayment()) {
-                throw ValidationException::withMessages([
-                    'payment_status' => 'Pembayaran order ini tidak dalam status menunggu konfirmasi.',
-                ]);
-            }
-
-            $lockedOrder->update([
-                'payment_status' => OnlineOrder::PAYMENT_PAID,
-                'paid_at' => now(),
-                'payment_confirmed_at' => now(),
-                'payment_rejected_at' => null,
-                'admin_payment_note' => $adminPaymentNote,
-            ]);
-
-            return $lockedOrder->refresh();
-        });
-    }
-
-    public function deductStock(OnlineOrder $order): OnlineOrder
+    public function process(OnlineOrder $order): OnlineOrder
     {
         return DB::transaction(function () use ($order) {
             $lockedOrder = OnlineOrder::query()
@@ -45,10 +20,36 @@ class OnlineOrderStockService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $this->validateOrderCanBeProcessed($lockedOrder);
             $this->deductStockForLockedOrder($lockedOrder);
+
+            $lockedOrder->refresh();
+
+            $lockedOrder->update([
+                'status' => OnlineOrder::STATUS_PROCESSING,
+                'processed_at' => $lockedOrder->processed_at ?: now(),
+            ]);
 
             return $lockedOrder->refresh();
         });
+    }
+
+    private function validateOrderCanBeProcessed(OnlineOrder $order): void
+    {
+        if (! $order->canProcess()) {
+            throw ValidationException::withMessages([
+                'status' => 'Order belum bisa diproses. Pastikan pembayaran sudah dikonfirmasi.',
+            ]);
+        }
+
+        if (
+            $order->payment_method !== Sale::PAYMENT_CASH
+            && $order->payment_status !== OnlineOrder::PAYMENT_PAID
+        ) {
+            throw ValidationException::withMessages([
+                'payment_status' => 'Order non-COD hanya bisa diproses setelah pembayaran dibayar.',
+            ]);
+        }
     }
 
     private function deductStockForLockedOrder(OnlineOrder $order): void

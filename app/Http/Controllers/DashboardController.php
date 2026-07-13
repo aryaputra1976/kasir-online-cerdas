@@ -7,23 +7,13 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockMovement;
-use App\Models\User;
 use Illuminate\Support\Carbon;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View|RedirectResponse
+    public function index(): View
     {
-        $user = request()->user();
-
-        if ($user?->hasRole(User::ROLE_KASIR)) {
-            return redirect()
-                ->route('pos.index')
-                ->with('info', 'Akun kasir diarahkan ke halaman POS.');
-        }
-
         $today = now()->toDateString();
         $monthStart = now()->startOfMonth();
         $monthEnd = now()->endOfMonth();

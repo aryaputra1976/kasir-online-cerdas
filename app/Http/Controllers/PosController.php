@@ -3,22 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockMovement;
 use App\Models\StoreSetting;
+use App\Models\User;
+use App\Services\InvoiceNumberService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use App\Models\Customer;
 
 class PosController extends Controller
 {
     private const CART_SESSION_KEY = 'pos.cart';
+
+    public function __construct(
+        private readonly InvoiceNumberService $invoiceNumberService
+    ) {
+    }
 
     public function index(Request $request): View
     {
@@ -190,7 +197,11 @@ class PosController extends Controller
         $availablePaymentMethodKeys = array_keys($this->availablePaymentMethods($storeSetting));
 
         $validated = $request->validate([
-            'customer_id' => ['nullable', 'integer', Rule::exists('customers', 'id')],
+            'customer_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('customers', 'id')->where('is_active', true),
+            ],
             'customer_name' => ['nullable', 'string', 'max:191'],
             'payment_method' => [
                 'required',
@@ -207,10 +218,10 @@ class PosController extends Controller
             $subtotalAmount = 0;
 
             foreach ($cart as $item) {
-                $subtotalAmount += (float) $item['selling_price'] * (int) $item['quantity'];
+                $subtotalAmount += $this->normalizeRupiahAmount($item['selling_price']) * (int) $item['quantity'];
             }
 
-            $discountAmount = (float) ($validated['discount_amount'] ?? 0);
+            $discountAmount = $this->normalizeRupiahAmount($validated['discount_amount'] ?? 0);
 
             if ($discountAmount > $subtotalAmount) {
                 throw ValidationException::withMessages([
@@ -219,15 +230,15 @@ class PosController extends Controller
             }
 
             $storeSetting = StoreSetting::current();
-            $taxPercentage = (float) $storeSetting->tax_percentage;
+            $taxPercentageBasisPoints = $this->percentageToBasisPoints($storeSetting->tax_percentage);
 
             $taxableAmount = max(0, $subtotalAmount - $discountAmount);
-            $taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+            $taxAmount = $this->calculateTaxAmount($taxableAmount, $taxPercentageBasisPoints);
             $totalAmount = max(0, $taxableAmount + $taxAmount);
 
             $paymentMethod = $validated['payment_method'];
 
-            $paidAmount = (float) ($validated['paid_amount'] ?? 0);
+            $paidAmount = $this->normalizeRupiahAmount($validated['paid_amount'] ?? 0);
 
             if ($paymentMethod !== Sale::PAYMENT_CASH && $paidAmount <= 0) {
                 $paidAmount = $totalAmount;
@@ -252,7 +263,8 @@ class PosController extends Controller
 
             $sale = Sale::create([
                 'customer_id' => $selectedCustomer?->id,
-                'invoice_no' => $this->generateInvoiceNo(),
+                'created_by' => auth()->id(),
+                'invoice_no' => $this->invoiceNumberService->next('POS'),
                 'sale_date' => now(),
                 'customer_name' => $customerName,
                 'subtotal_amount' => $subtotalAmount,
@@ -286,7 +298,7 @@ class PosController extends Controller
                     ]);
                 }
 
-                $unitPrice = (float) $product->selling_price;
+                $unitPrice = $this->normalizeRupiahAmount($product->selling_price);
                 $itemSubtotal = $unitPrice * $quantity;
 
                 SaleItem::create([
@@ -323,6 +335,7 @@ class PosController extends Controller
         });
 
         session()->forget(self::CART_SESSION_KEY);
+        session()->put('pos.recent_receipt_sale_id', $sale->id);
 
         return redirect()
             ->route('pos.receipt', $sale)
@@ -332,6 +345,20 @@ class PosController extends Controller
 
     public function receipt(Sale $sale): View
     {
+        $user = auth()->user();
+
+        abort_unless(
+            $user?->hasAnyRole([User::ROLE_OWNER, User::ROLE_ADMIN])
+                || (
+                    $user?->hasRole(User::ROLE_KASIR)
+                    && (
+                        (int) $sale->created_by === (int) $user->id
+                        || (int) session('pos.recent_receipt_sale_id') === (int) $sale->id
+                    )
+                ),
+            403
+        );
+
         $sale->load('items');
 
         return view('pos-receipt', compact('sale'));
@@ -349,13 +376,13 @@ class PosController extends Controller
 
         foreach ($cart as $item) {
             $quantity = (int) $item['quantity'];
-            $subtotal += (float) $item['selling_price'] * $quantity;
+            $subtotal += $this->normalizeRupiahAmount($item['selling_price']) * $quantity;
             $totalItems += $quantity;
         }
 
         $discount = 0;
         $taxableAmount = max(0, $subtotal - $discount);
-        $taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+        $taxAmount = $this->calculateTaxAmount($taxableAmount, $this->percentageToBasisPoints($taxPercentage));
         $total = max(0, $taxableAmount + $taxAmount);
 
         return [
@@ -367,6 +394,48 @@ class PosController extends Controller
             'total_items' => $totalItems,
             'cart_count' => count($cart),
         ];
+    }
+
+    private function normalizeRupiahAmount(mixed $value): int
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        $normalized = trim((string) $value);
+        $isNegative = str_starts_with($normalized, '-');
+        $normalized = ltrim($normalized, '+-');
+        [$whole, $fraction] = array_pad(explode('.', $normalized, 2), 2, '');
+
+        $amount = (int) ($whole === '' ? 0 : $whole);
+
+        if (($fraction[0] ?? '0') >= '5') {
+            $amount++;
+        }
+
+        return $isNegative ? $amount * -1 : $amount;
+    }
+
+    private function percentageToBasisPoints(mixed $percentage): int
+    {
+        $normalized = trim((string) ($percentage ?? 0));
+        $isNegative = str_starts_with($normalized, '-');
+        $normalized = ltrim($normalized, '+-');
+        [$whole, $fraction] = array_pad(explode('.', $normalized, 2), 2, '');
+
+        $basisPoints = ((int) ($whole === '' ? 0 : $whole)) * 100;
+        $basisPoints += (int) str_pad(substr($fraction, 0, 2), 2, '0');
+
+        return $isNegative ? $basisPoints * -1 : $basisPoints;
+    }
+
+    private function calculateTaxAmount(int $taxableAmount, int $taxPercentageBasisPoints): int
+    {
+        if ($taxableAmount <= 0 || $taxPercentageBasisPoints <= 0) {
+            return 0;
+        }
+
+        return intdiv(($taxableAmount * $taxPercentageBasisPoints) + 5000, 10000);
     }
 
     private function availablePaymentMethods(?StoreSetting $storeSetting = null): array
@@ -398,20 +467,4 @@ class PosController extends Controller
         return $methods;
     }
 
-    private function generateInvoiceNo(): string
-    {
-        $date = now()->format('Ymd');
-        $prefix = "POS-{$date}";
-
-        $latestCount = Sale::query()
-            ->whereDate('sale_date', now()->toDateString())
-            ->count() + 1;
-
-        do {
-            $invoiceNo = $prefix . '-' . str_pad((string) $latestCount, 4, '0', STR_PAD_LEFT);
-            $latestCount++;
-        } while (Sale::where('invoice_no', $invoiceNo)->exists());
-
-        return $invoiceNo;
-    }
 }

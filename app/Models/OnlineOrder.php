@@ -19,6 +19,28 @@ class OnlineOrder extends Model
     public const PAYMENT_PAID = 'PAID';
     public const PAYMENT_REJECTED = 'REJECTED';
 
+    public const STATUSES = [
+        self::STATUS_NEW,
+        self::STATUS_CONFIRMED,
+        self::STATUS_PROCESSING,
+        self::STATUS_COMPLETED,
+        self::STATUS_CANCELLED,
+    ];
+
+    public const PAYMENT_STATUSES = [
+        self::PAYMENT_UNPAID,
+        self::PAYMENT_WAITING_CONFIRMATION,
+        self::PAYMENT_PAID,
+        self::PAYMENT_REJECTED,
+    ];
+
+    public const PAYMENT_METHODS = [
+        Sale::PAYMENT_CASH,
+        Sale::PAYMENT_QRIS,
+        Sale::PAYMENT_TRANSFER,
+        Sale::PAYMENT_EDC,
+    ];
+
     protected $fillable = [
         'customer_id',
         'order_no',
@@ -177,12 +199,12 @@ class OnlineOrder extends Model
 
     public function canConfirmPayment(): bool
     {
-        return $this->payment_status === self::PAYMENT_WAITING_CONFIRMATION;
+        return $this->canManageManualPayment();
     }
 
     public function canRejectPayment(): bool
     {
-        return $this->payment_status === self::PAYMENT_WAITING_CONFIRMATION;
+        return $this->canManageManualPayment();
     }
 
     public function hasStockDeducted(): bool
@@ -197,6 +219,28 @@ class OnlineOrder extends Model
             && $this->payment_status !== self::PAYMENT_PAID
             && ! $this->hasStockDeducted()
             && is_null($this->cod_confirmed_at);
+    }
+
+    public function canUpdatePublicPayment(): bool
+    {
+        return $this->status === self::STATUS_NEW
+            && $this->payment_status !== self::PAYMENT_PAID
+            && ! $this->hasStockDeducted()
+            && is_null($this->sale_id)
+            && is_null($this->completed_at)
+            && is_null($this->cancelled_at);
+    }
+
+    private function canManageManualPayment(): bool
+    {
+        return $this->payment_status === self::PAYMENT_WAITING_CONFIRMATION
+            && $this->payment_method !== Sale::PAYMENT_CASH
+            && $this->status === self::STATUS_NEW
+            && ! $this->hasStockDeducted()
+            && is_null($this->sale_id)
+            && is_null($this->processed_at)
+            && is_null($this->completed_at)
+            && is_null($this->cancelled_at);
     }
 
     public function canProcess(): bool

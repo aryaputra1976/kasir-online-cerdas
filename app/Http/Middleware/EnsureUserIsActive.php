@@ -23,7 +23,7 @@ class EnsureUserIsActive
             return redirect()
                 ->route('login')
                 ->withErrors([
-                    'email' => 'Akun Anda sedang nonaktif. Hubungi owner atau admin.',
+                    'email' => 'Akun Anda sedang nonaktif. Hubungi Owner.',
                 ]);
         }
 

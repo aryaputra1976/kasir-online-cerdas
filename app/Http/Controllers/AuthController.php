@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -39,6 +41,8 @@ class AuthController extends Controller
                 ]);
         }
 
+        $this->clearLoginThrottle($request);
+
         $request->session()->regenerate();
 
         /** @var User $user */
@@ -53,7 +57,7 @@ class AuthController extends Controller
             return back()
                 ->withInput($request->only('email'))
                 ->withErrors([
-                    'email' => 'Akun Anda sedang nonaktif. Hubungi owner atau admin.',
+                    'email' => 'Akun Anda sedang nonaktif. Hubungi Owner.',
                 ]);
         }
 
@@ -79,5 +83,18 @@ class AuthController extends Controller
         }
 
         return route('dashboard');
+    }
+
+    private function throttleKey(Request $request): string
+    {
+        return Str::lower((string) $request->input('email')) . '|' . $request->ip();
+    }
+
+    private function clearLoginThrottle(Request $request): void
+    {
+        $key = $this->throttleKey($request);
+
+        RateLimiter::clear($key);
+        RateLimiter::clear(md5('login' . $key));
     }
 }

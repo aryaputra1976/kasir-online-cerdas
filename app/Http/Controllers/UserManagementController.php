@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class UserManagementController extends Controller
 {
+    private const LAST_ACTIVE_OWNER_LOCK_ERROR = 'last_active_owner_lock_error';
+
     public function index(Request $request): View
     {
         $search = trim((string) $request->input('q'));
@@ -106,13 +109,28 @@ class UserManagementController extends Controller
                 ->with('error', 'Akun yang sedang Anda gunakan tidak boleh dinonaktifkan.');
         }
 
-        if ($this->wouldLeaveNoActiveOwner($user, $validated)) {
+        try {
+            DB::transaction(function () use ($user, $validated) {
+                $lockedUser = User::query()
+                    ->whereKey($user->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($this->wouldLeaveNoActiveOwnerAfterLock($lockedUser, $validated)) {
+                    throw new \RuntimeException(self::LAST_ACTIVE_OWNER_LOCK_ERROR);
+                }
+
+                $lockedUser->update($validated);
+            });
+        } catch (\RuntimeException $exception) {
+            if ($exception->getMessage() !== self::LAST_ACTIVE_OWNER_LOCK_ERROR) {
+                throw $exception;
+            }
+
             return redirect()
                 ->route('settings.users.index')
                 ->with('error', 'Owner aktif terakhir tidak boleh diubah menjadi non-owner atau dinonaktifkan.');
         }
-
-        $user->update($validated);
 
         return redirect()
             ->route('settings.users.index')
@@ -121,25 +139,44 @@ class UserManagementController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        if (User::count() <= 1) {
-            return redirect()
-                ->route('settings.users.index')
-                ->with('error', 'User terakhir tidak boleh dihapus.');
-        }
-
         if ($request->user()?->is($user)) {
             return redirect()
                 ->route('settings.users.index')
                 ->with('error', 'Akun yang sedang Anda gunakan tidak boleh dihapus.');
         }
 
-        if ($this->isLastActiveOwner($user)) {
+        try {
+            DB::transaction(function () use ($user) {
+                $lockedUser = User::query()
+                    ->whereKey($user->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if (User::query()->lockForUpdate()->pluck('id')->count() <= 1) {
+                    throw new \RuntimeException('last_user_lock_error');
+                }
+
+                if ($this->wouldDeleteLastActiveOwnerAfterLock($lockedUser)) {
+                    throw new \RuntimeException(self::LAST_ACTIVE_OWNER_LOCK_ERROR);
+                }
+
+                $lockedUser->delete();
+            });
+        } catch (\RuntimeException $exception) {
+            if ($exception->getMessage() === 'last_user_lock_error') {
+                return redirect()
+                    ->route('settings.users.index')
+                    ->with('error', 'User terakhir tidak boleh dihapus.');
+            }
+
+            if ($exception->getMessage() !== self::LAST_ACTIVE_OWNER_LOCK_ERROR) {
+                throw $exception;
+            }
+
             return redirect()
                 ->route('settings.users.index')
                 ->with('error', 'Owner aktif terakhir tidak boleh dihapus.');
         }
-
-        $user->delete();
 
         return redirect()
             ->route('settings.users.index')
@@ -178,21 +215,9 @@ class UserManagementController extends Controller
         ]);
     }
 
-    private function isLastActiveOwner(User $user): bool
+    private function wouldLeaveNoActiveOwnerAfterLock(User $user, array $validated): bool
     {
         if (! $user->hasRole(User::ROLE_OWNER) || ! $user->is_active) {
-            return false;
-        }
-
-        return User::query()
-            ->where('role', User::ROLE_OWNER)
-            ->where('is_active', true)
-            ->count() <= 1;
-    }
-
-    private function wouldLeaveNoActiveOwner(User $user, array $validated): bool
-    {
-        if (! $this->isLastActiveOwner($user)) {
             return false;
         }
 
@@ -201,7 +226,27 @@ class UserManagementController extends Controller
             ? filter_var($validated['is_active'], FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE)
             : $user->is_active;
 
-        return $nextRole !== User::ROLE_OWNER || $nextIsActive !== true;
+        if ($nextRole === User::ROLE_OWNER && $nextIsActive === true) {
+            return false;
+        }
+
+        return $this->activeOwnerIdsAfterLock()->count() <= 1;
+    }
+
+    private function wouldDeleteLastActiveOwnerAfterLock(User $user): bool
+    {
+        return $user->hasRole(User::ROLE_OWNER)
+            && $user->is_active
+            && $this->activeOwnerIdsAfterLock()->count() <= 1;
+    }
+
+    private function activeOwnerIdsAfterLock()
+    {
+        return User::query()
+            ->where('role', User::ROLE_OWNER)
+            ->where('is_active', true)
+            ->lockForUpdate()
+            ->pluck('id');
     }
 
     private function wouldDeactivateCurrentUser(Request $request, User $user, array $validated): bool

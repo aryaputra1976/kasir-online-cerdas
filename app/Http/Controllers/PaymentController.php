@@ -70,11 +70,11 @@ class PaymentController extends Controller
     public function confirm(OnlineOrder $order): RedirectResponse
     {
         $confirmedOrder = $this->onlineOrderStockService
-            ->confirmPaymentAndDeductStock($order);
+            ->confirmPayment($order);
 
         return redirect()
             ->route('payments.show', $confirmedOrder)
-            ->with('success', "Pembayaran {$confirmedOrder->order_no} berhasil dikonfirmasi dan stok produk otomatis dikurangi.");
+            ->with('success', "Pembayaran {$confirmedOrder->order_no} berhasil dikonfirmasi. Stok akan dikurangi saat order diproses.");
     }
 
     public function reject(Request $request, OnlineOrder $order): RedirectResponse

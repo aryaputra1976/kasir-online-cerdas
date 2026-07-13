@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OnlineOrderController;
 use App\Http\Controllers\OnlineOrderReportController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\PaymentMethodSettingController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
@@ -34,6 +35,10 @@ use App\Models\User;
 */
 
 Route::get('/', function () {
+    if (auth()->user()?->hasRole(User::ROLE_KASIR)) {
+        return redirect()->route('pos.index');
+    }
+
     return redirect()->route('dashboard');
 });
 
@@ -60,20 +65,17 @@ Route::view('/demo-produk', 'demo-produk')
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
-    Route::post('/login', [AuthController::class, 'store']);
+    Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:login');
 
     Route::get('/register', function () {
         return redirect()
             ->route('login')
-            ->with('info', 'Pendaftaran akun publik tidak aktif. Hubungi owner atau admin.');
+            ->with('info', 'Pendaftaran akun publik tidak aktif. Hubungi Owner.');
     })->name('register');
 });
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
-
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
 
     Route::middleware('role:' . User::ROLE_OWNER . ',' . User::ROLE_ADMIN . ',' . User::ROLE_KASIR)
         ->group(function () {
@@ -101,17 +103,13 @@ Route::middleware(['auth', 'active'])->group(function () {
                     Route::patch('/{order}/complete', 'complete')->name('complete');
                 });
 
-            Route::prefix('pembayaran')
-                ->name('payments.')
-                ->controller(PaymentController::class)
-                ->group(function () {
-                    Route::get('/', 'index')->name('index');
-                    Route::get('/{order}', 'show')->name('show');
-                });
         });
 
     Route::middleware('role:' . User::ROLE_OWNER . ',' . User::ROLE_ADMIN)
         ->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'index'])
+                ->name('dashboard');
+
             Route::prefix('kategori-produk')
                 ->name('categories.')
                 ->controller(CategoryController::class)
@@ -159,9 +157,17 @@ Route::middleware(['auth', 'active'])->group(function () {
 
             Route::patch('/order-online/{order}/payment/confirm', [OnlineOrderController::class, 'confirmPayment'])->name('online-orders.payment.confirm');
             Route::patch('/order-online/{order}/payment/reject', [OnlineOrderController::class, 'rejectPayment'])->name('online-orders.payment.reject');
+            Route::get('/order-online/{order}/payment-proof', [PaymentProofController::class, 'showForOrder'])->name('online-orders.payment-proof');
             Route::patch('/order-online/{order}/cancel', [OnlineOrderController::class, 'cancel'])->name('online-orders.cancel');
             Route::patch('/order-online/{order}/convert-sale', [OnlineOrderController::class, 'convertToSale'])->name('online-orders.convert-sale');
 
+            Route::prefix('pembayaran')
+                ->name('payments.')
+                ->controller(PaymentController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/{order}', 'show')->name('show');
+                });
             Route::patch('/pembayaran/{order}/confirm', [PaymentController::class, 'confirm'])->name('payments.confirm');
             Route::patch('/pembayaran/{order}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
         });
@@ -185,7 +191,6 @@ Route::middleware(['auth', 'active'])->group(function () {
                     Route::delete('/{user}', 'destroy')->name('destroy');
                 });
 
-            Route::get('/pengaturan/tambah-user', [UserManagementController::class, 'create'])->name('settings.users.create-legacy');
             Route::get('/pengaturan/template-struk', [ReceiptTemplateController::class, 'edit'])->name('settings.receipt-template');
             Route::put('/pengaturan/template-struk', [ReceiptTemplateController::class, 'update'])->name('settings.receipt-template.update');
             Route::get('/pengaturan/metode-pembayaran', [PaymentMethodSettingController::class, 'edit'])->name('settings.payment-methods');
@@ -207,7 +212,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 Route::get('/menu', [PublicOrderController::class, 'menu'])
     ->name('public.menu');
 
-Route::get('/order', [PublicOrderController::class, 'checkout'])
+Route::redirect('/order', '/checkout', 301)
     ->name('public.order');
 
 Route::get('/checkout', [PublicOrderController::class, 'checkout'])
@@ -234,20 +239,20 @@ Route::get('/tracking/{token}', [PublicOrderTrackingController::class, 'show'])
 Route::post(
     '/tracking/{token}/payment-proof',
     [PublicOrderTrackingController::class, 'uploadPaymentProof']
-)->name('public.payment-proof.upload');
+)->middleware('throttle:public-payment-proof')->name('public.payment-proof.upload');
+
+Route::get(
+    '/tracking/{token}/payment-proof-file',
+    [PaymentProofController::class, 'showForTracking']
+)->name('public.payment-proof.show');
 
 /*
 |--------------------------------------------------------------------------
 | Demo Trezo
 |--------------------------------------------------------------------------
 |
-| Route ini supaya halaman demo Trezo lama tetap bisa dibuka jika dibutuhkan.
-|
-| Contoh:
-| /demo/pos-system
-| /demo/products-list
-| /demo/orders
-| /demo/reports
+| Local-only preview untuk view _trezo_demo lama.
+| TODO: audit dan hapus folder _trezo_demo jika sudah tidak dipakai.
 |
 */
 

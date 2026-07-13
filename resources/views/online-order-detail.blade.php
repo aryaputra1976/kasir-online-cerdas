@@ -419,18 +419,22 @@
 
                                         <span class="text-body fs-13 d-block mb-2">Bukti Pembayaran</span>
 
-                                        @if ($order->payment_proof_path)
+                                        @if ($order->payment_proof_path && $canManagePayment)
                                             <a
-                                                href="{{ asset('storage/' . $order->payment_proof_path) }}"
+                                                href="{{ route('online-orders.payment-proof', $order) }}"
                                                 target="_blank"
                                                 class="d-inline-block"
                                             >
                                                 <img
-                                                    src="{{ asset('storage/' . $order->payment_proof_path) }}"
+                                                    src="{{ route('online-orders.payment-proof', $order) }}"
                                                     alt="Bukti pembayaran"
                                                     class="koc-proof-image"
                                                 >
                                             </a>
+                                        @elseif ($order->payment_proof_path)
+                                            <div class="alert alert-light border rounded-3 mb-0">
+                                                Bukti pembayaran hanya dapat dilihat Owner atau Admin.
+                                            </div>
                                         @else
                                             <div class="alert alert-light border rounded-3 mb-0">
                                                 Belum ada bukti pembayaran.
@@ -459,7 +463,7 @@
                                             <form
                                                 action="{{ route('payments.confirm', $order) }}"
                                                 method="post"
-                                                onsubmit="return confirm('Konfirmasi pembayaran order ini dan kurangi stok otomatis?')"
+                                                onsubmit="return confirm('Konfirmasi pembayaran order ini? Stok akan dikurangi saat order diproses.')"
                                             >
                                                 @csrf
                                                 @method('PATCH')
