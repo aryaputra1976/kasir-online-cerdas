@@ -20,14 +20,15 @@ class DashboardMetricsService
     public function data(): array
     {
         $today = now();
-        $todayDate = $today->toDateString();
+        $todayStart = $today->copy()->startOfDay();
+        $todayEnd = $today->copy()->endOfDay();
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
 
         $completedSales = Sale::query()->where('status', Sale::STATUS_COMPLETED);
 
         $todayOmzet = (clone $completedSales)
-            ->whereDate('sale_date', $todayDate)
+            ->whereBetween('sale_date', [$todayStart, $todayEnd])
             ->sum('total_amount');
 
         $monthOmzet = (clone $completedSales)
@@ -35,34 +36,34 @@ class DashboardMetricsService
             ->sum('total_amount');
 
         $todayTransactions = (clone $completedSales)
-            ->whereDate('sale_date', $todayDate)
+            ->whereBetween('sale_date', [$todayStart, $todayEnd])
             ->count();
 
         $todayItemsSold = SaleItem::query()
-            ->whereHas('sale', function ($query) use ($todayDate) {
+            ->whereHas('sale', function ($query) use ($todayStart, $todayEnd) {
                 $query
                     ->where('status', Sale::STATUS_COMPLETED)
-                    ->whereDate('sale_date', $todayDate);
+                    ->whereBetween('sale_date', [$todayStart, $todayEnd]);
             })
             ->sum('quantity');
 
         $todayOnlineOrders = OnlineOrder::query()
-            ->whereDate('created_at', $todayDate)
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
             ->count();
 
         $todayOnlineOrderValue = OnlineOrder::query()
-            ->whereDate('created_at', $todayDate)
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
             ->sum('total_amount');
 
         $todayCompletedOnlineRevenue = OnlineOrder::query()
             ->where('status', OnlineOrder::STATUS_COMPLETED)
             ->where('payment_status', OnlineOrder::PAYMENT_PAID)
-            ->whereDate('completed_at', $todayDate)
+            ->whereBetween('completed_at', [$todayStart, $todayEnd])
             ->sum('total_amount');
 
         $todayCancelledOrderValue = OnlineOrder::query()
             ->where('status', OnlineOrder::STATUS_CANCELLED)
-            ->whereDate('cancelled_at', $todayDate)
+            ->whereBetween('cancelled_at', [$todayStart, $todayEnd])
             ->sum('total_amount');
 
         $onlineOrdersNotConvertedToSale = OnlineOrder::query()
@@ -92,7 +93,7 @@ class DashboardMetricsService
             'waitingPaymentConfirmations' => $this->countOrdersByPaymentStatus(OnlineOrder::PAYMENT_WAITING_CONFIRMATION),
             'paidOnlineOrders' => $this->countOrdersByPaymentStatus(OnlineOrder::PAYMENT_PAID),
             'completedOnlineOrdersToday' => OnlineOrder::query()
-                ->whereDate('completed_at', $todayDate)
+                ->whereBetween('completed_at', [$todayStart, $todayEnd])
                 ->where('status', OnlineOrder::STATUS_COMPLETED)
                 ->count(),
             'onlineOrdersNotConvertedToSale' => $onlineOrdersNotConvertedToSale,
@@ -107,8 +108,8 @@ class DashboardMetricsService
             'latestStockMovements' => $this->latestStockMovements(),
             'bestProducts' => $this->bestProducts($monthStart, $monthEnd),
             'weeklySales' => $this->weeklySales(),
-            'paymentSummary' => $this->paymentSummary($todayDate),
-            'onlinePaymentSummary' => $this->onlinePaymentSummary($todayDate),
+            'paymentSummary' => $this->paymentSummary($todayStart, $todayEnd),
+            'onlinePaymentSummary' => $this->onlinePaymentSummary($todayStart, $todayEnd),
         ];
     }
 
@@ -217,14 +218,14 @@ class DashboardMetricsService
         });
     }
 
-    private function paymentSummary(string $todayDate): Collection
+    private function paymentSummary(Carbon $todayStart, Carbon $todayEnd): Collection
     {
         $paymentSummaryRaw = Sale::query()
             ->select('payment_method')
             ->selectRaw('SUM(total_amount) as total_amount')
             ->selectRaw('COUNT(*) as total_transaction')
             ->where('status', Sale::STATUS_COMPLETED)
-            ->whereDate('sale_date', $todayDate)
+            ->whereBetween('sale_date', [$todayStart, $todayEnd])
             ->groupBy('payment_method')
             ->orderByDesc('total_amount')
             ->get();
@@ -243,14 +244,14 @@ class DashboardMetricsService
         });
     }
 
-    private function onlinePaymentSummary(string $todayDate): Collection
+    private function onlinePaymentSummary(Carbon $todayStart, Carbon $todayEnd): Collection
     {
         $summaryRaw = OnlineOrder::query()
             ->select('payment_method')
             ->selectRaw('COUNT(*) as total_order')
             ->selectRaw('SUM(CASE WHEN payment_status = ? THEN total_amount ELSE 0 END) as paid_value', [OnlineOrder::PAYMENT_PAID])
             ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed_count', [OnlineOrder::STATUS_COMPLETED])
-            ->whereDate('created_at', $todayDate)
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
             ->groupBy('payment_method')
             ->orderByDesc('paid_value')
             ->get();

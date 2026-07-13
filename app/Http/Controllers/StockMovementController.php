@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -58,10 +59,10 @@ class StockMovementController extends Controller
                 $query->where('movement_type', $movementType);
             })
             ->when($dateFrom, function ($query) use ($dateFrom) {
-                $query->whereDate('movement_date', '>=', $dateFrom);
+                $query->where('movement_date', '>=', Carbon::parse($dateFrom)->startOfDay());
             })
             ->when($dateTo, function ($query) use ($dateTo) {
-                $query->whereDate('movement_date', '<=', $dateTo);
+                $query->where('movement_date', '<=', Carbon::parse($dateTo)->endOfDay());
             });
 
         $movements = (clone $baseQuery)

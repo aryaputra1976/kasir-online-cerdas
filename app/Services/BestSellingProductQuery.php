@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Sale;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -17,11 +18,11 @@ class BestSellingProductQuery
             ->where('sales.status', Sale::STATUS_COMPLETED);
 
         if (! empty($filters['date_from'])) {
-            $query->whereDate('sales.sale_date', '>=', $filters['date_from']);
+            $query->where('sales.sale_date', '>=', Carbon::parse($filters['date_from'])->startOfDay());
         }
 
         if (! empty($filters['date_to'])) {
-            $query->whereDate('sales.sale_date', '<=', $filters['date_to']);
+            $query->where('sales.sale_date', '<=', Carbon::parse($filters['date_to'])->endOfDay());
         }
 
         if (! empty($filters['category_id'])) {

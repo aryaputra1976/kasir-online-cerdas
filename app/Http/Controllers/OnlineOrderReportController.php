@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\OnlineOrder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -134,11 +135,11 @@ class OnlineOrderReportController extends Controller
             ]);
 
         if (! empty($filters['start_date'])) {
-            $query->whereDate('online_orders.created_at', '>=', $filters['start_date']);
+            $query->where('online_orders.created_at', '>=', Carbon::parse($filters['start_date'])->startOfDay());
         }
 
         if (! empty($filters['end_date'])) {
-            $query->whereDate('online_orders.created_at', '<=', $filters['end_date']);
+            $query->where('online_orders.created_at', '<=', Carbon::parse($filters['end_date'])->endOfDay());
         }
 
         if (! empty($filters['status'])) {
