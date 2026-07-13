@@ -443,6 +443,144 @@
                 font-size: 27px;
             }
         }
+
+        /* Compact desktop login */
+        @media (min-width: 992px) {
+            .koc-login-wrapper {
+                min-height: 100svh;
+                padding: 12px;
+            }
+
+            .koc-login-card {
+                max-width: 1120px;
+                height: min(700px, calc(100svh - 24px));
+                max-height: 700px;
+                border-radius: 24px;
+            }
+
+            .koc-login-hero {
+                padding: 26px 34px;
+            }
+
+            .koc-brand-badge {
+                padding: 7px 12px;
+                gap: 9px;
+            }
+
+            .koc-brand-badge img {
+                width: 30px;
+                height: 30px;
+            }
+
+            .koc-hero-title {
+                margin-top: 28px;
+                margin-bottom: 12px;
+                font-size: 36px;
+                line-height: 1.12;
+            }
+
+            .koc-hero-description {
+                font-size: 14px;
+                line-height: 1.5;
+                margin-bottom: 14px;
+            }
+
+            .koc-feature-grid {
+                gap: 10px;
+            }
+
+            .koc-feature-item {
+                padding: 11px 13px;
+                border-radius: 14px;
+            }
+
+            .koc-feature-item i {
+                width: 30px;
+                height: 30px;
+                margin-bottom: 7px;
+                font-size: 19px;
+            }
+
+            .koc-feature-item h6 {
+                font-size: 14px;
+                margin-bottom: 3px;
+            }
+
+            .koc-feature-item p {
+                font-size: 12px;
+                line-height: 1.4;
+            }
+
+            .koc-login-form-side {
+                padding: 24px 40px;
+            }
+
+            .koc-login-form-box {
+                max-width: 440px;
+            }
+
+            .koc-logo-box {
+                width: 50px;
+                height: 50px;
+                border-radius: 15px;
+                margin-bottom: 12px;
+            }
+
+            .koc-logo-box img {
+                width: 35px;
+                height: 35px;
+            }
+
+            .koc-login-title {
+                font-size: 27px;
+                margin-bottom: 6px;
+            }
+
+            .koc-login-subtitle {
+                font-size: 14px;
+                line-height: 1.5;
+                margin-bottom: 14px;
+            }
+
+            .koc-access-card {
+                padding: 10px 13px;
+                margin-bottom: 14px;
+                border-radius: 13px;
+            }
+
+            .koc-access-card p {
+                line-height: 1.45;
+            }
+
+            .koc-login-form-box .alert {
+                padding: 11px 14px;
+                margin-bottom: 14px !important;
+            }
+
+            .koc-login-form-box .form-group.mb-4 {
+                margin-bottom: 14px !important;
+            }
+
+            .koc-form-control {
+                min-height: 46px;
+                border-radius: 12px;
+            }
+
+            .koc-login-form-box form > .d-flex.mb-4 {
+                margin-bottom: 14px !important;
+            }
+
+            .koc-login-button {
+                min-height: 48px;
+                border-radius: 12px;
+            }
+
+            .koc-footer-note {
+                margin-top: 14px;
+                padding-top: 12px;
+                line-height: 1.45;
+            }
+        }        
     </style>
 </head>
 
