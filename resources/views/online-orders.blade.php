@@ -234,7 +234,7 @@
                                                 <p class="text-body mb-1">
                                                     {{ $order->customer_name }}
                                                     @if ($order->customer_phone)
-                                                        Â· {{ $order->customer_phone }}
+                                                        <span class="mx-1">&middot;</span>{{ $order->customer_phone }}
                                                     @endif
                                                 </p>
 
