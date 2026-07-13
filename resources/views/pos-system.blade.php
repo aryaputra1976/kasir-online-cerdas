@@ -66,6 +66,13 @@
 
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+            $currentUser = auth()->user();
+            $canManageProducts = $currentUser?->hasAnyRole([
+                \App\Models\User::ROLE_OWNER,
+                \App\Models\User::ROLE_ADMIN,
+            ]) ?? false;
+            $homeRoute = $canManageProducts ? route('dashboard') : route('pos.index');
+            $homeLabel = $canManageProducts ? 'Dashboard' : 'Kasir POS';
         @endphp
 
         <div class="container-fluid">
@@ -84,9 +91,9 @@
                         <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
                             <ol class="breadcrumb align-items-center mb-0 lh-1">
                                 <li class="breadcrumb-item">
-                                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none">
+                                    <a href="{{ $homeRoute }}" class="d-flex align-items-center text-decoration-none">
                                         <i class="ri-home-4-line fs-18 text-primary me-1"></i>
-                                        <span class="text-secondary fw-medium hover">Dashboard</span>
+                                        <span class="text-secondary fw-medium hover">{{ $homeLabel }}</span>
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active" aria-current="page">
@@ -140,9 +147,11 @@
                                             </p>
                                         </div>
 
-                                        <a href="{{ route('products.index') }}" class="btn btn-outline-primary">
-                                            Kelola Produk
-                                        </a>
+                                        @if ($canManageProducts)
+                                            <a href="{{ route('products.index') }}" class="btn btn-outline-primary">
+                                                Kelola Produk
+                                            </a>
+                                        @endif
                                     </div>
 
                                     <div class="koc-filter-card mb-4">
@@ -248,9 +257,11 @@
                                                         Tambahkan produk aktif atau ubah kata kunci pencarian.
                                                     </p>
 
-                                                    <a href="{{ route('products.index') }}" class="btn btn-primary text-white">
-                                                        Kelola Produk
-                                                    </a>
+                                                    @if ($canManageProducts)
+                                                        <a href="{{ route('products.index') }}" class="btn btn-primary text-white">
+                                                            Kelola Produk
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         @endforelse

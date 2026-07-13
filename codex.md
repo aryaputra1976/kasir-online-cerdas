@@ -1,309 +1,212 @@
-## Hasil audit awal GitHub — Kasir Online Cerdas
+# Audit ulang repo — hasil terbaru
 
-Saya sudah audit dari repository GitHub. Status push-nya **sudah masuk benar**. Commit terbaru adalah:
+Commit **`3297d5d strengthen role based access control` sudah masuk ke branch `main` GitHub**.
+
+## Yang sudah benar
+
+### 1. Route Owner sudah dipisahkan
+
+Sekarang route operasional untuk **Owner + Admin** mencakup:
+
+* Kategori
+* Produk
+* Pelanggan
+* Stok
+* Laporan Penjualan
+* Produk Terlaris
+* Laporan Stok
+* Laporan Order Online
+
+Sedangkan route khusus **Owner** sudah mencakup:
+
+* Laporan Laba Rugi
+* Profil Toko
+* User & Role
+* Template Struk
+* Metode Pembayaran
+
+**Kesimpulan: pemisahan Owner dan Admin sudah sesuai.**
+
+---
+
+### 2. Proteksi Owner terakhir sudah bekerja
+
+Controller sekarang mencegah Owner aktif terakhir:
+
+* diubah menjadi Admin/Kasir;
+
+* dinonaktifkan;
+
+* dihapus.
+
+Pengecekan juga hanya menghitung akun dengan role Owner yang aktif.
+
+Ditambah hasil test lokal Anda:
 
 ```text
-9fc7139 update product demo landing page
-39b58ab improve user role list layout
-a9bffb5 add user and role management
+13 passed
+42 assertions
 ```
 
-Ini terlihat dari riwayat commit terakhir di repo.
+Bagian ini sudah layak.
 
 ---
 
-# Kesimpulan Audit
+### 3. Redirect Kasir sudah sesuai
 
-Secara fitur, project sudah **bagus untuk MVP / demo produk / pengembangan lanjutan**.
+Dari perubahan commit, Kasir diarahkan ke halaman POS setelah login dan ketika mencoba membuka dashboard.
 
-Tapi untuk **produksi atau dijual ke user UMKM**, masih ada beberapa hal penting yang harus dibereskan dulu.
-
-## Status saat ini
-
-| Area                        | Status                           |
-| --------------------------- | -------------------------------- |
-| Struktur Laravel            | Baik                             |
-| Modul POS                   | Baik                             |
-| Modul Produk, Stok, Laporan | Baik                             |
-| Order Online                | Hampir baik, tapi ada bug kritis |
-| User & Role                 | Sudah ada CRUD                   |
-| Login real user             | Belum aman                       |
-| Proteksi route admin        | Belum aman                       |
-| Asset Trezo di GitHub       | Berisiko tidak ikut terupload    |
-| README produk               | Masih bawaan Laravel             |
-| Siap produksi               | Belum                            |
+Ini sesuai konsep penggunaan kasir: login lalu langsung bertransaksi.
 
 ---
 
-# Temuan Kritis
+### 4. Sidebar sudah mengikuti role
 
-## 1. Admin dashboard belum diproteksi login
+Perubahan commit juga menunjukkan:
 
-Di `routes/web.php`, login dan register masih berupa halaman view demo, bukan proses autentikasi Laravel asli.
+* Master Data dan Stok: Owner + Admin
+* Laba Rugi: Owner
+* Pengaturan: Owner
+* Kasir tidak melihat menu strategis
 
-Route dashboard langsung dibuka tanpa middleware auth:
-
-```php
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->name('dashboard');
-```
-
-Semua route penting seperti kategori, produk, POS, order online admin, pembayaran, laporan, dan pengaturan juga belum dibungkus `auth` middleware. Contohnya route produk, POS, laporan, dan pengaturan langsung didefinisikan terbuka.
-
-**Dampak:** kalau aplikasi online, orang bisa akses halaman admin/POS/pengaturan tanpa login jika tahu URL-nya.
-
-**Prioritas:** sangat tinggi. Ini harus jadi **Tahap 31 — Login Real User & Middleware Role**.
+Jadi tampilan dan backend sekarang sudah sinkron, bukan hanya menyembunyikan menu.
 
 ---
 
-## 2. Ada bug serius di checkout order online
+# Temuan yang masih tersisa
 
-Di `PublicOrderController`, saat membuat online order, ada kode:
+## 1. Kasir masih mempunyai akses sensitif ke Order Online dan Pembayaran
 
-```php
-'customer_id' => $customer->id,
-```
-
-Tetapi variabel `$customer` belum dibuat di dalam method `store()`.
-
-Padahal di bagian bawah file sudah ada function:
+Semua route berikut masih diberikan kepada:
 
 ```php
-private function syncCustomerFromOnlineOrder(array $data): Customer
+OWNER, ADMIN, KASIR
 ```
 
-yang seharusnya dipakai untuk membuat/mencari customer.
+Termasuk:
 
-**Dampak:** checkout publik bisa error `Undefined variable $customer`.
+* konfirmasi pembayaran;
+* penolakan pembayaran;
+* pembatalan order;
+* proses dan penyelesaian order;
+* konversi order menjadi penjualan.
 
-**Prioritas:** sangat tinggi. Ini harus diperbaiki sebelum lanjut promosi/iklan.
+Ini bukan error, tetapi perlu keputusan bisnis.
+
+### Rekomendasi saya
+
+Kasir tetap boleh:
+
+* membuka POS;
+* melihat order online;
+* melihat detail order;
+* memproses dan menyelesaikan order.
+
+Namun sebaiknya hanya Owner/Admin yang boleh:
+
+* mengonfirmasi pembayaran;
+* menolak pembayaran;
+* membatalkan order;
+* melakukan konversi manual ke penjualan.
+
+Ini menjadi **tahap berikutnya yang paling tepat**.
 
 ---
 
-## 3. Asset Trezo berisiko tidak ikut masuk GitHub
+## 2. Owner masih bisa menghapus akun dirinya sendiri bila ada Owner aktif lain
 
-`.gitignore` saat ini mengabaikan:
+Saat ini sistem hanya melarang penghapusan **Owner aktif terakhir**. Bila ada dua Owner aktif, akun Owner yang sedang login masih dapat menghapus dirinya sendiri.
 
-```text
-/public/assets/
-```
+Secara teknis aplikasi tetap memiliki Owner, tetapi pengalaman pengguna kurang baik karena session bisa tetap aktif sementara akun di database sudah terhapus.
 
-Padahal layout aplikasi masih memanggil banyak file dari `/assets`, misalnya CSS:
-
-```blade
-/assets/css/sidebar-menu.css
-/assets/scss/style.css
-```
-
-Dan JS:
-
-```blade
-/assets/js/bootstrap.bundle.min.js
-/assets/js/sidebar-menu.js
-/assets/js/custom/custom.js
-```
-
-**Dampak:** saat orang clone repo dari GitHub atau deploy dari GitHub, tampilan bisa rusak karena asset Trezo tidak ada.
-
-**Catatan:** kalau asset Trezo tidak boleh di-public karena lisensi, buat folder deployment privat/zip terpisah. Kalau repo ini memang untuk deployment pribadi, asset wajib ikut atau ada instruksi copy asset.
-
----
-
-## 4. Route demo Trezo masih terbuka
-
-Masih ada route:
+Sebaiknya tambahkan aturan:
 
 ```php
-/demo/{page}
-```
-
-yang mencoba membuka view demo lama jika view-nya ada.
-
-**Dampak:** untuk produksi, route demo seperti ini sebaiknya dihapus atau hanya aktif saat `APP_ENV=local`.
-
-**Saran:** nanti kita bungkus begini:
-
-```php
-if (app()->environment('local')) {
-    Route::get('/demo/{page}', ...);
+if ($user->is(auth()->user())) {
+    // akun yang sedang digunakan tidak boleh dihapus
 }
 ```
 
----
-
-## 5. `.env.example` masih bawaan Laravel
-
-`.env.example` masih:
-
-```env
-APP_NAME=Laravel
-APP_ENV=local
-APP_DEBUG=true
-APP_TIMEZONE=UTC
-DB_CONNECTION=sqlite
-```
-
-**Dampak:** kurang siap untuk pengguna lain/deploy karena belum mencerminkan aplikasi Kasir Online Cerdas, MySQL, timezone Indonesia, dan setting production.
-
-**Saran:** ubah ke template yang sesuai:
-
-```env
-APP_NAME="Kasir Online Cerdas"
-APP_ENV=production
-APP_DEBUG=false
-APP_TIMEZONE=Asia/Makassar
-DB_CONNECTION=mysql
-```
+Hal yang sama sebaiknya berlaku untuk menonaktifkan akun sendiri.
 
 ---
 
-# Temuan Sedang
+## 3. Route produk lama masih berupa halaman statis
 
-## 6. README masih bawaan Laravel
-
-README masih menampilkan logo Laravel dan penjelasan framework Laravel, bukan dokumentasi aplikasi Kasir Online Cerdas.
-
-**Dampak:** repo terlihat belum profesional kalau dilihat calon pembeli, client, atau reviewer.
-
-**Saran:** buat README baru berisi:
-
-```text
-- Deskripsi Kasir Online Cerdas
-- Fitur utama
-- Screenshot
-- Cara instalasi lokal
-- Cara deploy
-- Akun demo
-- Struktur modul
-- Roadmap
-```
-
----
-
-## 7. Composer masih identitas Laravel default
-
-`composer.json` masih:
-
-```json
-"name": "laravel/laravel",
-"description": "The skeleton application for the Laravel framework."
-```
-
-**Saran:** ganti nanti menjadi:
-
-```json
-"name": "ruangcerdas/kasir-online-cerdas",
-"description": "Aplikasi POS dan order online sederhana untuk UMKM Indonesia."
-```
-
----
-
-## 8. POS customer name belum sepenuhnya konsisten
-
-Di `PosController`, sistem sudah mengambil customer terpilih:
+Route berikut masih ada:
 
 ```php
-$selectedCustomer = Customer::query()
-    ->where('is_active', true)
-    ->find($validated['customer_id']);
+/produk/create
+/produk/edit
+/produk/detail
 ```
 
-lalu membuat `$customerName`.
+dan masih menggunakan `Route::view`.
 
-Tetapi saat simpan `Sale`, field `customer_name` masih memakai input manual:
+Sedangkan modul produk utama memakai controller dan modal/form yang sudah berjalan.
+
+Perlu dicek apakah tiga route ini masih dipakai. Bila tidak, sebaiknya dihapus untuk menghindari:
+
+* halaman Trezo lama terbuka;
+* route ganda;
+* kebingungan saat pemeliharaan.
+
+---
+
+## 4. Komentar autentikasi sudah tidak sesuai
+
+Di `routes/web.php` masih tertulis bahwa login menggunakan auth demo dan nanti akan diganti auth Laravel asli.
+
+Padahal sistem autentikasi Laravel asli sudah digunakan.
+
+Ini hanya dokumentasi kode, tetapi sebaiknya diganti menjadi:
 
 ```php
-'customer_name' => $validated['customer_name'] ?? null,
-```
-
-**Dampak:** kalau kasir memilih customer dari dropdown tapi tidak isi nama manual, nama customer di penjualan bisa kosong.
-
-**Saran:** ganti ke:
-
-```php
-'customer_name' => $customerName,
+/*
+|--------------------------------------------------------------------------
+| Authentication
+|--------------------------------------------------------------------------
+| Login Laravel untuk akun Owner, Admin, dan Kasir.
+| Registrasi publik dinonaktifkan.
+*/
 ```
 
 ---
 
-# Bagian yang Sudah Bagus
+## 5. Pengujian route Owner masih dapat diperluas
 
-## 1. User model sudah siap untuk role
+Test yang lulus sudah bagus, tetapi berdasarkan perubahan commit, pengujian Admin hanya terlihat memeriksa salah satu route khusus Owner, yaitu laporan laba rugi.
 
-Model `User` sudah punya role:
+Sebaiknya ditambah pengecekan untuk:
 
-```php
-OWNER
-ADMIN
-KASIR
-```
+* `/pengaturan/user-role`
+* `/pengaturan/profil-toko`
+* `/pengaturan/metode-pembayaran`
+* `/pengaturan/template-struk`
 
-dan field `phone`, `role`, `is_active`.
-
-Password juga sudah memakai cast `hashed`, jadi password otomatis di-hash saat disimpan.
+Tidak mendesak karena semua berada dalam middleware group yang sama, tetapi bagus untuk mencegah regresi.
 
 ---
 
-## 2. Upload gambar sudah dibatasi
+# Putusan akhir
 
-Upload bukti pembayaran sudah dibatasi sebagai image `jpg/jpeg/png/webp` dan maksimal 2 MB.
+| Area                           | Status                |
+| ------------------------------ | --------------------- |
+| Owner                          | ✅ Sesuai              |
+| Admin                          | ✅ Sudah sesuai        |
+| Kasir redirect ke POS          | ✅ Sesuai              |
+| Laba Rugi khusus Owner         | ✅ Sesuai              |
+| Pengaturan khusus Owner        | ✅ Sesuai              |
+| Perlindungan Owner terakhir    | ✅ Sesuai              |
+| Pengujian otomatis             | ✅ Lulus               |
+| Hak aksi Kasir pada pembayaran | ⚠️ Masih terlalu luas |
+| Hapus/nonaktifkan akun sendiri | ⚠️ Perlu perlindungan |
+| Route produk statis lama       | ⚠️ Perlu dibersihkan  |
 
-Upload logo toko juga sudah dibatasi sebagai image dan maksimal 2 MB.
+## Nilai terbaru
 
----
+**9/10 untuk sistem role.**
 
-## 3. Stok online order sudah aman dari double deduction
+Perubahan utama sudah benar dan aman untuk dilanjutkan. Tahap berikutnya sebaiknya:
 
-`OnlineOrderStockService` sudah memakai transaksi database, lock order, dan lock produk saat pengurangan stok.
-
-Ada juga guard:
-
-```php
-if ($order->stock_deducted_at) {
-    return;
-}
-```
-
-sehingga stok tidak dikurangi dua kali.
-
----
-
-# Prioritas Perbaikan yang Saya Sarankan
-
-## Urutan terbaik
-
-| Prioritas | Tahap                                           | Alasan                                                |
-| --------- | ----------------------------------------------- | ----------------------------------------------------- |
-| 1         | Fix checkout order online `$customer` undefined | Ini bisa menyebabkan error langsung di halaman publik |
-| 2         | Login real user                                 | Saat ini admin route belum aman                       |
-| 3         | Middleware role Owner/Admin/Kasir               | Supaya User & Role benar-benar berguna                |
-| 4         | Rapikan asset Trezo untuk GitHub/deploy         | Supaya clone/deploy tidak rusak                       |
-| 5         | Ubah `.env.example`                             | Supaya siap instalasi                                 |
-| 6         | Buat README produk                              | Supaya repo terlihat profesional                      |
-| 7         | Matikan route demo Trezo di production          | Supaya aman dan bersih                                |
-
----
-
-# Kesimpulan
-
-Project **sudah berhasil naik ke GitHub dan fiturnya sudah cukup kuat untuk MVP**.
-
-Tapi sebelum dipromosikan sebagai produk final, saya sarankan jangan lanjut fitur besar dulu. Kita perlu lakukan tahap:
-
-```text
-Tahap 31 — Audit Fix Kritis Setelah Push GitHub
-```
-
-Isi tahap itu sebaiknya:
-
-```text
-1. Fix bug checkout order online customer_id
-2. Fix POS customer_name
-3. Proteksi admin route dengan auth
-4. Aktifkan login real user
-5. Batasi akses berdasarkan role
-6. Rapikan .env.example
-7. Rapikan README
-```
-
-Paling pertama sebaiknya kita perbaiki **bug checkout order online `$customer` undefined**.
+> **Batasi aksi sensitif Order Online dan Pembayaran untuk Kasir**, kemudian tambahkan proteksi agar user tidak dapat menghapus atau menonaktifkan akun yang sedang digunakan.

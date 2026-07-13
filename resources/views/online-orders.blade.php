@@ -44,6 +44,13 @@
 
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+            $currentUser = auth()->user();
+            $canManagePayment = $currentUser?->hasAnyRole([
+                \App\Models\User::ROLE_OWNER,
+                \App\Models\User::ROLE_ADMIN,
+            ]) ?? false;
+            $homeRoute = $canManagePayment ? route('dashboard') : route('pos.index');
+            $homeLabel = $canManagePayment ? 'Dashboard' : 'Kasir POS';
         @endphp
 
         <div class="container-fluid">
@@ -62,9 +69,9 @@
                         <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
                             <ol class="breadcrumb align-items-center mb-0 lh-1">
                                 <li class="breadcrumb-item">
-                                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none">
+                                    <a href="{{ $homeRoute }}" class="d-flex align-items-center text-decoration-none">
                                         <i class="ri-home-4-line fs-18 text-primary me-1"></i>
-                                        <span class="text-secondary fw-medium hover">Dashboard</span>
+                                        <span class="text-secondary fw-medium hover">{{ $homeLabel }}</span>
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active">Transaksi</li>
@@ -210,9 +217,11 @@
                                     </p>
                                 </div>
 
-                                <a href="{{ route('payments.index') }}" class="btn btn-primary text-white">
-                                    Konfirmasi Pembayaran
-                                </a>
+                                @if ($canManagePayment)
+                                    <a href="{{ route('payments.index') }}" class="btn btn-primary text-white">
+                                        Konfirmasi Pembayaran
+                                    </a>
+                                @endif
                             </div>
 
                             <div class="d-flex flex-column gap-3">
@@ -249,9 +258,11 @@
                                                     <a href="{{ route('online-orders.show', $order) }}" class="btn btn-outline-primary btn-sm">
                                                         Detail
                                                     </a>
-                                                    <a href="{{ route('payments.show', $order) }}" class="btn btn-outline-success btn-sm">
-                                                        Pembayaran
-                                                    </a>
+                                                    @if ($canManagePayment)
+                                                        <a href="{{ route('payments.show', $order) }}" class="btn btn-outline-success btn-sm">
+                                                            Pembayaran
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>

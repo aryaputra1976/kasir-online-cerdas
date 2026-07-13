@@ -51,6 +51,11 @@
             $isCashOrder = $order->payment_method === \App\Models\Sale::PAYMENT_CASH;
             $isPaidOrder = $order->payment_status === \App\Models\OnlineOrder::PAYMENT_PAID;
             $canRunOrderAction = $isCashOrder || $isPaidOrder;
+            $currentUser = auth()->user();
+            $canManagePayment = $currentUser?->hasAnyRole([
+                \App\Models\User::ROLE_OWNER,
+                \App\Models\User::ROLE_ADMIN,
+            ]) ?? false;
         @endphp
 
         <div class="container-fluid">
@@ -71,13 +76,15 @@
                                 Order Online
                             </a>
 
-                            <a href="{{ route('payments.index') }}" class="btn btn-outline-primary">
-                                Pembayaran
-                            </a>
+                            @if ($canManagePayment)
+                                <a href="{{ route('payments.index') }}" class="btn btn-outline-primary">
+                                    Pembayaran
+                                </a>
 
-                            <a href="{{ route('sales.report') }}" class="btn btn-outline-success">
-                                Laporan Penjualan
-                            </a>
+                                <a href="{{ route('sales.report') }}" class="btn btn-outline-success">
+                                    Laporan Penjualan
+                                </a>
+                            @endif
                         </div>
                     </div>
 
@@ -317,7 +324,7 @@
                                         @endif
                                     </div>
 
-                                    @if ($order->canConvertToSale())
+                                    @if ($canManagePayment && $order->canConvertToSale())
                                         <form
                                             action="{{ route('online-orders.convert-sale', $order) }}"
                                             method="post"
@@ -369,7 +376,7 @@
                                         @endif
                                     </div>
 
-                                    @if ($order->canConfirmPayment())
+                                    @if ($canManagePayment && $order->canConfirmPayment())
                                         <div class="d-flex flex-column gap-2 mt-4">
                                             <form
                                                 action="{{ route('payments.confirm', $order) }}"
@@ -442,7 +449,7 @@
                                             </form>
                                         @endif
 
-                                        @if ($order->canCancel())
+                                        @if ($canManagePayment && $order->canCancel())
                                             <form
                                                 action="{{ route('online-orders.cancel', $order) }}"
                                                 method="post"
@@ -457,7 +464,7 @@
                                             </form>
                                         @endif
 
-                                        @if (! ($canRunOrderAction && $order->canProcess()) && ! ($canRunOrderAction && $order->canComplete()) && ! $order->canCancel())
+                                        @if (! ($canRunOrderAction && $order->canProcess()) && ! ($canRunOrderAction && $order->canComplete()) && ! ($canManagePayment && $order->canCancel()))
                                             <div class="alert alert-light border rounded-3 mb-0">
                                                 Tidak ada aksi proses order yang tersedia untuk status saat ini.
                                             </div>

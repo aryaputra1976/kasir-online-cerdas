@@ -29,6 +29,7 @@
     $currentUser = auth()->user();
     $canManageOperationalData = $currentUser?->hasAnyRole([\App\Models\User::ROLE_OWNER, \App\Models\User::ROLE_ADMIN]) ?? false;
     $isOwner = $currentUser?->hasRole(\App\Models\User::ROLE_OWNER) ?? false;
+    $canAccessPayments = $currentUser?->hasAnyRole([\App\Models\User::ROLE_OWNER, \App\Models\User::ROLE_ADMIN]) ?? false;
 @endphp
 
 <div class="sidebar-area" id="sidebar-area">
@@ -49,13 +50,15 @@
     <aside id="layout-menu" class="layout-menu menu-vertical menu active" data-simplebar>
         <ul class="menu-inner">
 
-            {{-- Dashboard --}}
-            <li class="menu-item {{ $isDashboard ? 'active' : '' }}">
-                <a href="{{ route('dashboard') }}" class="menu-link {{ $isDashboard ? 'active' : '' }}">
-                    <span class="material-symbols-outlined menu-icon">dashboard</span>
-                    <span class="title">Dashboard</span>
-                </a>
-            </li>
+            @if ($canManageOperationalData)
+                {{-- Dashboard --}}
+                <li class="menu-item {{ $isDashboard ? 'active' : '' }}">
+                    <a href="{{ route('dashboard') }}" class="menu-link {{ $isDashboard ? 'active' : '' }}">
+                        <span class="material-symbols-outlined menu-icon">dashboard</span>
+                        <span class="title">Dashboard</span>
+                    </a>
+                </li>
+            @endif
 
             @if ($canManageOperationalData)
                 {{-- Master Data --}}
@@ -107,11 +110,13 @@
                         </a>
                     </li>
 
-                    <li class="menu-item">
-                        <a href="{{ route('payments.index') }}" class="menu-link {{ Request::is('pembayaran') || Request::is('pembayaran/*') ? 'active' : '' }}">
-                            Pembayaran
-                        </a>
-                    </li>
+                    @if ($canAccessPayments)
+                        <li class="menu-item">
+                            <a href="{{ route('payments.index') }}" class="menu-link {{ Request::is('pembayaran') || Request::is('pembayaran/*') ? 'active' : '' }}">
+                                Pembayaran
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             </li>
 
