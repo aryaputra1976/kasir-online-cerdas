@@ -88,6 +88,9 @@
 
         @php
             $rupiah = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+            $displayName = fn ($product) => $product->current_product_name ?: $product->snapshot_product_name;
+            $displaySku = fn ($product) => $product->current_product_sku ?: $product->snapshot_sku;
+            $transactionSearch = fn ($product) => $product->snapshot_sku ?: $product->snapshot_product_name;
         @endphp
 
         <div class="container-fluid">
@@ -99,7 +102,7 @@
                         <div>
                             <h3 class="mb-1">Laporan Produk Terlaris</h3>
                             <p class="text-body mb-0">
-                                Analisis produk dengan penjualan terbanyak berdasarkan transaksi POS.
+                                Analisis produk terlaris dari transaksi POS dan order online yang telah selesai.
                             </p>
                         </div>
 
@@ -131,6 +134,9 @@
                                             <h3 class="fs-22 fw-semibold mb-0 koc-price">
                                                 {{ $rupiah($totalOmzet) }}
                                             </h3>
+                                            <p class="fs-13 text-body mb-0 mt-1">
+                                                Akumulasi subtotal item sebelum diskon dan pajak transaksi.
+                                            </p>
                                         </div>
 
                                         <div class="koc-summary-icon bg-success bg-opacity-10 text-success">
@@ -215,7 +221,7 @@
                                                 </span>
 
                                                 <h4 class="fw-semibold mb-1">
-                                                    {{ $topProduct->product_name }}
+                                                    {{ $displayName($topProduct) }}
                                                 </h4>
 
                                                 <p class="text-body mb-0">
@@ -229,18 +235,20 @@
                                     <div class="col-lg-5">
                                         <div class="d-flex justify-content-lg-end gap-2 flex-wrap">
                                             <a
-                                                href="{{ route('sales.report', ['q' => $topProduct->product_name]) }}"
+                                                href="{{ route('sales.report', ['q' => $transactionSearch($topProduct)]) }}"
                                                 class="btn btn-outline-primary"
                                             >
                                                 Lihat Transaksi
                                             </a>
 
-                                            <a
-                                                href="{{ route('products.index', ['q' => $topProduct->sku]) }}"
-                                                class="btn btn-primary text-white"
-                                            >
-                                                Detail Produk
-                                            </a>
+                                            @if ($topProduct->current_product_id)
+                                                <a
+                                                    href="{{ route('products.index', ['q' => $displaySku($topProduct)]) }}"
+                                                    class="btn btn-primary text-white"
+                                                >
+                                                    Detail Produk
+                                                </a>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -251,6 +259,10 @@
                     <div class="card bg-white border-0 rounded-3 mb-4">
                         <div class="card-body p-4">
                             <div class="koc-filter-card mb-4">
+                                <div class="alert alert-light border fs-13 text-body mb-3">
+                                    {{ $categoryFilterNote }}
+                                </div>
+
                                 <form action="{{ route('best-products.report') }}" method="get">
                                     <div class="row g-2 align-items-center">
                                         <div class="col-xl-3 col-lg-4 col-md-6">
@@ -327,16 +339,16 @@
 
                                                     <div>
                                                         <h6 class="fw-semibold fs-15 mb-1">
-                                                            {{ $product->product_name }}
+                                                            {{ $displayName($product) }}
                                                         </h6>
 
                                                         <p class="text-body fs-13 mb-0">
-                                                            {{ $product->product?->category?->name ?? 'Tanpa Kategori' }}
+                                                            {{ $product->category_name ?? 'Tanpa Kategori / Produk Historis' }}
                                                         </p>
 
                                                         <div class="koc-product-meta">
                                                             <span class="badge bg-light text-body border p-2 fs-12 fw-normal">
-                                                                SKU: {{ $product->sku ?: '-' }}
+                                                                SKU: {{ $displaySku($product) ?: '-' }}
                                                             </span>
 
                                                             <span class="badge bg-info bg-opacity-10 text-info p-2 fs-12 fw-normal">
@@ -372,11 +384,20 @@
                                             <div class="col-xl-2 col-lg-1 col-md-12">
                                                 <div class="d-flex justify-content-xl-end gap-2 flex-wrap">
                                                     <a
-                                                        href="{{ route('sales.report', ['q' => $product->product_name]) }}"
+                                                        href="{{ route('sales.report', ['q' => $transactionSearch($product)]) }}"
                                                         class="btn btn-outline-primary btn-sm"
                                                     >
                                                         Transaksi
                                                     </a>
+
+                                                    @if ($product->current_product_id)
+                                                        <a
+                                                            href="{{ route('products.index', ['q' => $displaySku($product)]) }}"
+                                                            class="btn btn-outline-secondary btn-sm"
+                                                        >
+                                                            Detail
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -401,7 +422,7 @@
                                         <h6 class="fw-semibold mb-1">Belum ada produk terjual</h6>
 
                                         <p class="text-body mb-3">
-                                            Produk terlaris akan muncul setelah transaksi POS disimpan.
+                                            Produk terlaris akan muncul setelah transaksi POS atau order online selesai masuk penjualan.
                                         </p>
 
                                         <a href="{{ route('pos.index') }}" class="btn btn-primary text-white">
